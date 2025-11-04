@@ -1,19 +1,12 @@
 /**
- * Send Voucher Form JavaScript - Enhanced with Real FlexPay Integration
+ * Send Voucher Form JavaScript - Fixed with null checks
+ * Enhanced with Real FlexPay Integration
  */
 
 // Form elements
-const form = document.getElementById('sendVoucherForm');
-const currencySelect = document.getElementById('currency');
-const amountButtons = document.querySelectorAll('.amount-btn');
-const customAmountInput = document.getElementById('customAmount');
-const quantityInput = document.getElementById('quantity');
-const recipientFields = document.getElementById('recipientFields');
-const addRecipientBtn = document.getElementById('addRecipient');
-const feeDisplay = document.getElementById('feeDisplay');
-const totalDisplay = document.getElementById('totalDisplay');
-const serviceFeeDisplay = document.getElementById('serviceFeeDisplay');
-const senderCoversFeeCheckbox = document.getElementById('senderCoversFee');
+let form, currencySelect, amountButtons, customAmountInput, quantityInput;
+let recipientFields, addRecipientBtn, feeDisplay, totalDisplay;
+let serviceFeeDisplay, senderCoversFeeCheckbox;
 
 // State
 let recipientCount = 1;
@@ -23,17 +16,39 @@ let exchangeRate = 2800; // Default rate
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initializeForm();
-    fetchExchangeRate();
+    initializeElements();
+    if (form) {
+        initializeForm();
+        fetchExchangeRate();
+    } else {
+        console.error('Form not found on this page');
+    }
 });
+
+function initializeElements() {
+    // Get all form elements safely
+    form = document.getElementById('sendVoucherForm');
+    currencySelect = document.getElementById('currency');
+    amountButtons = document.querySelectorAll('.amount-btn');
+    customAmountInput = document.getElementById('customAmount');
+    quantityInput = document.getElementById('quantity');
+    recipientFields = document.getElementById('recipientFields');
+    addRecipientBtn = document.getElementById('addRecipient');
+    feeDisplay = document.getElementById('feeDisplay');
+    totalDisplay = document.getElementById('totalDisplay');
+    serviceFeeDisplay = document.getElementById('serviceFeeDisplay');
+    senderCoversFeeCheckbox = document.getElementById('senderCoversFee');
+}
 
 function initializeForm() {
     // Currency change handler
-    currencySelect.addEventListener('change', (e) => {
-        currentCurrency = e.target.value;
-        updateAmountDisplay();
-        updateFeeDisplay();
-    });
+    if (currencySelect) {
+        currencySelect.addEventListener('change', (e) => {
+            currentCurrency = e.target.value;
+            updateAmountDisplay();
+            updateFeeDisplay();
+        });
+    }
 
     // Amount button handlers
     amountButtons.forEach(btn => {
@@ -44,24 +59,32 @@ function initializeForm() {
     });
 
     // Custom amount handler
-    customAmountInput.addEventListener('input', (e) => {
-        const amount = parseFloat(e.target.value) || 0;
-        setAmount(amount);
-    });
+    if (customAmountInput) {
+        customAmountInput.addEventListener('input', (e) => {
+            const amount = parseFloat(e.target.value) || 0;
+            setAmount(amount);
+        });
+    }
 
     // Quantity handler
-    quantityInput.addEventListener('input', (e) => {
-        const quantity = parseInt(e.target.value) || 1;
-        updateRecipientFields(quantity);
-    });
+    if (quantityInput) {
+        quantityInput.addEventListener('input', (e) => {
+            const quantity = parseInt(e.target.value) || 1;
+            updateRecipientFields(quantity);
+        });
+    }
 
     // Service fee handler
-    senderCoversFeeCheckbox.addEventListener('change', updateFeeDisplay);
+    if (senderCoversFeeCheckbox) {
+        senderCoversFeeCheckbox.addEventListener('change', updateFeeDisplay);
+    }
 
     // Add recipient handler
-    addRecipientBtn.addEventListener('click', () => {
-        addRecipientField();
-    });
+    if (addRecipientBtn) {
+        addRecipientBtn.addEventListener('click', () => {
+            addRecipientField();
+        });
+    }
 
     // Form submission
     form.addEventListener('submit', handleFormSubmit);
@@ -72,7 +95,9 @@ function initializeForm() {
 
 function setAmount(amount) {
     currentAmount = amount;
-    customAmountInput.value = amount;
+    if (customAmountInput) {
+        customAmountInput.value = amount;
+    }
     
     // Update button states
     amountButtons.forEach(btn => {
@@ -96,33 +121,45 @@ function updateAmountDisplay() {
     const usdDisplay = currentCurrency === 'USD' ? currentAmount : convertedAmount;
     const cdfDisplay = currentCurrency === 'CDF' ? currentAmount : convertedAmount;
 
-    document.getElementById('usdDisplay').textContent = `$${usdDisplay.toFixed(2)}`;
-    document.getElementById('cdfDisplay').textContent = `${cdfDisplay.toLocaleString()} FC`;
-
+    const usdDisplayEl = document.getElementById('usdDisplay');
+    const cdfDisplayEl = document.getElementById('cdfDisplay');
+    const amountField = document.getElementById('amount');
+    
+    if (usdDisplayEl) usdDisplayEl.textContent = `$${usdDisplay.toFixed(2)}`;
+    if (cdfDisplayEl) cdfDisplayEl.textContent = `${cdfDisplay.toLocaleString()} FC`;
+    
     // Update hidden amount field
-    document.getElementById('amount').value = currentAmount;
+    if (amountField) amountField.value = currentAmount;
 }
 
 function updateFeeDisplay() {
     const amount = currentAmount;
-    const quantity = parseInt(quantityInput.value) || 1;
+    const quantity = parseInt(quantityInput?.value) || 1;
     const baseTotal = amount * quantity;
     const fee = baseTotal * 0.035; // 3.5% fee
-    const senderCoversFee = senderCoversFeeCheckbox.checked;
+    const senderCoversFee = senderCoversFeeCheckbox?.checked || false;
     
     const total = senderCoversFee ? baseTotal + fee : baseTotal;
     
     // Update displays
-    serviceFeeDisplay.textContent = `$${fee.toFixed(2)} USD`;
-    totalDisplay.textContent = `$${total.toFixed(2)} USD`;
+    if (serviceFeeDisplay) {
+        serviceFeeDisplay.textContent = `$${fee.toFixed(2)} USD`;
+    }
+    if (totalDisplay) {
+        totalDisplay.textContent = `$${total.toFixed(2)} USD`;
+    }
     
     // Update hidden fields
-    document.getElementById('serviceFee').value = fee.toFixed(2);
-    document.getElementById('totalAmount').value = total.toFixed(2);
+    const serviceFeeField = document.getElementById('serviceFee');
+    const totalAmountField = document.getElementById('totalAmount');
+    if (serviceFeeField) serviceFeeField.value = fee.toFixed(2);
+    if (totalAmountField) totalAmountField.value = total.toFixed(2);
 }
 
 function updateRecipientFields(quantity) {
     recipientCount = quantity;
+    
+    if (!recipientFields) return;
     
     // Clear existing fields except first one
     while (recipientFields.children.length > 1) {
@@ -139,6 +176,8 @@ function updateRecipientFields(quantity) {
 }
 
 function addRecipientField() {
+    if (!recipientFields) return;
+    
     const fieldDiv = document.createElement('div');
     fieldDiv.className = 'recipient-field';
     fieldDiv.innerHTML = `
@@ -157,12 +196,16 @@ function addRecipientField() {
 
 function removeRecipient(button) {
     const fieldDiv = button.closest('.recipient-field');
-    fieldDiv.remove();
-    recipientCount--;
-    
-    // Update quantity input
-    quantityInput.value = recipientCount;
-    updateBatchInfo();
+    if (fieldDiv) {
+        fieldDiv.remove();
+        recipientCount--;
+        
+        // Update quantity input
+        if (quantityInput) {
+            quantityInput.value = recipientCount;
+        }
+        updateBatchInfo();
+    }
 }
 
 function updateBatchInfo() {
@@ -193,6 +236,8 @@ async function fetchExchangeRate() {
 
 async function handleFormSubmit(e) {
     e.preventDefault();
+    
+    if (!form) return;
     
     const formData = new FormData(form);
     const orderData = {
@@ -252,7 +297,7 @@ async function handleFormSubmit(e) {
     }
 }
 
-// ✅ NEW FUNCTION: Real FlexPay Integration
+// Real FlexPay Integration
 async function showFlexPayPopupAndPay(orderId, amount) {
     try {
         // Show loading state
@@ -292,7 +337,7 @@ async function showFlexPayPopupAndPay(orderId, amount) {
     }
 }
 
-// ✅ NEW FUNCTION: Interactive FlexPay Popup
+// Interactive FlexPay Popup
 function showInteractiveFlexPayPopup(paymentUrl, orderId) {
     // Create popup overlay
     const popupOverlay = document.createElement('div');
@@ -349,7 +394,7 @@ function showInteractiveFlexPayPopup(paymentUrl, orderId) {
     window.selectedPaymentMethod = null;
 }
 
-// ✅ NEW FUNCTION: Select Payment Method
+// Select Payment Method
 function selectPaymentMethod(method) {
     window.selectedPaymentMethod = method;
     
@@ -361,7 +406,7 @@ function selectPaymentMethod(method) {
     event.target.closest('.payment-btn').classList.add('selected');
 }
 
-// ✅ NEW FUNCTION: Proceed to Payment
+// Proceed to Payment
 function proceedToPayment() {
     if (!window.selectedPaymentMethod) {
         showToast('Veuillez sélectionner un mode de paiement', 'error');
@@ -395,7 +440,7 @@ function proceedToPayment() {
     closeFlexPayPopup();
 }
 
-// ✅ NEW FUNCTION: Check Payment Status
+// Check Payment Status
 async function checkPaymentStatus(orderId) {
     try {
         showLoadingSpinner();
@@ -422,7 +467,7 @@ async function checkPaymentStatus(orderId) {
     }
 }
 
-// ✅ NEW FUNCTION: Close FlexPay Popup
+// Close FlexPay Popup
 function closeFlexPayPopup() {
     const popup = document.getElementById('flexpayPopup');
     if (popup) {
@@ -430,7 +475,7 @@ function closeFlexPayPopup() {
     }
 }
 
-// ✅ NEW FUNCTION: Show Loading Spinner
+// Show Loading Spinner
 function showLoadingSpinner() {
     const spinner = document.createElement('div');
     spinner.id = 'loadingSpinner';
@@ -445,7 +490,7 @@ function showLoadingSpinner() {
     document.body.appendChild(spinner);
 }
 
-// ✅ NEW FUNCTION: Hide Loading Spinner
+// Hide Loading Spinner
 function hideLoadingSpinner() {
     const spinner = document.getElementById('loadingSpinner');
     if (spinner) {
