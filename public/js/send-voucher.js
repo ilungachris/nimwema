@@ -644,7 +644,7 @@ async function processFlexPayPayment(formData) {
         
         if (orderResult.success) {
             // Direct redirect to FlexPay with your token
-            const flexpayUrl = `http://41.243.7.46:8080/payment?order=${orderResult.order.id}&amount=${formData.amount}&merchant=CPOSSIBLE&token=Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A`;
+            const paymentUrl = `https://backend.flexpay.cd/api/rest/v1/paymentService?order=${orderId}&amount=${amount}&merchant=CPOSSIBLE&token=Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A`;
             
             // SIMPLE DIRECT REDIRECT!
             window.location.href = flexpayUrl;
