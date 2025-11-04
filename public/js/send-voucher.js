@@ -614,6 +614,9 @@ async function handleFormSubmit(e) {
 // COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
 
 // Process FlexPay payment - FIXED VERSION
+// COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
+
+// Process FlexPay payment - FIXED VERSION
 async function processFlexPayPayment(formData) {
     try {
         // Show loading
@@ -649,11 +652,11 @@ async function processFlexPayPayment(formData) {
             // FIXED: Get orderId from orderResult.order.id
             const orderId = orderResult.order.id;
             
-            // Direct redirect to FlexPay with your token
-            const flexpayUrl = `https://backend.flexpay.cd/api/rest/v1/paymentService?order=${orderId}&amount=${formData.amount}&merchant=CPOSSIBLE&token=Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A`;
+            // Redirect to our POST form page (FlexPay needs POST, not GET)
+            const flexpayFormUrl = `flexpay-post-form.html?order=${orderId}&amount=${formData.amount}`;
             
-            // SIMPLE DIRECT REDIRECT!
-            window.location.href = flexpayUrl;
+            // REDIRECT TO POST FORM PAGE!
+            window.location.href = flexpayFormUrl;
         } else {
             throw new Error(orderResult.message || 'Failed to create order');
         }

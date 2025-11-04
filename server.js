@@ -231,6 +231,10 @@ app.get('/redeem.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'redeem.html'));
 });
 
+app.get('/flexpay-post-form.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'flexpay-post-form.html'));
+});
+
 // ========== START SERVER ==========
 
 app.listen(PORT, () => {
