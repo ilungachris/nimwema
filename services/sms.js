@@ -188,4 +188,4 @@ class SMSService {
   }
 }
 
-module.exports = new SMSService();
+module.exports = SMSService;
