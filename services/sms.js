@@ -10,7 +10,7 @@ class SMSService {
     this.provider = process.env.SMS_PROVIDER || 'africas_talking';
     this.apiKey = process.env.SMS_API_KEY;
     this.username = process.env.SMS_USERNAME;
-    this.senderId = process.env.SMS_SENDER_ID || 'NIMWEMA';
+    this.senderId = process.env.SMS_SENDER_ID || null;
     this.isProduction = process.env.NODE_ENV === 'production';
     
     // Africa's Talking API endpoint
@@ -32,8 +32,7 @@ class SMSService {
         new URLSearchParams({
           username: this.username,
           to: phone,
-          message: message,
-          from: this.senderId
+          message: message
         }),
         {
           headers: {
