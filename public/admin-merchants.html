@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Commerçants - Admin Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .admin-dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #111111;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8BC34A;
+            text-decoration: none;
+        }
+
+        .sidebar-user {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #8BC34A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .user-details p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #8BC34A;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: rgba(139,195,74,0.1);
+            color: #8BC34A;
+        }
+
+        .menu-item .icon {
+            font-size: 20px;
+            width: 24px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: #111111;
+        }
+
+        .filters-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #8BC34A;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stat-box-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 5px;
+        }
+
+        .stat-box-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #111111;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.approved {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-badge.pending {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .status-badge.rejected {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .status-badge.suspended {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn.approve {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .action-btn.reject {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .action-btn.view {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+
+        .action-btn.suspend {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #8BC34A;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #111111;
+            font-weight: 600;
+        }
+
+        .document-preview {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .document-preview img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filters-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">NIMWEMA</a>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h3>Administrateur</h3>
+                        <p>Admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="admin-dashboard.html" class="menu-item">
+                    <span class="icon">📊</span>
+                    <span>Vue d'ensemble</span>
+                </a>
+                <a href="admin-merchants.html" class="menu-item active">
+                    <span class="icon">🏪</span>
+                    <span>Commerçants</span>
+                </a>
+                <a href="admin-users.html" class="menu-item">
+                    <span class="icon">👥</span>
+                    <span>Utilisateurs</span>
+                </a>
+                <a href="admin-transactions.html" class="menu-item">
+                    <span class="icon">💰</span>
+                    <span>Transactions</span>
+                </a>
+                <a href="admin-analytics.html" class="menu-item">
+                    <span class="icon">📈</span>
+                    <span>Analytics</span>
+                </a>
+                <a class="menu-item" id="logoutBtn">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Gestion des commerçants</h1>
+                <button class="btn btn-primary" onclick="exportMerchants()">📥 Exporter</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-box-value" id="totalMerchants">0</div>
+                    <div class="stat-box-label">Total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="approvedMerchants">0</div>
+                    <div class="stat-box-label">Approuvés</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="pendingMerchants">0</div>
+                    <div class="stat-box-label">En attente</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="rejectedMerchants">0</div>
+                    <div class="stat-box-label">Rejetés</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Recherche</label>
+                    <input type="text" id="searchInput" placeholder="Nom, email, téléphone...">
+                </div>
+                <div class="filter-group">
+                    <label>Statut</label>
+                    <select id="statusFilter">
+                        <option value="">Tous</option>
+                        <option value="pending">En attente</option>
+                        <option value="approved">Approuvés</option>
+                        <option value="rejected">Rejetés</option>
+                        <option value="suspended">Suspendus</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ville</label>
+                    <select id="cityFilter">
+                        <option value="">Toutes</option>
+                        <option value="kinshasa">Kinshasa</option>
+                        <option value="lubumbashi">Lubumbashi</option>
+                        <option value="mbuji-mayi">Mbuji-Mayi</option>
+                        <option value="kananga">Kananga</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Type</label>
+                    <select id="typeFilter">
+                        <option value="">Tous</option>
+                        <option value="supermarket">Supermarché</option>
+                        <option value="grocery">Épicerie</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="pharmacy">Pharmacie</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Merchants Table -->
+            <div class="section-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Commerce</th>
+                                <th>Propriétaire</th>
+                                <th>Type</th>
+                                <th>Ville</th>
+                                <th>Téléphone</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="merchantsBody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
+                                    Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Merchant Details Modal -->
+    <div class="modal" id="merchantModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Détails du commerçant</h3>
+                <span class="modal-close" onclick="closeMerchantModal()">×</span>
+            </div>
+            <div id="merchantDetails"></div>
+        </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script>
+        let merchants = [];
+        let filteredMerchants = [];
+
+        // Load merchants
+        async function loadMerchants() {
+            try {
+                const response = await fetch('/api/admin/merchants', {
+                    credentials: 'include'
+                });
+                merchants = await response.json();
+                filteredMerchants = merchants;
+                
+                updateStats();
+                renderMerchants();
+            } catch (error) {
+                console.error('Error loading merchants:', error);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalMerchants').textContent = merchants.length;
+            document.getElementById('approvedMerchants').textContent = merchants.filter(m => m.status === 'approved').length;
+            document.getElementById('pendingMerchants').textContent = merchants.filter(m => m.status === 'pending').length;
+            document.getElementById('rejectedMerchants').textContent = merchants.filter(m => m.status === 'rejected').length;
+        }
+
+        function renderMerchants() {
+            const tbody = document.getElementById('merchantsBody');
+            
+            if (filteredMerchants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
+                            Aucun commerçant trouvé
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredMerchants.map(m => `
+                <tr>
+                    <td>${m.businessName}</td>
+                    <td>${m.firstName} ${m.lastName}</td>
+                    <td>${m.businessType}</td>
+                    <td>${m.city}</td>
+                    <td>${m.phone}</td>
+                    <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+                    <td><span class="status-badge ${m.status}">${getStatusText(m.status)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            ${m.status === 'pending' ? `
+                                <button class="action-btn approve" onclick="approveMerchant('${m.id}')">Approuver</button>
+                                <button class="action-btn reject" onclick="rejectMerchant('${m.id}')">Rejeter</button>
+                            ` : ''}
+                            ${m.status === 'approved' ? `
+                                <button class="action-btn suspend" onclick="suspendMerchant('${m.id}')">Suspendre</button>
+                            ` : ''}
+                            <button class="action-btn view" onclick="viewMerchant('${m.id}')">Voir</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'En attente',
+                'approved': 'Approuvé',
+                'rejected': 'Rejeté',
+                'suspended': 'Suspendu'
+            };
+            return statusMap[status] || status;
+        }
+
+        // Filters
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('cityFilter').addEventListener('change', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const city = document.getElementById('cityFilter').value;
+            const type = document.getElementById('typeFilter').value;
+
+            filteredMerchants = merchants.filter(m => {
+                const matchSearch = !search || 
+                    m.businessName.toLowerCase().includes(search) ||
+                    m.firstName.toLowerCase().includes(search) ||
+                    m.lastName.toLowerCase().includes(search) ||
+                    m.email.toLowerCase().includes(search) ||
+                    m.phone.includes(search);
+                
+                const matchStatus = !status || m.status === status;
+                const matchCity = !city || m.city === city;
+                const matchType = !type || m.businessType === type;
+
+                return matchSearch && matchStatus && matchCity && matchType;
+            });
+
+            renderMerchants();
+        }
+
+        // Actions
+        async function approveMerchant(id) {
+            if (!confirm('Approuver ce commerçant ?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/merchants/${id}/approve`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    alert('Commerçant approuvé avec succès');
+                    loadMerchants();
+                } else {
+                    alert('Erreur lors de l\'approbation');
+                }
+            } catch (error) {
+                console.error('Error approving merchant:', error);
+                alert('Erreur lors de l\'approbation');
+            }
+        }
+
+        async function rejectMerchant(id) {
+            const reason = prompt('Raison du rejet :');
+            if (!reason) return;
+            
+            try {
+                const response = await fetch(`/api/admin/merchants/${id}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ reason })
+                });
+                
+                if (response.ok) {
+                    alert('Commerçant rejeté');
+                    loadMerchants();
+                } else {
+                    alert('Erreur lors du rejet');
+                }
+            } catch (error) {
+                console.error('Error rejecting merchant:', error);
+                alert('Erreur lors du rejet');
+            }
+        }
+
+        async function suspendMerchant(id) {
+            const reason = prompt('Raison de la suspension :');
+            if (!reason) return;
+            
+            try {
+                const response = await fetch(`/api/admin/merchants/${id}/suspend`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ reason })
+                });
+                
+                if (response.ok) {
+                    alert('Commerçant suspendu');
+                    loadMerchants();
+                } else {
+                    alert('Erreur lors de la suspension');
+                }
+            } catch (error) {
+                console.error('Error suspending merchant:', error);
+                alert('Erreur lors de la suspension');
+            }
+        }
+
+        function viewMerchant(id) {
+            const merchant = merchants.find(m => m.id === id);
+            if (!merchant) return;
+
+            const details = `
+                <div class="info-row">
+                    <span class="info-label">Commerce:</span>
+                    <span class="info-value">${merchant.businessName}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Propriétaire:</span>
+                    <span class="info-value">${merchant.firstName} ${merchant.lastName}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">${merchant.email}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Téléphone:</span>
+                    <span class="info-value">${merchant.phone}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Type:</span>
+                    <span class="info-value">${merchant.businessType}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Adresse:</span>
+                    <span class="info-value">${merchant.businessAddress}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ville:</span>
+                    <span class="info-value">${merchant.city}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Commune:</span>
+                    <span class="info-value">${merchant.commune}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Statut:</span>
+                    <span class="info-value"><span class="status-badge ${merchant.status}">${getStatusText(merchant.status)}</span></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Date d'inscription:</span>
+                    <span class="info-value">${new Date(merchant.createdAt).toLocaleString()}</span>
+                </div>
+            `;
+
+            document.getElementById('merchantDetails').innerHTML = details;
+            document.getElementById('merchantModal').classList.add('active');
+        }
+
+        function closeMerchantModal() {
+            document.getElementById('merchantModal').classList.remove('active');
+        }
+
+        function exportMerchants() {
+            // Export to CSV
+            const csv = [
+                ['Commerce', 'Propriétaire', 'Email', 'Téléphone', 'Type', 'Ville', 'Statut', 'Date'].join(','),
+                ...filteredMerchants.map(m => [
+                    m.businessName,
+                    `${m.firstName} ${m.lastName}`,
+                    m.email,
+                    m.phone,
+                    m.businessType,
+                    m.city,
+                    m.status,
+                    new Date(m.createdAt).toLocaleDateString()
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `merchants_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    window.location.href = 'login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+        });
+
+        // Initialize
+        loadMerchants();
+    </script>
+</body>
+</html>

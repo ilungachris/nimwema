@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statut du Paiement - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/forms.css">
+    <style>
+        .status-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-icon {
+            text-align: center;
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .status-icon.pending {
+            color: #FFA726;
+        }
+
+        .status-icon.success {
+            color: #66BB6A;
+        }
+
+        .status-icon.failed {
+            color: #EF5350;
+        }
+
+        .status-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #111111;
+        }
+
+        .status-message {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .status-details {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .detail-value {
+            color: #111111;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8BC34A;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+        }
+
+        .instructions {
+            background: #E8F5E9;
+            border-left: 4px solid #8BC34A;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .instructions h4 {
+            margin: 0 0 10px 0;
+            color: #111111;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 0.875rem;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Nimwema</h1>
+                    <p class="tagline" data-i18n="tagline">La solidarité africaine, rendue simple</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" data-i18n="nav_home">Accueil</a>
+                    <a href="request.html" data-i18n="nav_request">Demander</a>
+                    <a href="send.html" data-i18n="nav_send">Envoyer</a>
+                    <button id="languageToggle" class="language-toggle">EN</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="status-container">
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-spinner">
+                <div class="spinner"></div>
+                <p data-i18n="checking_payment">Vérification du paiement en cours...</p>
+            </div>
+
+            <!-- Payment Status -->
+            <div id="statusContent" class="hidden">
+                <div class="status-icon" id="statusIcon">⏳</div>
+                <h2 class="status-title" id="statusTitle">Paiement en attente</h2>
+                <p class="status-message" id="statusMessage">Veuillez confirmer le paiement sur votre téléphone</p>
+
+                <div class="status-details" id="statusDetails">
+                    <!-- Details will be populated by JavaScript -->
+                </div>
+
+                <div class="instructions" id="instructions">
+                    <h4 data-i18n="payment_instructions">Instructions:</h4>
+                    <p id="instructionText">1. Vérifiez votre téléphone pour la notification de paiement</p>
+                    <p>2. Entrez votre code PIN pour confirmer</p>
+                    <p>3. Attendez la confirmation</p>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="checkStatus()" id="refreshBtn">
+                        <span data-i18n="refresh_status">Actualiser le statut</span>
+                    </button>
+                    <button class="btn-primary hidden" onclick="goToVouchers()" id="viewVouchersBtn">
+                        <span data-i18n="view_vouchers">Voir mes bons</span>
+                    </button>
+                    <button class="btn-secondary" onclick="goHome()" id="homeBtn">
+                        <span data-i18n="back_home">Retour à l'accueil</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Nimwema. <span data-i18n="footer_rights">Tous droits réservés.</span></p>
+        </div>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+    <script>
+        // Get order ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        const orderNumber = urlParams.get('orderNumber');
+
+        let checkInterval;
+
+        // Check payment status
+        async function checkStatus() {
+            try {
+                if (!orderNumber) {
+                    showError('Numéro de commande manquant');
+                    return;
+                }
+
+                const response = await fetch(`/api/payment/flexpay/check/${orderNumber}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayStatus(data.transaction);
+                } else {
+                    // If transaction not found in FlexPay, check our order status
+                    checkOrderStatus();
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+                // Fallback to checking order status
+                checkOrderStatus();
+            }
+        }
+
+        // Check order status in our system
+        async function checkOrderStatus() {
+            try {
+                const response = await fetch(`/api/orders/${orderId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayOrderStatus(data.order);
+                } else {
+                    showError('Commande non trouvée');
+                }
+            } catch (error) {
+                console.error('Error checking order:', error);
+                showError('Erreur lors de la vérification');
+            }
+        }
+
+        // Display transaction status
+        function displayStatus(transaction) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('statusContent').classList.remove('hidden');
+
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusDetails = document.getElementById('statusDetails');
+
+            if (transaction.status === 'success') {
+                statusIcon.textContent = '✅';
+                statusIcon.className = 'status-icon success';
+                statusTitle.textContent = 'Paiement réussi !';
+                statusMessage.textContent = 'Votre paiement a été confirmé avec succès';
+                document.getElementById('instructions').classList.add('hidden');
+                document.getElementById('viewVouchersBtn').classList.remove('hidden');
+                document.getElementById('refreshBtn').classList.add('hidden');
+                clearInterval(checkInterval);
+            } else {
+                statusIcon.textContent = '⏳';
+                statusIcon.className = 'status-icon pending';
+                statusTitle.textContent = 'Paiement en attente';
+                statusMessage.textContent = 'Veuillez confirmer le paiement sur votre téléphone';
+            }
+
+            statusDetails.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Référence:</span>
+                    <span class="detail-value">${transaction.reference}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Numéro de commande:</span>
+                    <span class="detail-value">${transaction.orderNumber}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Montant:</span>
+                    <span class="detail-value">${transaction.amount} ${transaction.currency}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">${new Date(transaction.createdAt).toLocaleString('fr-FR')}</span>
+                </div>
+            `;
+        }
+
+        // Display order status
+        function displayOrderStatus(order) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('statusContent').classList.remove('hidden');
+
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusDetails = document.getElementById('statusDetails');
+
+            if (order.status === 'paid') {
+                statusIcon.textContent = '✅';
+                statusIcon.className = 'status-icon success';
+                statusTitle.textContent = 'Paiement réussi !';
+                statusMessage.textContent = 'Votre paiement a été confirmé avec succès';
+                document.getElementById('instructions').classList.add('hidden');
+                document.getElementById('viewVouchersBtn').classList.remove('hidden');
+                document.getElementById('refreshBtn').classList.add('hidden');
+                clearInterval(checkInterval);
+            } else if (order.status === 'failed') {
+                statusIcon.textContent = '❌';
+                statusIcon.className = 'status-icon failed';
+                statusTitle.textContent = 'Paiement échoué';
+                statusMessage.textContent = 'Le paiement n\'a pas pu être traité';
+                document.getElementById('instructions').classList.add('hidden');
+                document.getElementById('refreshBtn').classList.add('hidden');
+                clearInterval(checkInterval);
+            } else {
+                statusIcon.textContent = '⏳';
+                statusIcon.className = 'status-icon pending';
+                statusTitle.textContent = 'Paiement en attente';
+                statusMessage.textContent = 'Veuillez confirmer le paiement sur votre téléphone';
+            }
+
+            statusDetails.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Commande:</span>
+                    <span class="detail-value">${order.id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Montant:</span>
+                    <span class="detail-value">${order.amount} ${order.currency}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Quantité:</span>
+                    <span class="detail-value">${order.quantity} bon(s)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Statut:</span>
+                    <span class="detail-value">${getStatusText(order.status)}</span>
+                </div>
+            `;
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('statusContent').classList.remove('hidden');
+            
+            document.getElementById('statusIcon').textContent = '❌';
+            document.getElementById('statusIcon').className = 'status-icon failed';
+            document.getElementById('statusTitle').textContent = 'Erreur';
+            document.getElementById('statusMessage').textContent = message;
+            document.getElementById('statusDetails').innerHTML = '';
+            document.getElementById('instructions').classList.add('hidden');
+            document.getElementById('refreshBtn').classList.add('hidden');
+        }
+
+        // Get status text
+        function getStatusText(status) {
+            const statuses = {
+                'pending': 'En attente',
+                'paid': 'Payé',
+                'failed': 'Échoué'
+            };
+            return statuses[status] || status;
+        }
+
+        // Navigation functions
+        function goToVouchers() {
+            window.location.href = 'sender-dashboard.html';
+        }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!orderId && !orderNumber) {
+                showError('Aucune commande spécifiée');
+                return;
+            }
+
+            // Check status immediately
+            checkStatus();
+
+            // Set up auto-refresh every 5 seconds for pending payments
+            checkInterval = setInterval(checkStatus, 5000);
+
+            // Stop checking after 5 minutes
+            setTimeout(() => {
+                clearInterval(checkInterval);
+            }, 300000);
+
+            // Apply translations
+            if (typeof applyTranslations === 'function') {
+                applyTranslations();
+            }
+        });
+    </script>
+</body>
+</html>

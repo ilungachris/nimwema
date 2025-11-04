@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nimwema-platform
+    runtime: node
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SMS_ENABLED
+        value: true
+      - key: PAYMENT_ENABLED
+        value: true

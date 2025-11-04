@@ -1,2 +1,0 @@
-# nimwema
-Nimwema voucher app

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Envoyeur - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/sender-dashboard.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Nimwema</h1>
+                    <p class="tagline" data-i18n="tagline">La solidarité africaine, rendue simple</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" data-i18n="nav_home">Accueil</a>
+                    <a href="request.html" data-i18n="nav_request">Demander</a>
+                    <a href="send.html" data-i18n="nav_send">Envoyer</a>
+                    <a href="sender-dashboard.html" class="active" data-i18n="nav_sender_dashboard">Mon Tableau de Bord</a>
+                    <button id="languageToggle" class="language-toggle">EN</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="dashboard-sidebar">
+            <div class="sidebar-header">
+                <h2 data-i18n="sender_dashboard_title">Tableau de Bord Envoyeur</h2>
+            </div>
+               <div class="user-profile" style="margin-top: 20px; padding: 15px; background: rgba(139,195,74,0.1); border-radius: 8px;">
+                   <div style="font-weight: 600; color: #111111; margin-bottom: 5px;" id="senderName">Nom de l'envoyeur</div>
+                   <div style="font-size: 13px; color: #666;" id="senderPhone">+243XXXXXXXXX</div>
+               </div>
+            <nav class="sidebar-nav">
+                <a href="#vouchers" class="nav-item active" data-section="vouchers">
+                    <span class="nav-icon">📋</span>
+                    <span data-i18n="my_sent_vouchers">Mes Bons Envoyés</span>
+                </a>
+                <a href="#recipients" class="nav-item" data-section="recipients">
+                    <span class="nav-icon">👥</span>
+                    <span data-i18n="recipients_management">Gestion des Destinataires</span>
+                </a>
+                <a href="#transactions" class="nav-item" data-section="transactions">
+                    <span class="nav-icon">💳</span>
+                    <span data-i18n="transaction_history">Historique des Transactions</span>
+                </a>
+                <a href="#settings" class="nav-item" data-section="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span data-i18n="settings">Paramètres</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📤</div>
+                    <div class="stat-content">
+                        <h3 data-i18n="total_sent">Total Envoyé</h3>
+                        <p class="stat-value" id="totalSent">$0</p>
+                        <span class="stat-label" data-i18n="all_time">Tout le temps</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <h3 data-i18n="redeemed_vouchers">Bons Utilisés</h3>
+                        <p class="stat-value" id="redeemedCount">0</p>
+                        <span class="stat-label" data-i18n="vouchers">bons</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-content">
+                        <h3 data-i18n="pending_vouchers">Bons en Attente</h3>
+                        <p class="stat-value" id="pendingCount">0</p>
+                        <span class="stat-label" data-i18n="vouchers">bons</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3 data-i18n="total_recipients">Total Destinataires</h3>
+                        <p class="stat-value" id="recipientCount">0</p>
+                        <span class="stat-label" data-i18n="people">personnes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vouchers Section -->
+            <section id="vouchers-section" class="dashboard-section active">
+                <div class="section-header">
+                    <h2 data-i18n="my_sent_vouchers">Mes Bons Envoyés</h2>
+                    <div class="section-actions">
+                        <button class="btn-secondary" onclick="window.location.href='send.html'" data-i18n="send_new_voucher">
+                            Envoyer un Nouveau Bon
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label data-i18n="filter_by_status">Filtrer par statut:</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all" data-i18n="all_statuses">Tous les statuts</option>
+                            <option value="pending" data-i18n="pending">En attente</option>
+                            <option value="redeemed" data-i18n="redeemed">Utilisé</option>
+                            <option value="expired" data-i18n="expired">Expiré</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="sort_by">Trier par:</label>
+                        <select id="sortFilter" class="filter-select">
+                            <option value="date-desc" data-i18n="newest_first">Plus récent</option>
+                            <option value="date-asc" data-i18n="oldest_first">Plus ancien</option>
+                            <option value="amount-desc" data-i18n="highest_amount">Montant le plus élevé</option>
+                            <option value="amount-asc" data-i18n="lowest_amount">Montant le plus bas</option>
+                        </select>
+                    </div>
+                    <div class="filter-group search-group">
+                        <input type="text" id="searchVouchers" class="search-input" placeholder="Rechercher par code ou destinataire..." data-i18n-placeholder="search_vouchers">
+                    </div>
+                </div>
+
+                <!-- Vouchers Grid -->
+                <div id="vouchersGrid" class="vouchers-grid">
+                    <!-- Vouchers will be loaded here -->
+                </div>
+
+                <div id="noVouchers" class="empty-state hidden">
+                    <div class="empty-icon">📋</div>
+                    <h3 data-i18n="no_vouchers_sent">Aucun bon envoyé</h3>
+                    <p data-i18n="no_vouchers_message">Vous n'avez pas encore envoyé de bons d'achat.</p>
+                    <button class="btn-primary" onclick="window.location.href='send.html'" data-i18n="send_first_voucher">
+                        Envoyer votre premier bon
+                    </button>
+                </div>
+            </section>
+
+            <!-- Recipients Section -->
+            <section id="recipients-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2 data-i18n="recipients_management">Gestion des Destinataires</h2>
+                    <div class="section-actions">
+                        <button class="btn-primary" onclick="showAddRecipientModal()" data-i18n="add_recipient">
+                            Ajouter un Destinataire
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recipients Grid -->
+                <div id="recipientsGrid" class="recipients-grid">
+                    <!-- Recipients will be loaded here -->
+                </div>
+
+                <div id="noRecipients" class="empty-state hidden">
+                    <div class="empty-icon">👥</div>
+                    <h3 data-i18n="no_recipients">Aucun destinataire</h3>
+                    <p data-i18n="no_recipients_message">Ajoutez des destinataires pour envoyer des bons plus rapidement.</p>
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section id="transactions-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2 data-i18n="transaction_history">Historique des Transactions</h2>
+                    <div class="section-actions">
+                        <button class="btn-secondary" onclick="exportTransactions()" data-i18n="export_history">
+                            Exporter l'Historique
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date Filter -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label data-i18n="date_range">Période:</label>
+                        <select id="dateRangeFilter" class="filter-select">
+                            <option value="all" data-i18n="all_time">Tout le temps</option>
+                            <option value="today" data-i18n="today">Aujourd'hui</option>
+                            <option value="week" data-i18n="this_week">Cette semaine</option>
+                            <option value="month" data-i18n="this_month">Ce mois</option>
+                            <option value="year" data-i18n="this_year">Cette année</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="payment_method">Méthode de paiement:</label>
+                        <select id="paymentMethodFilter" class="filter-select">
+                            <option value="all" data-i18n="all_methods">Toutes les méthodes</option>
+                            <option value="flexpay">FlexPay</option>
+                            <option value="flutterwave">Flutterwave</option>
+                            <option value="cash">Cash/Western Union</option>
+                            <option value="bank">Virement Bancaire</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Transactions Table -->
+                <div class="table-container">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="date">Date</th>
+                                <th data-i18n="transaction_id">ID Transaction</th>
+                                <th data-i18n="amount">Montant</th>
+                                <th data-i18n="payment_method">Méthode</th>
+                                <th data-i18n="vouchers_count">Bons</th>
+                                <th data-i18n="status">Statut</th>
+                                <th data-i18n="actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody">
+                            <!-- Transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="noTransactions" class="empty-state hidden">
+                    <div class="empty-icon">💳</div>
+                    <h3 data-i18n="no_transactions">Aucune transaction</h3>
+                    <p data-i18n="no_transactions_message">Votre historique de transactions apparaîtra ici.</p>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2 data-i18n="settings">Paramètres</h2>
+                </div>
+
+                <div class="settings-container">
+                    <div class="settings-card">
+                        <h3 data-i18n="notification_settings">Paramètres de Notification</h3>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <input type="checkbox" id="emailNotifications" checked>
+                                <span data-i18n="email_notifications">Notifications par email</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <input type="checkbox" id="smsNotifications" checked>
+                                <span data-i18n="sms_notifications">Notifications par SMS</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <input type="checkbox" id="redemptionAlerts" checked>
+                                <span data-i18n="redemption_alerts">Alertes d'utilisation de bons</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 data-i18n="account_settings">Paramètres du Compte</h3>
+                        <div class="setting-item">
+                            <label class="setting-label" data-i18n="default_currency">Devise par défaut:</label>
+                            <select id="defaultCurrency" class="setting-select">
+                                <option value="USD">USD</option>
+                                <option value="CDF">CDF</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label" data-i18n="language">Langue:</label>
+                            <select id="languageSetting" class="setting-select">
+                                <option value="fr">Français</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 data-i18n="privacy_settings">Paramètres de Confidentialité</h3>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <input type="checkbox" id="hideIdentity">
+                                <span data-i18n="hide_identity_default">Masquer mon identité par défaut</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <input type="checkbox" id="shareStats">
+                                <span data-i18n="share_stats">Partager mes statistiques anonymes</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-primary" onclick="saveSettings()" data-i18n="save_settings">
+                            Enregistrer les Paramètres
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Voucher Details Modal -->
+    <div id="voucherDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="voucher_details">Détails du Bon</h2>
+                <button class="modal-close" onclick="closeVoucherDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="voucherDetailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Recipient Modal -->
+    <div id="recipientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="recipientModalTitle" data-i18n="add_recipient">Ajouter un Destinataire</h2>
+                <button class="modal-close" onclick="closeRecipientModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="recipientForm">
+                    <input type="hidden" id="recipientId">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="recipient_name">Nom du destinataire:</label>
+                        <input type="text" id="recipientName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="phone_number">Numéro de téléphone:</label>
+                        <input type="tel" id="recipientPhone" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="notes">Notes (optionnel):</label>
+                        <textarea id="recipientNotes" class="form-input" rows="3"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeRecipientModal()" data-i18n="cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-primary" data-i18n="save">
+                            Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Nimwema. <span data-i18n="footer_rights">Tous droits réservés.</span></p>
+        </div>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/sender-dashboard.js"></script>
+</body>
+</html>

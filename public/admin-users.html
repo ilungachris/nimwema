@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Utilisateurs - Admin Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .admin-dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #111111;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8BC34A;
+            text-decoration: none;
+        }
+
+        .sidebar-user {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #8BC34A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .user-details p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #8BC34A;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: rgba(139,195,74,0.1);
+            color: #8BC34A;
+        }
+
+        .menu-item .icon {
+            font-size: 20px;
+            width: 24px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: #111111;
+        }
+
+        .filters-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stat-box-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 5px;
+        }
+
+        .stat-box-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #111111;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-badge.inactive {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn.view {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+
+        .action-btn.suspend {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #8BC34A;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">NIMWEMA</a>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h3>Administrateur</h3>
+                        <p>Admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="admin-dashboard.html" class="menu-item">
+                    <span class="icon">📊</span>
+                    <span>Vue d'ensemble</span>
+                </a>
+                <a href="admin-merchants.html" class="menu-item">
+                    <span class="icon">🏪</span>
+                    <span>Commerçants</span>
+                </a>
+                <a href="admin-users.html" class="menu-item active">
+                    <span class="icon">👥</span>
+                    <span>Utilisateurs</span>
+                </a>
+                <a href="admin-transactions.html" class="menu-item">
+                    <span class="icon">💰</span>
+                    <span>Transactions</span>
+                </a>
+                <a href="admin-analytics.html" class="menu-item">
+                    <span class="icon">📈</span>
+                    <span>Analytics</span>
+                </a>
+                <a class="menu-item" id="logoutBtn">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Gestion des utilisateurs</h1>
+                <button class="btn btn-primary" onclick="exportUsers()">📥 Exporter</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-box-value" id="totalUsers">0</div>
+                    <div class="stat-box-label">Total utilisateurs</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="activeUsers">0</div>
+                    <div class="stat-box-label">Actifs</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="newUsersMonth">0</div>
+                    <div class="stat-box-label">Nouveaux ce mois</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Recherche</label>
+                    <input type="text" id="searchInput" placeholder="Nom, email, téléphone...">
+                </div>
+                <div class="filter-group">
+                    <label>Statut</label>
+                    <select id="statusFilter">
+                        <option value="">Tous</option>
+                        <option value="active">Actifs</option>
+                        <option value="inactive">Inactifs</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date d'inscription</label>
+                    <select id="dateFilter">
+                        <option value="">Toutes</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="section-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Bons envoyés</th>
+                                <th>Bons reçus</th>
+                                <th>Date d'inscription</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
+                                    Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script>
+        let users = [];
+        let filteredUsers = [];
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users', {
+                    credentials: 'include'
+                });
+                users = await response.json();
+                filteredUsers = users;
+                
+                updateStats();
+                renderUsers();
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('activeUsers').textContent = users.filter(u => u.active).length;
+            
+            const thisMonth = new Date();
+            thisMonth.setDate(1);
+            document.getElementById('newUsersMonth').textContent = users.filter(u => 
+                new Date(u.createdAt) >= thisMonth
+            ).length;
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('usersBody');
+            
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
+                            Aucun utilisateur trouvé
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredUsers.map(u => `
+                <tr>
+                    <td>${u.name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.phone}</td>
+                    <td>${u.vouchersSent || 0}</td>
+                    <td>${u.vouchersReceived || 0}</td>
+                    <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td><span class="status-badge ${u.active ? 'active' : 'inactive'}">${u.active ? 'Actif' : 'Inactif'}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view" onclick="viewUser('${u.id}')">Voir</button>
+                            ${u.active ? 
+                                `<button class="action-btn suspend" onclick="suspendUser('${u.id}')">Suspendre</button>` :
+                                `<button class="action-btn" onclick="activateUser('${u.id}')">Activer</button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filters
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('dateFilter').addEventListener('change', applyFilters);
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+
+            filteredUsers = users.filter(u => {
+                const matchSearch = !search || 
+                    u.name.toLowerCase().includes(search) ||
+                    u.email.toLowerCase().includes(search) ||
+                    u.phone.includes(search);
+                
+                const matchStatus = !status || 
+                    (status === 'active' && u.active) ||
+                    (status === 'inactive' && !u.active);
+
+                let matchDate = true;
+                if (dateFilter) {
+                    const userDate = new Date(u.createdAt);
+                    const now = new Date();
+                    
+                    if (dateFilter === 'today') {
+                        matchDate = userDate.toDateString() === now.toDateString();
+                    } else if (dateFilter === 'week') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        matchDate = userDate >= weekAgo;
+                    } else if (dateFilter === 'month') {
+                        const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
+                        matchDate = userDate >= monthAgo;
+                    }
+                }
+
+                return matchSearch && matchStatus && matchDate;
+            });
+
+            renderUsers();
+        }
+
+        function viewUser(id) {
+            alert('Voir détails utilisateur: ' + id);
+        }
+
+        async function suspendUser(id) {
+            if (!confirm('Suspendre cet utilisateur ?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${id}/suspend`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    alert('Utilisateur suspendu');
+                    loadUsers();
+                } else {
+                    alert('Erreur lors de la suspension');
+                }
+            } catch (error) {
+                console.error('Error suspending user:', error);
+            }
+        }
+
+        async function activateUser(id) {
+            try {
+                const response = await fetch(`/api/admin/users/${id}/activate`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    alert('Utilisateur activé');
+                    loadUsers();
+                } else {
+                    alert('Erreur lors de l\'activation');
+                }
+            } catch (error) {
+                console.error('Error activating user:', error);
+            }
+        }
+
+        function exportUsers() {
+            const csv = [
+                ['Nom', 'Email', 'Téléphone', 'Bons envoyés', 'Bons reçus', 'Date', 'Statut'].join(','),
+                ...filteredUsers.map(u => [
+                    u.name,
+                    u.email,
+                    u.phone,
+                    u.vouchersSent || 0,
+                    u.vouchersReceived || 0,
+                    new Date(u.createdAt).toLocaleDateString(),
+                    u.active ? 'Actif' : 'Inactif'
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    window.location.href = 'login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+        });
+
+        // Initialize
+        loadUsers();
+    </script>
+</body>
+</html>

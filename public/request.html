@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demander un bon d'achat - Nimwema</title>
+    <meta name="description" content="Demandez un bon d'achat alimentaire via Nimwema">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <!-- Top Bar: Language Selector + Login -->
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="section">
+        <div class="container container-narrow">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 data-i18n="request_voucher_title">Demander un bon d'achat</h1>
+                <p class="text-small" data-i18n="request_voucher_subtitle">
+                    Remplissez le formulaire ci-dessous pour demander un bon d'achat alimentaire.
+                </p>
+            </div>
+
+            <!-- Request Form -->
+            <form id="requestVoucherForm" class="form-card">
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title" data-i18n="personal_info">Informations personnelles</h3>
+                    
+                    <!-- First Name -->
+                    <div class="form-group">
+                        <label for="firstName" class="form-label">
+                            <span data-i18n="first_name">Prénom</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="firstName" 
+                            name="firstName" 
+                            class="form-input" 
+                            required
+                            data-i18n-placeholder="first_name_placeholder"
+                            placeholder="Entrez votre prénom">
+                        <div class="form-error" id="firstNameError"></div>
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="form-group">
+                        <label for="lastName" class="form-label">
+                            <span data-i18n="last_name">Nom</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="lastName" 
+                            name="lastName" 
+                            class="form-input" 
+                            required
+                            data-i18n-placeholder="last_name_placeholder"
+                            placeholder="Entrez votre nom">
+                        <div class="form-error" id="lastNameError"></div>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="form-group">
+                        <label for="phone" class="form-label">
+                            <span data-i18n="phone_number">Numéro de téléphone</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            name="phone" 
+                            class="form-input" 
+                            required
+                            data-i18n-placeholder="phone_placeholder"
+                            placeholder="+243 XXX XXX XXX">
+                        <div class="form-helper" data-i18n="phone_helper">
+                            Format: +243 suivi de votre numéro
+                        </div>
+                        <div class="form-error" id="phoneError"></div>
+                    </div>
+
+                    <!-- Confirm Phone Number -->
+                    <div class="form-group">
+                        <label for="phoneConfirm" class="form-label">
+                            <span data-i18n="confirm_phone">Confirmer le numéro</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="phoneConfirm" 
+                            name="phoneConfirm" 
+                            class="form-input" 
+                            required
+                            data-i18n-placeholder="phone_placeholder"
+                            placeholder="+243 XXX XXX XXX">
+                        <div class="form-error" id="phoneConfirmError"></div>
+                    </div>
+                </div>
+
+                <!-- Request Type Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title" data-i18n="request_type_title">Type de demande</h3>
+                    
+                    <div class="radio-group">
+                        <!-- Known Sender Option (Default) -->
+                        <label class="radio-label">
+                            <input 
+                                type="radio" 
+                                name="requestType" 
+                                value="known_sender"
+                                checked
+                                onchange="toggleSenderFields()">
+                            <span class="radio-custom"></span>
+                            <span class="radio-text">
+                                <strong data-i18n="known_sender">Expéditeur connu</strong>
+                                <small data-i18n="known_sender_desc">Envoyer la demande à un numéro spécifique</small>
+                            </span>
+                        </label>
+
+                        <!-- Waiting List Option -->
+                        <label class="radio-label">
+                            <input 
+                                type="radio" 
+                                name="requestType" 
+                                value="waiting_list"
+                                onchange="toggleSenderFields()">
+                            <span class="radio-custom"></span>
+                            <span class="radio-text">
+                                <strong data-i18n="waiting_list">Liste d'attente</strong>
+                                <small data-i18n="waiting_list_desc">Votre demande sera visible pendant 48 heures</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Known Sender Fields (Visible by default) -->
+                <div id="knownSenderFields" class="form-section">
+                    <h3 class="form-section-title" data-i18n="sender_info">Informations de l'expéditeur</h3>
+                    
+                    <!-- Sender Name -->
+                    <div class="form-group">
+                        <label for="senderName" class="form-label">
+                            <span data-i18n="sender_name">Nom de l'expéditeur</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="senderName" 
+                            name="senderName" 
+                            class="form-input"
+                            data-i18n-placeholder="sender_name_placeholder"
+                            placeholder="Nom de la personne">
+                        <div class="form-error" id="senderNameError"></div>
+                    </div>
+
+                    <!-- Sender Phone -->
+                    <div class="form-group">
+                        <label for="senderPhone" class="form-label">
+                            <span data-i18n="sender_phone">Numéro de l'expéditeur</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="senderPhone" 
+                            name="senderPhone" 
+                            class="form-input"
+                            data-i18n-placeholder="phone_placeholder"
+                            placeholder="+243 XXX XXX XXX">
+                        <div class="form-error" id="senderPhoneError"></div>
+                    </div>
+
+                    <!-- Confirm Sender Phone -->
+                    <div class="form-group">
+                        <label for="senderPhoneConfirm" class="form-label">
+                            <span data-i18n="confirm_sender_phone">Confirmer le numéro</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="senderPhoneConfirm" 
+                            name="senderPhoneConfirm" 
+                            class="form-input"
+                            data-i18n-placeholder="phone_placeholder"
+                            placeholder="+243 XXX XXX XXX">
+                        <div class="form-error" id="senderPhoneConfirmError"></div>
+                    </div>
+                </div>
+
+                <!-- Message Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title" data-i18n="message_title">Message</h3>
+                    
+                    <!-- Optional Message -->
+                    <div class="form-group">
+                        <label for="message" class="form-label">
+                            <span data-i18n="message_optional">Message (optionnel)</span>
+                        </label>
+                        <textarea 
+                            id="message" 
+                            name="message" 
+                            class="form-textarea" 
+                            rows="4"
+                            maxlength="500"
+                            data-i18n-placeholder="message_placeholder"
+                            placeholder="Ajoutez un message pour expliquer votre demande..."></textarea>
+                        <div class="form-helper">
+                            <span id="messageCount">0</span>/500 <span data-i18n="characters">caractères</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()" data-i18n="clear_form">
+                        Effacer
+                    </button>
+                    <button type="submit" class="btn btn-primary" data-i18n="send_request">
+                        Envoyer la demande
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="quick_links">Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html" data-i18n="send_voucher">Envoyer un bon</a></li>
+                        <li><a href="/request.html" data-i18n="request_voucher">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html" data-i18n="how_it_works">Comment ça marche</a></li>
+                        <li><a href="/about.html" data-i18n="about">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="support">Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html" data-i18n="contact">Contact</a></li>
+                        <li><a href="/terms.html" data-i18n="terms">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html" data-i18n="privacy">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="contact">Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.cd<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/request-form.js"></script>
+</body>
+</html>

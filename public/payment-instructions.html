@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructions de paiement - Nimwema</title>
+    <meta name="description" content="Instructions pour compléter votre paiement">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="section">
+        <div class="container">
+            <div class="confirmation-card">
+                <!-- Icon -->
+                <div class="confirmation-icon" style="background: var(--warning);">
+                    ⏳
+                </div>
+                
+                <!-- Title -->
+                <h1 class="confirmation-title" data-i18n="payment_pending_title">
+                    Paiement en attente
+                </h1>
+                
+                <!-- Message -->
+                <p class="confirmation-message" data-i18n="payment_pending_message">
+                    Votre commande a été créée avec succès. Veuillez suivre les instructions ci-dessous pour compléter votre paiement.
+                </p>
+                
+                <!-- Order Details -->
+                <div class="confirmation-details" id="orderDetails">
+                    <!-- Details will be populated by JavaScript -->
+                </div>
+                
+                <!-- Payment Instructions -->
+                <div class="card" style="text-align: left; margin-bottom: var(--space-xl);" id="paymentInstructions">
+                    <!-- Instructions will be populated by JavaScript -->
+                </div>
+                
+                <!-- Important Note -->
+                <div style="margin-top: var(--space-xl); padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input); border-left: 4px solid var(--warning);">
+                    <p style="font-size: 14px; color: var(--grey-700); margin: 0;">
+                        <strong>⚠️ Important:</strong> Vos bons d'achat seront générés et envoyés aux destinataires une fois que nous aurons confirmé la réception de votre paiement. Cela peut prendre jusqu'à 24 heures.
+                    </p>
+                </div>
+                
+                <!-- Actions -->
+                <div class="confirmation-actions">
+                    <button class="btn btn-primary btn-large" onclick="window.location.href='/'">
+                        <span data-i18n="back_home">Retour à l'accueil</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        <span data-i18n="print_instructions">Imprimer les instructions</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/payment-instructions.js"></script>
+</body>
+</html>

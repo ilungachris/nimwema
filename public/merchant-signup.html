@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Commerçant - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/forms.css">
+    <style>
+        .merchant-signup-container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .signup-header h1 {
+            color: #111111;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .signup-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #ddd;
+            z-index: 0;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            height: 2px;
+            background: #8BC34A;
+            transition: width 0.3s;
+            z-index: 1;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: 600;
+            color: #999;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-circle {
+            border-color: #8BC34A;
+            background: #8BC34A;
+            color: white;
+        }
+
+        .step.completed .step-circle {
+            border-color: #8BC34A;
+            background: #8BC34A;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .step.active .step-label {
+            color: #8BC34A;
+            font-weight: 600;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #111111;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #8BC34A;
+        }
+
+        .form-group .error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group.has-error input,
+        .form-group.has-error select,
+        .form-group.has-error textarea {
+            border-color: #dc3545;
+        }
+
+        .form-group.has-error .error {
+            display: block;
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #8BC34A;
+            background: #f0f8e8;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            color: #8BC34A;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-preview.active {
+            display: block;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .file-preview-name {
+            font-size: 13px;
+            color: #111111;
+        }
+
+        .file-preview-remove {
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #111111;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn-primary {
+            background: #8BC34A;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box h4 {
+            margin: 0 0 10px 0;
+            color: #111111;
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #8BC34A;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="index.html">
+                    <span class="logo">NIMWEMA</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Accueil</a>
+                <a href="login.html">Connexion</a>
+                <div class="language-selector">
+                    <button id="languageToggle" class="language-btn">
+                        <span id="currentLanguage">FR</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="merchant-signup-container">
+        <div class="signup-header">
+            <h1>Inscription Commerçant</h1>
+            <p>Rejoignez le réseau Nimwema et acceptez les bons d'achat</p>
+        </div>
+
+        <div class="progress-steps">
+            <div class="progress-line" id="progressLine"></div>
+            <div class="step active" data-step="1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Informations</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Commerce</div>
+            </div>
+            <div class="step" data-step="3">
+                <div class="step-circle">3</div>
+                <div class="step-label">Documents</div>
+            </div>
+            <div class="step" data-step="4">
+                <div class="step-circle">4</div>
+                <div class="step-label">Confirmation</div>
+            </div>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <div class="loading" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Traitement en cours...</p>
+        </div>
+
+        <form id="merchantSignupForm">
+            <!-- Step 1: Personal Information -->
+            <div class="form-section active" data-section="1">
+                <h3>Informations personnelles</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Prénom *</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                        <span class="error">Le prénom est requis</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Nom *</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                        <span class="error">Le nom est requis</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required>
+                        <span class="error">Email invalide</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Téléphone *</label>
+                        <input type="tel" id="phone" name="phone" placeholder="+243XXXXXXXXX" required>
+                        <span class="error">Numéro invalide</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Mot de passe *</label>
+                        <input type="password" id="password" name="password" required>
+                        <span class="error">Mot de passe trop faible</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmer *</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        <span class="error">Les mots de passe ne correspondent pas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Business Information -->
+            <div class="form-section" data-section="2">
+                <h3>Informations du commerce</h3>
+
+                <div class="form-group">
+                    <label for="businessName">Nom du commerce *</label>
+                    <input type="text" id="businessName" name="businessName" required>
+                    <span class="error">Le nom du commerce est requis</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessType">Type de commerce *</label>
+                    <select id="businessType" name="businessType" required>
+                        <option value="">Sélectionner...</option>
+                        <option value="supermarket">Supermarché</option>
+                        <option value="grocery">Épicerie</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="pharmacy">Pharmacie</option>
+                        <option value="bakery">Boulangerie</option>
+                        <option value="butcher">Boucherie</option>
+                        <option value="market">Marché</option>
+                        <option value="other">Autre</option>
+                    </select>
+                    <span class="error">Sélectionnez un type</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessAddress">Adresse complète *</label>
+                    <textarea id="businessAddress" name="businessAddress" required></textarea>
+                    <span class="error">L'adresse est requise</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">Ville *</label>
+                        <select id="city" name="city" required>
+                            <option value="">Sélectionner...</option>
+                            <option value="kinshasa">Kinshasa</option>
+                            <option value="lubumbashi">Lubumbashi</option>
+                            <option value="mbuji-mayi">Mbuji-Mayi</option>
+                            <option value="kananga">Kananga</option>
+                            <option value="kisangani">Kisangani</option>
+                            <option value="bukavu">Bukavu</option>
+                            <option value="goma">Goma</option>
+                            <option value="other">Autre</option>
+                        </select>
+                        <span class="error">Sélectionnez une ville</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="commune">Commune/Quartier *</label>
+                        <input type="text" id="commune" name="commune" required>
+                        <span class="error">La commune est requise</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessDescription">Description du commerce</label>
+                    <textarea id="businessDescription" name="businessDescription" placeholder="Décrivez votre commerce, les produits que vous vendez..."></textarea>
+                </div>
+            </div>
+
+            <!-- Step 3: Documents -->
+            <div class="form-section" data-section="3">
+                <h3>Documents requis</h3>
+
+                <div class="info-box">
+                    <h4>📄 Documents nécessaires</h4>
+                    <p>Veuillez fournir les documents suivants pour vérifier votre commerce :</p>
+                    <ul style="margin: 10px 0 0 20px; font-size: 13px;">
+                        <li>Registre de commerce (RCCM) ou patente</li>
+                        <li>Pièce d'identité du propriétaire</li>
+                        <li>Photo de la devanture du commerce (optionnel)</li>
+                    </ul>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessLicense">Registre de commerce / Patente *</label>
+                    <div class="file-upload" onclick="document.getElementById('businessLicense').click()">
+                        <input type="file" id="businessLicense" name="businessLicense" accept="image/*,.pdf" required>
+                        <div class="file-upload-icon">📄</div>
+                        <div class="file-upload-text">Cliquez pour télécharger (PDF ou Image)</div>
+                    </div>
+                    <div class="file-preview" id="businessLicensePreview"></div>
+                    <span class="error">Document requis</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="idDocument">Pièce d'identité *</label>
+                    <div class="file-upload" onclick="document.getElementById('idDocument').click()">
+                        <input type="file" id="idDocument" name="idDocument" accept="image/*,.pdf" required>
+                        <div class="file-upload-icon">🪪</div>
+                        <div class="file-upload-text">Cliquez pour télécharger (PDF ou Image)</div>
+                    </div>
+                    <div class="file-preview" id="idDocumentPreview"></div>
+                    <span class="error">Document requis</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessPhoto">Photo du commerce (optionnel)</label>
+                    <div class="file-upload" onclick="document.getElementById('businessPhoto').click()">
+                        <input type="file" id="businessPhoto" name="businessPhoto" accept="image/*">
+                        <div class="file-upload-icon">📸</div>
+                        <div class="file-upload-text">Cliquez pour télécharger (Image)</div>
+                    </div>
+                    <div class="file-preview" id="businessPhotoPreview"></div>
+                </div>
+            </div>
+
+            <!-- Step 4: Confirmation -->
+            <div class="form-section" data-section="4">
+                <h3>Confirmation</h3>
+
+                <div class="info-box">
+                    <h4>✅ Vérification de votre demande</h4>
+                    <p>Votre demande sera examinée par notre équipe dans les 24-48 heures. Vous recevrez un email et un SMS une fois votre compte approuvé.</p>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h4 style="margin-top: 0;">Récapitulatif</h4>
+                    <div id="summaryContent"></div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="termsAccept" name="termsAccept" required style="width: auto; margin-right: 10px;">
+                        <span>J'accepte les conditions d'utilisation et la politique de confidentialité *</span>
+                    </label>
+                    <span class="error">Vous devez accepter les conditions</span>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Précédent</button>
+                <button type="button" class="btn btn-primary" id="nextBtn">Suivant</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">Soumettre</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        const formData = {};
+
+        // File upload handlers
+        function setupFileUpload(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    preview.innerHTML = `
+                        <div class="file-preview-item">
+                            <span class="file-preview-name">${file.name}</span>
+                            <span class="file-preview-remove" onclick="clearFile('${inputId}', '${previewId}')">×</span>
+                        </div>
+                    `;
+                    preview.classList.add('active');
+                }
+            });
+        }
+
+        function clearFile(inputId, previewId) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(previewId).classList.remove('active');
+            document.getElementById(previewId).innerHTML = '';
+        }
+
+        setupFileUpload('businessLicense', 'businessLicensePreview');
+        setupFileUpload('idDocument', 'idDocumentPreview');
+        setupFileUpload('businessPhoto', 'businessPhotoPreview');
+
+        // Step navigation
+        function updateProgress() {
+            const progressLine = document.getElementById('progressLine');
+            const percentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            progressLine.style.width = percentage + '%';
+
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((step, index) => {
+                const stepNum = index + 1;
+                if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                    step.classList.remove('active');
+                } else if (stepNum === currentStep) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+
+            // Show/hide sections
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${currentStep}"]`).classList.add('active');
+
+            // Update buttons
+            document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'block';
+            document.getElementById('nextBtn').style.display = currentStep === totalSteps ? 'none' : 'block';
+            document.getElementById('submitBtn').style.display = currentStep === totalSteps ? 'block' : 'none';
+        }
+
+        function validateStep(step) {
+            const section = document.querySelector(`[data-section="${step}"]`);
+            const inputs = section.querySelectorAll('input[required], select[required], textarea[required]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+                const formGroup = input.closest('.form-group');
+                formGroup.classList.remove('has-error');
+
+                if (!input.value.trim()) {
+                    formGroup.classList.add('has-error');
+                    isValid = false;
+                } else if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
+                    formGroup.classList.add('has-error');
+                    isValid = false;
+                } else if (input.type === 'tel' && !/^\+243[0-9]{9}$/.test(input.value)) {
+                    formGroup.classList.add('has-error');
+                    isValid = false;
+                } else if (input.id === 'confirmPassword' && input.value !== document.getElementById('password').value) {
+                    formGroup.classList.add('has-error');
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summaryContent');
+            summary.innerHTML = `
+                <p><strong>Nom:</strong> ${document.getElementById('firstName').value} ${document.getElementById('lastName').value}</p>
+                <p><strong>Email:</strong> ${document.getElementById('email').value}</p>
+                <p><strong>Téléphone:</strong> ${document.getElementById('phone').value}</p>
+                <p><strong>Commerce:</strong> ${document.getElementById('businessName').value}</p>
+                <p><strong>Type:</strong> ${document.getElementById('businessType').options[document.getElementById('businessType').selectedIndex].text}</p>
+                <p><strong>Ville:</strong> ${document.getElementById('city').options[document.getElementById('city').selectedIndex].text}</p>
+                <p><strong>Documents:</strong> ${document.getElementById('businessLicense').files.length > 0 ? '✓' : '✗'} Registre, ${document.getElementById('idDocument').files.length > 0 ? '✓' : '✗'} ID</p>
+            `;
+        }
+
+        document.getElementById('nextBtn').addEventListener('click', function() {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                if (currentStep === 4) {
+                    updateSummary();
+                }
+                updateProgress();
+            }
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', function() {
+            currentStep--;
+            updateProgress();
+        });
+
+        // Form submission
+        document.getElementById('merchantSignupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!document.getElementById('termsAccept').checked) {
+                showAlert('Vous devez accepter les conditions d\'utilisation', 'error');
+                return;
+            }
+
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const form = document.getElementById('merchantSignupForm');
+
+            loadingSpinner.classList.add('active');
+            form.style.display = 'none';
+
+            try {
+                // Prepare form data
+                const formDataObj = new FormData();
+                formDataObj.append('firstName', document.getElementById('firstName').value);
+                formDataObj.append('lastName', document.getElementById('lastName').value);
+                formDataObj.append('email', document.getElementById('email').value);
+                formDataObj.append('phone', document.getElementById('phone').value);
+                formDataObj.append('password', document.getElementById('password').value);
+                formDataObj.append('businessName', document.getElementById('businessName').value);
+                formDataObj.append('businessType', document.getElementById('businessType').value);
+                formDataObj.append('businessAddress', document.getElementById('businessAddress').value);
+                formDataObj.append('city', document.getElementById('city').value);
+                formDataObj.append('commune', document.getElementById('commune').value);
+                formDataObj.append('businessDescription', document.getElementById('businessDescription').value);
+                formDataObj.append('businessLicense', document.getElementById('businessLicense').files[0]);
+                formDataObj.append('idDocument', document.getElementById('idDocument').files[0]);
+                if (document.getElementById('businessPhoto').files[0]) {
+                    formDataObj.append('businessPhoto', document.getElementById('businessPhoto').files[0]);
+                }
+
+                const response = await fetch('/api/auth/merchant-signup', {
+                    method: 'POST',
+                    body: formDataObj
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('Demande soumise avec succès ! Vous recevrez une confirmation par email.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la soumission');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                showAlert(error.message, 'error');
+                loadingSpinner.classList.remove('active');
+                form.style.display = 'block';
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert ${type}`;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize
+        updateProgress();
+    </script>
+</body>
+</html>

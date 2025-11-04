@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Tableau de Bord - Nimwema</title>
+    <meta name="description" content="Gérez vos demandes de bons d'achat et vos expéditeurs">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <!-- Top Bar: Language Selector + User Menu -->
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <div class="user-menu">
+                <span class="user-name" id="userName">Utilisateur</span>
+                <button class="btn-logout" onclick="logout()" data-i18n="logout">Déconnexion</button>
+            </div>
+        </div>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-sidebar">
+            <nav class="dashboard-nav">
+                <a href="#requests" class="nav-item active" onclick="showSection('requests')" data-i18n="my_requests">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Mes Demandes</span>
+                </a>
+                <a href="#senders" class="nav-item" onclick="showSection('senders')" data-i18n="my_senders">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Mes Expéditeurs</span>
+                </a>
+                <a href="#new-request" class="nav-item nav-item-primary" onclick="window.location.href='/request.html'" data-i18n="new_request">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-text">Nouvelle Demande</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="dashboard-content">
+            <!-- Requests Section -->
+            <section id="requestsSection" class="dashboard-section active">
+                <!-- Section Header -->
+                <div class="section-header">
+                    <div>
+                        <h1 data-i18n="my_requests">Mes Demandes</h1>
+                        <p class="text-small" data-i18n="requests_subtitle">
+                            Gérez toutes vos demandes de bons d'achat
+                        </p>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.location.href='/request.html'" data-i18n="new_request">
+                        ➕ Nouvelle Demande
+                    </button>
+                </div>
+
+                <!-- Filters and Sort -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label data-i18n="filter_by_status">Filtrer par statut:</label>
+                        <select id="statusFilter" class="form-select" onchange="filterRequests()">
+                            <option value="all" data-i18n="all_statuses">Tous</option>
+                            <option value="pending" data-i18n="pending">En attente</option>
+                            <option value="fulfilled" data-i18n="fulfilled">Satisfait</option>
+                            <option value="expired" data-i18n="expired">Expiré</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label data-i18n="filter_by_type">Filtrer par type:</label>
+                        <select id="typeFilter" class="form-select" onchange="filterRequests()">
+                            <option value="all" data-i18n="all_types">Tous</option>
+                            <option value="known_sender" data-i18n="known_sender">Expéditeur connu</option>
+                            <option value="waiting_list" data-i18n="waiting_list">Liste d'attente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label data-i18n="sort_by">Trier par:</label>
+                        <select id="sortBy" class="form-select" onchange="sortRequests()">
+                            <option value="date_desc" data-i18n="newest_first">Plus récent</option>
+                            <option value="date_asc" data-i18n="oldest_first">Plus ancien</option>
+                            <option value="status" data-i18n="status">Statut</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Requests List -->
+                <div id="requestsList" class="requests-list">
+                    <!-- Requests will be loaded here -->
+                    <div class="loading-state">
+                        <p data-i18n="loading">Chargement...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Senders Section -->
+            <section id="sendersSection" class="dashboard-section">
+                <!-- Section Header -->
+                <div class="section-header">
+                    <div>
+                        <h1 data-i18n="my_senders">Mes Expéditeurs</h1>
+                        <p class="text-small" data-i18n="senders_subtitle">
+                            Gérez vos contacts expéditeurs favoris
+                        </p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddSenderModal()" data-i18n="add_sender">
+                        ➕ Ajouter un expéditeur
+                    </button>
+                </div>
+
+                <!-- Senders List -->
+                <div id="sendersList" class="senders-grid">
+                    <!-- Senders will be loaded here -->
+                    <div class="loading-state">
+                        <p data-i18n="loading">Chargement...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Request Details Modal -->
+    <div id="requestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="request_details">Détails de la demande</h2>
+                <button class="modal-close" onclick="closeModal('requestModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="requestModalBody">
+                <!-- Request details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('requestModal')" data-i18n="close">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Sender Modal -->
+    <div id="senderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="senderModalTitle" data-i18n="add_sender">Ajouter un expéditeur</h2>
+                <button class="modal-close" onclick="closeModal('senderModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="senderForm" onsubmit="saveSender(event)">
+                    <input type="hidden" id="senderId" name="senderId">
+                    
+                    <div class="form-group">
+                        <label for="senderFormName" class="form-label">
+                            <span data-i18n="sender_name">Nom</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="senderFormName" 
+                            name="name" 
+                            class="form-input" 
+                            required
+                            data-i18n-placeholder="sender_name_placeholder"
+                            placeholder="Nom de l'expéditeur">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="senderFormPhone" class="form-label">
+                            <span data-i18n="sender_phone">Numéro de téléphone</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="senderFormPhone" 
+                            name="phone" 
+                            class="form-input" 
+                            required
+                            data-i18n-placeholder="phone_placeholder"
+                            placeholder="+243 XXX XXX XXX">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="senderFormRelation" class="form-label">
+                            <span data-i18n="relation">Relation</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="senderFormRelation" 
+                            name="relation" 
+                            class="form-input"
+                            data-i18n-placeholder="relation_placeholder"
+                            placeholder="Ex: Famille, Ami, Collègue">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('senderModal')" data-i18n="cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary" data-i18n="save">
+                            Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 data-i18n="confirm_delete">Confirmer la suppression</h2>
+                <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage" data-i18n="delete_confirmation">
+                    Êtes-vous sûr de vouloir supprimer cet élément ?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('deleteModal')" data-i18n="cancel">
+                    Annuler
+                </button>
+                <button class="btn btn-primary" style="background: var(--error);" onclick="confirmDelete()" data-i18n="delete">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
