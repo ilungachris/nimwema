@@ -25,7 +25,10 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+    },
+    store: new session.MemoryStore({
+        checkPeriod: 86400000 // Clear expired sessions every 24h
+    })
 }));
 
 // Static files
@@ -80,6 +83,39 @@ app.post('/api/orders/create', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to create order'
+        });
+    }
+});
+
+// VOUCHERS CREATE PENDING API - MISSING ENDPOINT!
+app.post('/api/vouchers/create-pending', async (req, res) => {
+    try {
+        const orderData = req.body;
+        const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        if (!global.orders) global.orders = {};
+        global.orders[orderId] = {
+            ...orderData,
+            id: orderId,
+            status: 'pending',
+            createdAt: new Date()
+        };
+        
+        res.json({
+            success: true,
+            order: {
+                id: orderId,
+                ...orderData,
+                status: 'pending',
+                createdAt: new Date()
+            },
+            message: 'Pending order created successfully'
+        });
+    } catch (error) {
+        console.error('Create pending order error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create pending order'
         });
     }
 });
