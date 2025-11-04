@@ -158,46 +158,30 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
     }
 });
 
-// FLEXPAY PAYMENT API - SERVER-SIDE PROXY
+// FLEXPAY PAYMENT API - SIMPLIFIED VERSION
 app.post('/api/payment/flexpay/initiate', async (req, res) => {
     try {
         const { orderId, amount } = req.body;
         
-        console.log('🚀 Initiating FlexPay payment:', { orderId, amount });
+        console.log('🚀 FlexPay request received:', { orderId, amount });
         
-        // Make server-side request to FlexPay (avoids CORS)
-        const axios = require('axios');
+        // SIMPLIFIED: Just return a mock FlexPay URL for testing
+        const mockPaymentUrl = `https://web.flexpay.cd/payment?order=${orderId}&amount=${amount}&merchant=CPOSSIBLE`;
         
-        const paymentData = {
-            order: orderId,
-            amount: amount,
-            merchant: "CPOSSIBLE"
-        };
+        console.log('✅ Returning mock FlexPay URL:', mockPaymentUrl);
         
-        const response = await axios.post('https://backend.flexpay.cd/api/rest/v1/paymentService', paymentData, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A'
-            },
-            timeout: 10000
-        });
-        
-        console.log('✅ FlexPay response:', response.data);
-        
-        // Return the payment URL from FlexPay
         res.json({
             success: true,
-            paymentUrl: response.data.paymentUrl || response.data.url || `https://payment.flexpay.cd/pay/${orderId}`,
-            transactionId: 'TXN_' + Date.now(),
-            flexpayResponse: response.data
+            paymentUrl: mockPaymentUrl,
+            transactionId: 'TXN_' + Date.now()
         });
         
     } catch (error) {
-        console.error('❌ FlexPay error:', error.response?.data || error.message);
+        console.error('❌ FlexPay error:', error);
         res.status(500).json({
             success: false,
             message: 'FlexPay service unavailable',
-            error: error.response?.data || error.message
+            error: error.message
         });
     }
 });

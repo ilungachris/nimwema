@@ -620,6 +620,12 @@ async function handleFormSubmit(e) {
 // COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
 
 // Process FlexPay payment - FIXED VERSION
+// COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
+
+// Process FlexPay payment - FIXED VERSION
+// COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
+
+// Process FlexPay payment - FIXED VERSION
 async function processFlexPayPayment(formData) {
     try {
         // Show loading
@@ -655,7 +661,7 @@ async function processFlexPayPayment(formData) {
             // FIXED: Get orderId from orderResult.order.id
             const orderId = orderResult.order.id;
             
-            // Use server-side API to avoid CORS issues
+            // Use simplified server-side API
             const response = await fetch('/api/payment/flexpay/initiate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -665,10 +671,13 @@ async function processFlexPayPayment(formData) {
                 })
             });
             
+            console.log('FlexPay API response status:', response.status);
+            
             const result = await response.json();
+            console.log('FlexPay API response:', result);
             
             if (result.success && result.paymentUrl) {
-                // Direct redirect to FlexPay payment URL
+                // Redirect to FlexPay payment URL
                 window.location.href = result.paymentUrl;
             } else {
                 throw new Error(result.message || 'Failed to initiate payment');
