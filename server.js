@@ -33,7 +33,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ========== API ENDPOINTS ==========
 
-// EXCHANGE RATE API - FIXING THE ERROR NOW!
+// EXCHANGE RATE API - ALREADY EXISTS, KEEPING AS IS
 app.get('/api/exchange-rate', async (req, res) => {
     try {
         // Return fixed rate to stop the error
@@ -56,7 +56,7 @@ app.get('/api/exchange-rate', async (req, res) => {
     }
 });
 
-// ORDERS API - NEEDED FOR PAYMENTS
+// ORDERS API - ALREADY EXISTS, KEEPING AS IS
 app.post('/api/orders/create', async (req, res) => {
     try {
         const orderData = req.body;
@@ -84,13 +84,13 @@ app.post('/api/orders/create', async (req, res) => {
     }
 });
 
-// FLEXPAY PAYMENT API
+// FLEXPAY PAYMENT API - UPDATED WITH REAL TOKEN
 app.post('/api/payment/flexpay/initiate', async (req, res) => {
     try {
         const { orderId, amount, currency, returnUrl, cancelUrl } = req.body;
         
-        // Return mock payment URL for testing
-        const paymentUrl = `http://41.243.7.46:8080/payment/${orderId}`;
+        // REAL FLEXPAY URL WITH YOUR TOKEN
+        const paymentUrl = `http://41.243.7.46:8080/payment?order=${orderId}&amount=${amount}&merchant=CPOSSIBLE&token=Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A`;
         
         res.json({
             success: true,
@@ -156,8 +156,6 @@ app.get('/sender-dashboard.html', (req, res) => {
 app.get('/redeem.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'redeem.html'));
 });
-
-// Add all your other existing routes here...
 
 // ========== START SERVER ==========
 
