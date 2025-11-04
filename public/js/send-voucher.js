@@ -611,6 +611,9 @@ async function handleFormSubmit(e) {
 **/
 
 // Process FlexPay payment - SIMPLE DIRECT REDIRECT
+// COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
+
+// Process FlexPay payment - FIXED VERSION
 async function processFlexPayPayment(formData) {
     try {
         // Show loading
@@ -643,8 +646,11 @@ async function processFlexPayPayment(formData) {
         const orderResult = await orderResponse.json();
         
         if (orderResult.success) {
+            // FIXED: Get orderId from orderResult.order.id
+            const orderId = orderResult.order.id;
+            
             // Direct redirect to FlexPay with your token
-            const paymentUrl = `https://backend.flexpay.cd/api/rest/v1/paymentService?order=${orderId}&amount=${amount}&merchant=CPOSSIBLE&token=Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A`;
+            const flexpayUrl = `https://backend.flexpay.cd/api/rest/v1/paymentService?order=${orderId}&amount=${formData.amount}&merchant=CPOSSIBLE&token=Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A`;
             
             // SIMPLE DIRECT REDIRECT!
             window.location.href = flexpayUrl;
