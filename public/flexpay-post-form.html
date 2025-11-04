@@ -18,13 +18,62 @@
         <h3>Connecting to FlexPay...</h3>
         <p>Please wait while we redirect you to the payment page.</p>
         
-        <!-- AUTO-SUBMITTING FORM FOR FLEXPAY -->
-        <form id="flexpayForm" method="POST" action="https://backend.flexpay.cd/api/rest/v1/paymentService">
-            <input type="hidden" name="order" id="flexpayOrder">
-            <input type="hidden" name="amount" id="flexpayAmount">
-            <input type="hidden" name="merchant" value="CPOSSIBLE">
-            <input type="hidden" name="token" value="Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A">
-        </form>
+        <!-- FLEXPAY NEEDS JSON - We'll use fetch API -->
+        <script>
+            // Get parameters from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order');
+            const amount = urlParams.get('amount');
+            
+            // Create JSON data for FlexPay
+            const paymentData = {
+                order: orderId,
+                amount: amount,
+                merchant: "CPOSSIBLE",
+                token: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A"
+            };
+            
+            // Send POST request with JSON content-type
+            fetch('https://backend.flexpay.cd/api/rest/v1/paymentService', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A'
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    // If successful, redirect to their payment page
+                    return response.text();
+                } else {
+                    throw new Error('Payment initiation failed');
+                }
+            })
+            .then(paymentUrl => {
+                // Redirect to the actual payment URL
+                if (paymentUrl && paymentUrl.startsWith('http')) {
+                    window.location.href = paymentUrl;
+                } else {
+                    document.body.innerHTML = `
+                        <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                            <h3>Payment Response</h3>
+                            <pre>${paymentUrl}</pre>
+                            <button onclick="window.close()">Close</button>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.body.innerHTML = `
+                    <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px; color: red;">
+                        <h3>Payment Error</h3>
+                        <p>${error.message}</p>
+                        <button onclick="history.back()">Go Back</button>
+                    </div>
+                `;
+            });
+        </script>
     </div>
 
     <script>
