@@ -1,651 +1,485 @@
-// Nimwema Platform - Send Voucher JavaScript
+/**
+ * Send Voucher Form JavaScript - Enhanced with Real FlexPay Integration
+ */
 
-// Configuration
-const PRESET_AMOUNTS_USD = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
-const DEFAULT_EXCHANGE_RATE = 2800; // 1 USD = 2800 CDF
-const FEE_PERCENTAGE = 3.5;
-const MAX_RECIPIENTS_PER_BATCH = 50;
-const MAX_TOTAL_QUANTITY = 50;
+// Form elements
+const form = document.getElementById('sendVoucherForm');
+const currencySelect = document.getElementById('currency');
+const amountButtons = document.querySelectorAll('.amount-btn');
+const customAmountInput = document.getElementById('customAmount');
+const quantityInput = document.getElementById('quantity');
+const recipientFields = document.getElementById('recipientFields');
+const addRecipientBtn = document.getElementById('addRecipient');
+const feeDisplay = document.getElementById('feeDisplay');
+const totalDisplay = document.getElementById('totalDisplay');
+const serviceFeeDisplay = document.getElementById('serviceFeeDisplay');
+const senderCoversFeeCheckbox = document.getElementById('senderCoversFee');
 
 // State
+let recipientCount = 1;
 let currentCurrency = 'USD';
-let exchangeRate = DEFAULT_EXCHANGE_RATE;
-let selectedAmount = 0;
-let recipientCount = 0;
-let waitingListRequests = [];
+let currentAmount = 0;
+let exchangeRate = 2800; // Default rate
 
 // Initialize
-document.addEventListener('DOMContentLoaded', function() {
-  initializeSendForm();
-  loadExchangeRate();
-  generatePresetButtons();
-  addRecipientField();
-  setupEventListeners();
-  checkForPrefilledData();
+document.addEventListener('DOMContentLoaded', () => {
+    initializeForm();
+    fetchExchangeRate();
 });
 
-// Initialize form
-function initializeSendForm() {
-  console.log('Send voucher form initialized');
+function initializeForm() {
+    // Currency change handler
+    currencySelect.addEventListener('change', (e) => {
+        currentCurrency = e.target.value;
+        updateAmountDisplay();
+        updateFeeDisplay();
+    });
+
+    // Amount button handlers
+    amountButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const amount = parseFloat(btn.dataset.amount);
+            setAmount(amount);
+        });
+    });
+
+    // Custom amount handler
+    customAmountInput.addEventListener('input', (e) => {
+        const amount = parseFloat(e.target.value) || 0;
+        setAmount(amount);
+    });
+
+    // Quantity handler
+    quantityInput.addEventListener('input', (e) => {
+        const quantity = parseInt(e.target.value) || 1;
+        updateRecipientFields(quantity);
+    });
+
+    // Service fee handler
+    senderCoversFeeCheckbox.addEventListener('change', updateFeeDisplay);
+
+    // Add recipient handler
+    addRecipientBtn.addEventListener('click', () => {
+        addRecipientField();
+    });
+
+    // Form submission
+    form.addEventListener('submit', handleFormSubmit);
+
+    // Initialize recipients
+    updateRecipientFields(1);
 }
 
-// Load exchange rate
-async function loadExchangeRate() {
-  try {
-    // Try to get BCC.cd parallel rate first
-    const bccRate = await fetchBCCRate();
-    if (bccRate) {
-      exchangeRate = bccRate;
-      updateExchangeRateDisplay();
-      return;
-    }
-  } catch (error) {
-    console.log('BCC rate fetch failed, trying API...');
-  }
-  
-  try {
-    // Fallback to API
-    const apiRate = await fetchAPIRate();
-    if (apiRate) {
-      exchangeRate = apiRate;
-      updateExchangeRateDisplay();
-      return;
-    }
-  } catch (error) {
-    console.log('API rate fetch failed, using default...');
-  }
-  
-  // Use default rate
-  exchangeRate = DEFAULT_EXCHANGE_RATE;
-  updateExchangeRateDisplay();
-}
-
-// Fetch BCC.cd rate (attempt to scrape)
-async function fetchBCCRate() {
-  try {
-    const response = await fetch('/api/exchange-rate/bcc');
-    const data = await response.json();
-    if (data.success && data.rate) {
-      return data.rate;
-    }
-  } catch (error) {
-    console.error('Error fetching BCC rate:', error);
-  }
-  return null;
-}
-
-// Fetch API rate
-async function fetchAPIRate() {
-  try {
-    const response = await fetch('/api/exchange-rate/api');
-    const data = await response.json();
-    if (data.success && data.rate) {
-      return data.rate;
-    }
-  } catch (error) {
-    console.error('Error fetching API rate:', error);
-  }
-  return null;
-}
-
-// Update exchange rate display
-function updateExchangeRateDisplay() {
-  const displayText = `1 USD = ${formatNumber(exchangeRate)} CDF`;
-  document.getElementById('exchangeRateText').textContent = displayText;
-}
-
-// Generate preset amount buttons
-function generatePresetButtons() {
-  const container = document.getElementById('amountPresetGrid');
-  
-  PRESET_AMOUNTS_USD.forEach(amount => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'amount-preset-btn';
-    button.onclick = () => selectPresetAmount(amount);
+function setAmount(amount) {
+    currentAmount = amount;
+    customAmountInput.value = amount;
     
-    const primaryAmount = currentCurrency === 'USD' ? amount : convertToCDF(amount);
-    const secondaryAmount = currentCurrency === 'USD' ? convertToCDF(amount) : amount;
-    
-    button.innerHTML = `
-      <span class="amount-primary">${formatCurrency(primaryAmount, currentCurrency)}</span>
-      <span class="amount-secondary">${formatCurrency(secondaryAmount, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
-    `;
-    
-    container.appendChild(button);
-  });
-}
-
-// Select currency
-function selectCurrency(currency) {
-  currentCurrency = currency;
-  
-  // Update currency buttons
-  document.querySelectorAll('.currency-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.currency === currency);
-  });
-  
-  // Update currency symbol
-  document.getElementById('amountCurrencySymbol').textContent = currency === 'USD' ? '$' : 'FC';
-  
-  // Regenerate preset buttons
-  document.getElementById('amountPresetGrid').innerHTML = '';
-  generatePresetButtons();
-  
-  // Update custom amount equivalent
-  updateCustomAmountEquivalent();
-  
-  // Update totals
-  updateTotalAmount();
-}
-
-// Select preset amount
-function selectPresetAmount(amount) {
-  selectedAmount = amount;
-  
-  // Update button states
-  document.querySelectorAll('.amount-preset-btn').forEach(btn => {
-    btn.classList.remove('selected');
-  });
-  event.target.closest('.amount-preset-btn').classList.add('selected');
-  
-  // Clear custom amount
-  document.getElementById('customAmount').value = '';
-  
-  // Update totals
-  updateTotalAmount();
-}
-
-// Convert USD to CDF
-function convertToCDF(usdAmount) {
-  const cdfAmount = usdAmount * exchangeRate;
-  // Round up to nearest 1000
-  return Math.ceil(cdfAmount / 1000) * 1000;
-}
-
-// Convert CDF to USD
-function convertToUSD(cdfAmount) {
-  return cdfAmount / exchangeRate;
-}
-
-// Format currency
-function formatCurrency(amount, currency) {
-  if (currency === 'USD') {
-    return `$${formatNumber(amount)}`;
-  } else {
-    return `${formatNumber(amount)} FC`;
-  }
-}
-
-// Format number with commas
-function formatNumber(num) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-// Update custom amount equivalent
-function updateCustomAmountEquivalent() {
-  const customAmount = parseFloat(document.getElementById('customAmount').value) || 0;
-  const equivalentElement = document.getElementById('amountEquivalent');
-  
-  if (customAmount > 0) {
-    // Clear preset selection
-    document.querySelectorAll('.amount-preset-btn').forEach(btn => {
-      btn.classList.remove('selected');
+    // Update button states
+    amountButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (parseFloat(btn.dataset.amount) === amount) {
+            btn.classList.add('active');
+        }
     });
     
-    selectedAmount = customAmount;
+    updateAmountDisplay();
+    updateFeeDisplay();
+}
+
+function updateAmountDisplay() {
+    const otherCurrency = currentCurrency === 'USD' ? 'CDF' : 'USD';
+    const convertedAmount = currentCurrency === 'USD' 
+        ? Math.round(currentAmount * exchangeRate)
+        : Math.round(currentAmount / exchangeRate);
+
+    // Update displays
+    const usdDisplay = currentCurrency === 'USD' ? currentAmount : convertedAmount;
+    const cdfDisplay = currentCurrency === 'CDF' ? currentAmount : convertedAmount;
+
+    document.getElementById('usdDisplay').textContent = `$${usdDisplay.toFixed(2)}`;
+    document.getElementById('cdfDisplay').textContent = `${cdfDisplay.toLocaleString()} FC`;
+
+    // Update hidden amount field
+    document.getElementById('amount').value = currentAmount;
+}
+
+function updateFeeDisplay() {
+    const amount = currentAmount;
+    const quantity = parseInt(quantityInput.value) || 1;
+    const baseTotal = amount * quantity;
+    const fee = baseTotal * 0.035; // 3.5% fee
+    const senderCoversFee = senderCoversFeeCheckbox.checked;
     
-    const equivalent = currentCurrency === 'USD' ? convertToCDF(customAmount) : convertToUSD(customAmount);
-    const equivalentCurrency = currentCurrency === 'USD' ? 'CDF' : 'USD';
-    equivalentElement.textContent = formatCurrency(equivalent, equivalentCurrency);
-  } else {
-    equivalentElement.textContent = '';
-  }
-  
-  updateTotalAmount();
-}
-
-// Update total amount
-function updateTotalAmount() {
-  const quantity = parseInt(document.getElementById('quantity').value) || 1;
-  const amount = selectedAmount || 0;
-  
-  const subtotal = amount * quantity;
-  const currency = currentCurrency;
-  
-  // Update display
-  document.getElementById('totalAmountDisplay').textContent = formatCurrency(subtotal, currency);
-  
-  // Update fees
-  updateFees();
-  
-  // Update batch info
-  updateBatchInfo(quantity);
-}
-
-// Update fees
-function updateFees() {
-  const quantity = parseInt(document.getElementById('quantity').value) || 1;
-  const amount = selectedAmount || 0;
-  const coverFees = document.getElementById('coverFees').checked;
-  
-  const subtotal = amount * quantity;
-  const feeAmount = subtotal * (FEE_PERCENTAGE / 100);
-  const total = coverFees ? subtotal + feeAmount : subtotal;
-  
-  const currency = currentCurrency;
-  
-  document.getElementById('feeSubtotal').textContent = formatCurrency(subtotal, currency);
-  document.getElementById('feeAmount').textContent = formatCurrencyWithDecimals(feeAmount, currency);
-  document.getElementById('feeTotalAmount').textContent = formatCurrencyWithDecimals(total, currency);
-}
-
-// Format currency with 2 decimals
-function formatCurrencyWithDecimals(amount, currency) {
-  const formatted = amount.toFixed(2);
-  if (currency === 'USD') {
-    return `$${formatted}`;
-  } else {
-    return `${formatted} FC`;
-  }
-}
-
-// Update batch info
-  function updateBatchInfo(quantity) {
-    const batchCount = Math.ceil(quantity / MAX_RECIPIENTS_PER_BATCH);
-    const maxRecipients = Math.min(quantity, MAX_RECIPIENTS_PER_BATCH);
+    const total = senderCoversFee ? baseTotal + fee : baseTotal;
     
-    // Update batch count if element exists
-    const batchCountEl = document.getElementById('batchCount');
-    if (batchCountEl) {
-      batchCountEl.textContent = batchCount;
+    // Update displays
+    serviceFeeDisplay.textContent = `$${fee.toFixed(2)} USD`;
+    totalDisplay.textContent = `$${total.toFixed(2)} USD`;
+    
+    // Update hidden fields
+    document.getElementById('serviceFee').value = fee.toFixed(2);
+    document.getElementById('totalAmount').value = total.toFixed(2);
+}
+
+function updateRecipientFields(quantity) {
+    recipientCount = quantity;
+    
+    // Clear existing fields except first one
+    while (recipientFields.children.length > 1) {
+        recipientFields.removeChild(recipientFields.lastChild);
     }
     
-    // Show/hide batch info
-    const batchInfoEl = document.getElementById('batchInfo');
-    if (batchInfoEl) {
-      if (batchCount > 1) {
-        batchInfoEl.classList.remove('hidden');
-      } else {
-        batchInfoEl.classList.add('hidden');
-      }
+    // Add fields for additional recipients
+    for (let i = 1; i < quantity; i++) {
+        addRecipientField();
     }
-  }
-
-// Toggle recipient fields
-function toggleRecipientFields() {
-  const recipientType = document.querySelector('input[name="recipientType"]:checked').value;
-  
-  if (recipientType === 'waiting_list') {
-    document.getElementById('waitingListSection').classList.remove('hidden');
-    document.getElementById('specificRecipientsSection').classList.add('hidden');
-    loadWaitingList();
-  } else {
-    document.getElementById('waitingListSection').classList.add('hidden');
-    document.getElementById('specificRecipientsSection').classList.remove('hidden');
-  }
-}
-
-// Load waiting list
-async function loadWaitingList() {
-  try {
-    const response = await fetch('/api/requests?status=pending&requestType=waiting_list');
-    const requests = await response.json();
     
-    waitingListRequests = requests;
-    renderWaitingList(requests);
-  } catch (error) {
-    console.error('Error loading waiting list:', error);
-    document.getElementById('waitingListContainer').innerHTML = `
-      <div class="empty-state">
-        <p>Erreur lors du chargement de la liste d'attente</p>
-      </div>
-    `;
-  }
+    // Update batch info
+    updateBatchInfo();
 }
 
-// Render waiting list
-function renderWaitingList(requests) {
-  const container = document.getElementById('waitingListContainer');
-  
-  if (requests.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <p>Aucune demande en attente pour le moment</p>
-      </div>
-    `;
-    return;
-  }
-  
-  container.innerHTML = requests.map(request => `
-    <label class="waiting-list-item">
-      <input 
-        type="checkbox" 
-        class="waiting-list-checkbox" 
-        value="${request.id}"
-        onchange="toggleWaitingListItem(this)">
-      <div class="waiting-list-info">
-        <div class="waiting-list-name">${request.fullName}</div>
-        <div class="waiting-list-details">${request.phone}</div>
-        ${request.message ? `<div class="waiting-list-details">${request.message}</div>` : ''}
-        <div class="waiting-list-time">
-          Demandé ${getTimeAgo(request.created_at)} • 
-          Expire ${getTimeAgo(request.expires_at)}
-        </div>
-      </div>
-    </label>
-  `).join('');
-}
-
-// Toggle waiting list item
-function toggleWaitingListItem(checkbox) {
-  const item = checkbox.closest('.waiting-list-item');
-  if (checkbox.checked) {
-    item.classList.add('selected');
-  } else {
-    item.classList.remove('selected');
-  }
-}
-
-// Get time ago
-function getTimeAgo(dateString) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diff = now - date;
-  
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const days = Math.floor(hours / 24);
-  
-  if (days > 0) {
-    return `il y a ${days} jour${days > 1 ? 's' : ''}`;
-  } else if (hours > 0) {
-    return `il y a ${hours} heure${hours > 1 ? 's' : ''}`;
-  } else {
-    return 'il y a moins d\'une heure';
-  }
-}
-
-// Add recipient field
 function addRecipientField() {
-  const container = document.getElementById('recipientsInputContainer');
-  const quantity = parseInt(document.getElementById('quantity').value) || 1;
-  const maxRecipients = Math.min(quantity, MAX_RECIPIENTS_PER_BATCH);
-  
-  if (recipientCount >= maxRecipients) {
-    window.Nimwema.showNotification(`Maximum ${maxRecipients} destinataires par lot`, 'warning');
-    return;
-  }
-  
-  recipientCount++;
-  
-  const row = document.createElement('div');
-  row.className = 'recipient-input-row';
-  row.innerHTML = `
-    <input 
-      type="tel" 
-      class="form-input recipient-phone" 
-      placeholder="+243 XXX XXX XXX"
-      required>
-    <button type="button" class="btn-remove-recipient" onclick="removeRecipientField(this)">
-      ✕
-    </button>
-  `;
-  
-  container.appendChild(row);
-  
-  // Setup phone formatting for new input
-  const phoneInput = row.querySelector('.recipient-phone');
-  phoneInput.addEventListener('input', function(e) {
-    let value = e.target.value;
-    value = value.replace(/[^\d+]/g, '');
-    if (value && !value.startsWith('+')) {
-      value = '+' + value;
-    }
-    e.target.value = value;
-  });
-  
-  // Update button state
-  updateAddRecipientButton();
-}
-
-// Remove recipient field
-function removeRecipientField(button) {
-  if (recipientCount <= 1) {
-    window.Nimwema.showNotification('Au moins un destinataire requis', 'error');
-    return;
-  }
-  
-  button.closest('.recipient-input-row').remove();
-  recipientCount--;
-  updateAddRecipientButton();
-}
-
-// Update add recipient button
-   function updateAddRecipientButton() {
-     const quantity = parseInt(document.getElementById('quantity').value) || 1;
-     const maxRecipients = Math.min(quantity, MAX_RECIPIENTS_PER_BATCH);
-     const button = document.getElementById('addRecipientBtn');
-     
-     console.log('🔘 Button Update:', {
-       recipientCount: recipientCount,
-       quantity: quantity,
-       maxRecipients: maxRecipients,
-       shouldDisable: recipientCount >= maxRecipients
-     });
-     
-     if (recipientCount >= maxRecipients) {
-       button.disabled = true;
-       button.style.opacity = '0.5';
-       console.log('❌ Button DISABLED');
-     } else {
-       button.disabled = false;
-       button.style.opacity = '1';
-       console.log('✅ Button ENABLED');
-     }
-}
-
-// Setup event listeners
-function setupEventListeners() {
-  // Custom amount input
-  document.getElementById('customAmount').addEventListener('input', updateCustomAmountEquivalent);
-  
-  // Quantity input
-  document.getElementById('quantity').addEventListener('input', function() {
-    const quantityInput = this;
-    let value = parseInt(quantityInput.value) || 1;
-    
-    // Enforce maximum quantity of 50
-    if (value > MAX_TOTAL_QUANTITY) {
-      value = MAX_TOTAL_QUANTITY;
-      quantityInput.value = MAX_TOTAL_QUANTITY;
-    }
-    
-    if (value < 1) {
-      value = 1;
-      quantityInput.value = 1;
-    }
-    
-    updateTotalAmount();
-    updateAddRecipientButton();
-  });
-  
-  // Cover fees checkbox
-  document.getElementById('coverFees').addEventListener('change', updateFees);
-  
-  // Message counter
-  const messageField = document.getElementById('message');
-  const messageCount = document.getElementById('messageCount');
-  messageField.addEventListener('input', function() {
-    messageCount.textContent = this.value.length;
-  });
-  
-  // Form submission
-  document.getElementById('sendVoucherForm').addEventListener('submit', handleFormSubmit);
-}
-
-// Check for prefilled data (from SMS link or request)
-function checkForPrefilledData() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const requestId = urlParams.get('request');
-  const phone = urlParams.get('phone');
-  
-  if (requestId && phone) {
-    // Prefill from request
-    document.getElementById('recipientsInputContainer').innerHTML = `
-      <div class="recipient-input-row">
-        <input 
-          type="tel" 
-          class="form-input recipient-phone" 
-          value="${phone}"
-          readonly>
-      </div>
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'recipient-field';
+    fieldDiv.innerHTML = `
+        <div class="form-group">
+            <label>Recipient ${recipientCount + 1} Phone Number</label>
+            <input type="tel" name="recipient_${recipientCount + 1}" placeholder="+243 XXX XXX XXX" class="form-control" required>
+            <button type="button" class="btn-remove" onclick="removeRecipient(this)">×</button>
+        </div>
     `;
-    recipientCount = 1;
     
-    // Disable recipient type selection
-    document.querySelectorAll('input[name="recipientType"]').forEach(radio => {
-      radio.disabled = true;
-    });
-  }
+    recipientFields.appendChild(fieldDiv);
+    recipientCount++;
+    
+    updateBatchInfo();
 }
 
-// Handle form submission
-async function handleFormSubmit(e) {
-  e.preventDefault();
-  
-  // Validate amount
-  if (!selectedAmount || selectedAmount <= 0) {
-    window.Nimwema.showNotification('Veuillez sélectionner un montant', 'error');
-    return;
-  }
-  
-  // Get form data
-  const formData = {
-    amount: selectedAmount,
-    currency: currentCurrency,
-    quantity: parseInt(document.getElementById('quantity').value),
-    senderName: document.getElementById('senderName').value,
-    hideIdentity: document.getElementById('hideIdentity').checked,
-    message: document.getElementById('message').value,
-    coverFees: document.getElementById('coverFees').checked,
-    paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
-    recipientType: document.querySelector('input[name="recipientType"]:checked').value,
-    recipients: []
-  };
-  
-  // Get recipients
-  if (formData.recipientType === 'waiting_list') {
-    const selectedCheckboxes = document.querySelectorAll('.waiting-list-checkbox:checked');
-    formData.recipients = Array.from(selectedCheckboxes).map(cb => {
-      const request = waitingListRequests.find(r => r.id === parseInt(cb.value));
-      return {
-        phone: request.phone,
-        name: request.fullName,
-        requestId: request.id
-      };
-    });
+function removeRecipient(button) {
+    const fieldDiv = button.closest('.recipient-field');
+    fieldDiv.remove();
+    recipientCount--;
     
-    if (formData.recipients.length === 0) {
-      window.Nimwema.showNotification('Veuillez sélectionner au moins un destinataire', 'error');
-      return;
-    }
-  } else {
-    const phoneInputs = document.querySelectorAll('.recipient-phone');
-    formData.recipients = Array.from(phoneInputs).map(input => ({
-      phone: input.value.trim()
-    }));
-    
-    // Validate phones
-    for (const recipient of formData.recipients) {
-      if (!recipient.phone || recipient.phone.length < 10) {
-        window.Nimwema.showNotification('Veuillez entrer des numéros valides', 'error');
-        return;
-      }
-    }
-  }
-  
-  // Show loading
-  const form = e.target;
-  form.classList.add('form-loading');
-  
-  try {
-    // Process payment based on method
-    if (formData.paymentMethod === 'flexpay') {
-      await processFlexPayPayment(formData);
-    } else if (formData.paymentMethod === 'flutterwave') {
-      await processFlutterwavePayment(formData);
-    } else if (formData.paymentMethod === 'cash' || formData.paymentMethod === 'bank') {
-      await processManualPayment(formData);
-    }
-  } catch (error) {
-    console.error('Payment error:', error);
-    window.Nimwema.showNotification('Erreur lors du paiement', 'error');
-    form.classList.remove('form-loading');
-  }
+    // Update quantity input
+    quantityInput.value = recipientCount;
+    updateBatchInfo();
 }
 
-// Process FlexPay payment
-async function processFlexPayPayment(formData) {
+function updateBatchInfo() {
+    const batchInfo = document.getElementById('batchInfo');
+    if (batchInfo) {
+        batchInfo.textContent = `Adding ${recipientCount} recipient(s). Enter phone numbers below.`;
+    }
+    
+    // Update max recipients display
+    const maxRecipientsDisplay = document.getElementById('maxRecipientsDisplay');
+    if (maxRecipientsDisplay) {
+        maxRecipientsDisplay.textContent = `Max 50 recipients per batch`;
+    }
+}
+
+async function fetchExchangeRate() {
     try {
-      // Create order first
-      const response = await fetch('/api/vouchers/create-pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Store order data and redirect to FlexPay payment page
-        sessionStorage.setItem('pendingOrder', JSON.stringify(result.order));
-        window.location.href = `payment-flexpay.html?orderId=${result.order.id}`;
-      } else {
-        throw new Error(result.message || 'Failed to create order');
-      }
+        const response = await fetch('/api/exchange-rate');
+        const data = await response.json();
+        if (data.success) {
+            exchangeRate = data.rate;
+            updateAmountDisplay();
+        }
     } catch (error) {
-      console.error('FlexPay payment error:', error);
-      throw error;
+        console.error('Failed to fetch exchange rate:', error);
     }
-  }
-
-// Process Flutterwave payment
-async function processFlutterwavePayment(formData) {
-  // Redirect to Flutterwave payment page
-  window.location.href = `/payment/flutterwave?data=${encodeURIComponent(JSON.stringify(formData))}`;
 }
 
-// Process manual payment
-async function processManualPayment(formData) {
-  try {
-    const response = await fetch('/api/vouchers/create-pending', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const orderData = {
+        senderName: formData.get('senderName'),
+        hideIdentity: formData.get('hideIdentity') === 'on',
+        message: formData.get('message'),
+        currency: formData.get('currency'),
+        amount: parseFloat(formData.get('amount')),
+        quantity: parseInt(formData.get('quantity')),
+        serviceFee: parseFloat(formData.get('serviceFee')),
+        totalAmount: parseFloat(formData.get('totalAmount')),
+        senderCoversFee: formData.get('senderCoversFee') === 'on',
+        paymentMethod: formData.get('paymentMethod'),
+        recipients: []
+    };
+    
+    // Collect recipients
+    for (let i = 1; i <= orderData.quantity; i++) {
+        const phone = formData.get(`recipient_${i}`);
+        if (phone) {
+            orderData.recipients.push(phone);
+        }
+    }
+    
+    // Validate recipients
+    if (orderData.recipients.length !== orderData.quantity) {
+        showToast('Please enter phone numbers for all recipients', 'error');
+        return;
+    }
+    
+    try {
+        // Create order
+        const response = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Handle payment based on method
+            if (orderData.paymentMethod === 'flexpay') {
+                await showFlexPayPopupAndPay(result.orderId, orderData.totalAmount);
+            } else {
+                // Redirect to payment instructions
+                window.location.href = `/payment-instructions.html?orderId=${result.orderId}`;
+            }
+        } else {
+            showToast(result.message || 'Failed to create order', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+    }
+}
+
+// ✅ NEW FUNCTION: Real FlexPay Integration
+async function showFlexPayPopupAndPay(orderId, amount) {
+    try {
+        // Show loading state
+        showLoadingSpinner();
+        
+        // Initiate FlexPay payment
+        const response = await fetch('/api/payment/flexpay/initiate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                amount: amount,
+                currency: 'USD',
+                returnUrl: `${window.location.origin}/payment-success.html`,
+                cancelUrl: `${window.location.origin}/payment-cancel.html`
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.paymentUrl) {
+            // Hide loading
+            hideLoadingSpinner();
+            
+            // Show interactive popup
+            showInteractiveFlexPayPopup(result.paymentUrl, orderId);
+        } else {
+            hideLoadingSpinner();
+            showToast('Failed to initiate payment. Please try again.', 'error');
+        }
+    } catch (error) {
+        hideLoadingSpinner();
+        console.error('FlexPay error:', error);
+        showToast('Payment service unavailable. Please try again.', 'error');
+    }
+}
+
+// ✅ NEW FUNCTION: Interactive FlexPay Popup
+function showInteractiveFlexPayPopup(paymentUrl, orderId) {
+    // Create popup overlay
+    const popupOverlay = document.createElement('div');
+    popupOverlay.id = 'flexpayPopup';
+    popupOverlay.innerHTML = `
+        <div class="popup-overlay">
+            <div class="popup-content">
+                <div class="popup-header">
+                    <h3>💳 Paiement FlexPay</h3>
+                    <button class="close-btn" onclick="closeFlexPayPopup()">&times;</button>
+                </div>
+                <div class="popup-body">
+                    <div class="payment-amount">
+                        <span>Montant à payer:</span>
+                        <strong id="popupAmount">$${currentAmount.toFixed(2)} USD</strong>
+                    </div>
+                    <div class="payment-methods">
+                        <h4>Choisissez le mode de paiement:</h4>
+                        <div class="payment-options">
+                            <button class="payment-btn" onclick="selectPaymentMethod('mobile_money')">
+                                <div class="payment-icon">📱</div>
+                                <div class="payment-info">
+                                    <strong>Mobile Money</strong>
+                                    <span>Orange, Airtel, M-Pesa, Vodacom, Africell</span>
+                                </div>
+                            </button>
+                            <button class="payment-btn" onclick="selectPaymentMethod('bank_card')">
+                                <div class="payment-icon">💳</div>
+                                <div class="payment-info">
+                                    <strong>Carte Bancaire</strong>
+                                    <span>VISA, Mastercard</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="payment-actions">
+                        <button class="btn btn-primary btn-large" onclick="proceedToPayment()">
+                            Payer Maintenant
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeFlexPayPopup()">
+                            Annuler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(popupOverlay);
+    
+    // Store payment URL and order ID for later use
+    window.currentPaymentUrl = paymentUrl;
+    window.currentOrderId = orderId;
+    window.selectedPaymentMethod = null;
+}
+
+// ✅ NEW FUNCTION: Select Payment Method
+function selectPaymentMethod(method) {
+    window.selectedPaymentMethod = method;
+    
+    // Update UI to show selection
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+        btn.classList.remove('selected');
     });
     
-    const result = await response.json();
-    
-    if (result.success) {
-      // Store order data
-      sessionStorage.setItem('pendingOrder', JSON.stringify(result.order));
-      
-      // Redirect to payment instructions
-      window.location.href = '/payment-instructions.html';
-    } else {
-      throw new Error(result.message);
-    }
-  } catch (error) {
-    throw error;
-  }
+    event.target.closest('.payment-btn').classList.add('selected');
 }
 
-// Export functions
-window.selectCurrency = selectCurrency;
-window.selectPresetAmount = selectPresetAmount;
-window.toggleRecipientFields = toggleRecipientFields;
-window.addRecipientField = addRecipientField;
-window.removeRecipientField = removeRecipientField;
-window.toggleWaitingListItem = toggleWaitingListItem;
-window.updateTotalAmount = updateTotalAmount;
-window.updateFees = updateFees;
+// ✅ NEW FUNCTION: Proceed to Payment
+function proceedToPayment() {
+    if (!window.selectedPaymentMethod) {
+        showToast('Veuillez sélectionner un mode de paiement', 'error');
+        return;
+    }
+    
+    // Redirect to FlexPay payment page
+    const paymentUrl = window.currentPaymentUrl;
+    
+    // Add payment method parameter if needed
+    const urlWithParams = `${paymentUrl}?payment_method=${window.selectedPaymentMethod}&order_id=${window.currentOrderId}`;
+    
+    // Open FlexPay payment in new window
+    const popup = window.open(urlWithParams, 'flexpay_payment', 'width=800,height=600,scrollbars=yes,resizable=yes');
+    
+    if (!popup) {
+        // Fallback: redirect in same window
+        window.location.href = urlWithParams;
+    } else {
+        // Monitor popup for completion
+        const checkClosed = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkClosed);
+                // Check payment status
+                checkPaymentStatus(window.currentOrderId);
+            }
+        }, 1000);
+    }
+    
+    // Close popup overlay
+    closeFlexPayPopup();
+}
+
+// ✅ NEW FUNCTION: Check Payment Status
+async function checkPaymentStatus(orderId) {
+    try {
+        showLoadingSpinner();
+        
+        const response = await fetch(`/api/payment/flexpay/check/${orderId}`);
+        const result = await response.json();
+        
+        hideLoadingSpinner();
+        
+        if (result.success && result.paid) {
+            // Payment successful
+            showToast('Paiement réussi! Vouchers en cours de génération...', 'success');
+            setTimeout(() => {
+                window.location.href = `/payment-success.html?orderId=${orderId}`;
+            }, 2000);
+        } else {
+            // Payment pending or failed
+            showToast('Paiement en cours ou échoué. Veuillez réessayer.', 'warning');
+        }
+    } catch (error) {
+        hideLoadingSpinner();
+        console.error('Error checking payment status:', error);
+        showToast('Erreur lors de la vérification du paiement', 'error');
+    }
+}
+
+// ✅ NEW FUNCTION: Close FlexPay Popup
+function closeFlexPayPopup() {
+    const popup = document.getElementById('flexpayPopup');
+    if (popup) {
+        popup.remove();
+    }
+}
+
+// ✅ NEW FUNCTION: Show Loading Spinner
+function showLoadingSpinner() {
+    const spinner = document.createElement('div');
+    spinner.id = 'loadingSpinner';
+    spinner.innerHTML = `
+        <div class="spinner-overlay">
+            <div class="spinner-content">
+                <div class="spinner"></div>
+                <p>Traitement en cours...</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(spinner);
+}
+
+// ✅ NEW FUNCTION: Hide Loading Spinner
+function hideLoadingSpinner() {
+    const spinner = document.getElementById('loadingSpinner');
+    if (spinner) {
+        spinner.remove();
+    }
+}
+
+// Utility functions
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function formatPhoneNumber(phone) {
+    if (!phone) return '';
+    
+    // Remove all non-digit characters
+    let cleaned = phone.replace(/\D/g, '');
+    
+    // Remove leading 0 if present
+    if (cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+    }
+    
+    // Add +243 if not present
+    if (!cleaned.startsWith('243')) {
+        cleaned = '243' + cleaned;
+    }
+    
+    return '+' + cleaned;
+}
