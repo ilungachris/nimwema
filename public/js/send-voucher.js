@@ -617,6 +617,9 @@ async function handleFormSubmit(e) {
 // COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
 
 // Process FlexPay payment - FIXED VERSION
+// COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
+
+// Process FlexPay payment - FIXED VERSION
 async function processFlexPayPayment(formData) {
     try {
         // Show loading
@@ -652,11 +655,24 @@ async function processFlexPayPayment(formData) {
             // FIXED: Get orderId from orderResult.order.id
             const orderId = orderResult.order.id;
             
-            // Redirect to our POST form page (FlexPay needs POST, not GET)
-            const flexpayFormUrl = `flexpay-post-form.html?order=${orderId}&amount=${formData.amount}`;
+            // Use server-side API to avoid CORS issues
+            const response = await fetch('/api/payment/flexpay/initiate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    amount: formData.amount
+                })
+            });
             
-            // REDIRECT TO POST FORM PAGE!
-            window.location.href = flexpayFormUrl;
+            const result = await response.json();
+            
+            if (result.success && result.paymentUrl) {
+                // Direct redirect to FlexPay payment URL
+                window.location.href = result.paymentUrl;
+            } else {
+                throw new Error(result.message || 'Failed to initiate payment');
+            }
         } else {
             throw new Error(orderResult.message || 'Failed to create order');
         }
@@ -670,7 +686,6 @@ async function processFlexPayPayment(formData) {
         document.querySelector('#sendVoucherForm').classList.remove('form-loading');
     }
 }
-
 
 // Process Flutterwave payment
 async function processFlutterwavePayment(formData) {
