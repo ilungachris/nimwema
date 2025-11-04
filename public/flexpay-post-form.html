@@ -1,95 +1,190 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Redirecting to FlexPay...</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-        .spinner { width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #8BC34A; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        h3 { color: #333; margin-bottom: 20px; }
-        p { color: #666; }
-    </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+  <meta charset="utf-8" />
+  <title>Connecting to FlexPay…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: min(520px, 92vw); }
+    .spinner { width: 50px; height: 50px; border: 4px solid #f0f0f0; border-top: 4px solid #8BC34A; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    h3 { color: #333; margin: 0 0 8px; }
+    p { color: #666; margin: 8px 0; }
+    .muted { color: #888; font-size: 0.9rem; }
+    .error { color: #b00020; white-space: pre-wrap; text-align: left; background: #fff5f5; padding: 12px; border-radius: 8px; border: 1px solid #ffd3d3; }
+    .hidden { display: none; }
+    .actions { margin-top: 18px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    button { cursor: pointer; padding: 10px 16px; border-radius: 8px; border: 0; background: #8BC34A; color: #fff; font-weight: 600; }
+    button.secondary { background: #e0e0e0; color: #222; }
+    code { background: #f3f3f3; padding: 2px 6px; border-radius: 6px; }
+  </style>
+  <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="spinner"></div>
-        <h3>Connecting to FlexPay...</h3>
-        <p>Please wait while we redirect you to the payment page.</p>
-        
-        <!-- FLEXPAY NEEDS JSON - We'll use fetch API -->
-        <script>
-            // Get parameters from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const orderId = urlParams.get('order');
-            const amount = urlParams.get('amount');
-            
-            // Create JSON data for FlexPay
-            const paymentData = {
-                order: orderId,
-                amount: amount,
-                merchant: "CPOSSIBLE",
-                token: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A"
-            };
-            
-            // Send POST request with JSON content-type
-            fetch('https://backend.flexpay.cd/api/rest/v1/paymentService', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A'
-                },
-                body: JSON.stringify(paymentData)
-            })
-            .then(response => {
-                if (response.ok) {
-                    // If successful, redirect to their payment page
-                    return response.text();
-                } else {
-                    throw new Error('Payment initiation failed');
-                }
-            })
-            .then(paymentUrl => {
-                // Redirect to the actual payment URL
-                if (paymentUrl && paymentUrl.startsWith('http')) {
-                    window.location.href = paymentUrl;
-                } else {
-                    document.body.innerHTML = `
-                        <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-                            <h3>Payment Response</h3>
-                            <pre>${paymentUrl}</pre>
-                            <button onclick="window.close()">Close</button>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                document.body.innerHTML = `
-                    <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px; color: red;">
-                        <h3>Payment Error</h3>
-                        <p>${error.message}</p>
-                        <button onclick="history.back()">Go Back</button>
-                    </div>
-                `;
-            });
-        </script>
-    </div>
+  <div class="container">
+    <div class="spinner" id="spinner"></div>
+    <h3 id="title">Connecting to FlexPay…</h3>
+    <p id="subtitle">Please wait while we create your payment session.</p>
+    <p class="muted" id="details"></p>
 
-    <script>
-        // Get parameters from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('order');
-        const amount = urlParams.get('amount');
-        
-        // Set form values
-        document.getElementById('flexpayOrder').value = orderId;
-        document.getElementById('flexpayAmount').value = amount;
-        
-        // Auto-submit form after 2 seconds
-        setTimeout(() => {
-            document.getElementById('flexpayForm').submit();
-        }, 2000);
-    </script>
+    <div id="errorBlock" class="error hidden"></div>
+
+    <div class="actions">
+      <button id="retryBtn" class="secondary hidden">Try again</button>
+      <button id="closeBtn" class="secondary hidden" onclick="window.close()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const qs = new URLSearchParams(window.location.search);
+      const orderId = qs.get('order');
+      const amountRaw = qs.get('amount');
+
+      const titleEl = document.getElementById('title');
+      const subtitleEl = document.getElementById('subtitle');
+      const detailsEl = document.getElementById('details');
+      const errorEl = document.getElementById('errorBlock');
+      const spinnerEl = document.getElementById('spinner');
+      const retryBtn = document.getElementById('retryBtn');
+      const closeBtn = document.getElementById('closeBtn');
+
+      // --- CONFIG (provided) ---
+      const FLEXPAY_ENDPOINT = 'https://backend.flexpay.cd/api/rest/v1/paymentService';
+      const MERCHANT = 'CPOSSIBLE';
+      // NOTE: Keeping your provided token. Ideally, move this to a server-side proxy.
+      const AUTH_TOKEN = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzNnEyTEhrNWppRzlmekJuWWY3TyIsInJvbGVzIjpbIk1FUkNIQU5UIl0sImlzcyI6Ii9sb2dpbiIsImV4cCI6MTczNTY4NjAwMH0.uuJQqBkwmJADSUpgip9t0HngUofyAdWPTeVnSfN288A';
+
+      function showError(msg, extra) {
+        spinnerEl.classList.add('hidden');
+        titleEl.textContent = 'Could not start payment';
+        subtitleEl.textContent = 'Please review the details below.';
+        errorEl.classList.remove('hidden');
+        errorEl.textContent = msg + (extra ? '\n\n' + extra : '');
+        retryBtn.classList.remove('hidden');
+        closeBtn.classList.remove('hidden');
+      }
+
+      function validateInputs() {
+        if (!orderId) return 'Missing required URL parameter: ?order=...';
+        if (!amountRaw) return 'Missing required URL parameter: ?amount=...';
+        const amount = Number(amountRaw);
+        if (!Number.isFinite(amount) || amount <= 0) return 'Amount must be a positive number.';
+        return null;
+      }
+
+      function extractRedirectUrl(json, res) {
+        // Try common keys FlexPay-like APIs use
+        const candidates = [
+          json && json.payment_url,
+          json && json.redirectUrl,
+          json && json.url,
+          json && json.checkoutUrl,
+          json && json.data && json.data.link,
+        ].filter(Boolean);
+
+        if (candidates.length > 0) return candidates[0];
+
+        // Some APIs signal redirect via Location header on 201/202
+        const loc = res.headers.get('Location') || res.headers.get('location');
+        return loc || null;
+      }
+
+      async function startPayment() {
+        retryBtn.classList.add('hidden');
+        closeBtn.classList.add('hidden');
+        errorEl.classList.add('hidden');
+        spinnerEl.classList.remove('hidden');
+
+        const validationError = validateInputs();
+        if (validationError) {
+          showError(validationError, 'Example: /pay.html?order=ORD-123&amount=10000');
+          return;
+        }
+
+        const payload = {
+          order: String(orderId),
+          amount: Number(amountRaw),
+          merchant: MERCHANT
+        };
+
+        detailsEl.textContent = `Order: ${payload.order} • Amount: ${payload.amount}`;
+
+        try {
+          const res = await fetch(FLEXPAY_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json, text/plain, */*',
+              'Authorization': AUTH_TOKEN
+            },
+            body: JSON.stringify(payload),
+            // If FlexPay requires credentials/cookies, you might need: credentials: 'include'
+          });
+
+          const contentType = res.headers.get('Content-Type') || '';
+          const isJson = contentType.includes('application/json');
+
+          let body = null;
+          if (isJson) {
+            body = await res.json().catch(() => null);
+          } else {
+            body = await res.text().catch(() => null);
+          }
+
+          if (!res.ok) {
+            // 415 specifically appears when wrong media type is sent
+            const statusInfo = `HTTP ${res.status} ${res.statusText}`;
+            const bodyInfo = body ? (typeof body === 'string' ? body : JSON.stringify(body, null, 2)) : '(no response body)';
+            showError(
+              `FlexPay rejected the request. ${statusInfo}`,
+              `Response:\n${bodyInfo}\n\nTip: We are sending JSON with an Authorization header to avoid 415 Unsupported Media Type. If this persists, the endpoint path or payload schema may differ.`
+            );
+            return;
+          }
+
+          // Try to find a redirect URL in JSON or headers
+          const redirect = extractRedirectUrl(body || {}, res);
+          if (redirect) {
+            titleEl.textContent = 'Redirecting to FlexPay…';
+            subtitleEl.textContent = 'If nothing happens, use the button below.';
+            spinnerEl.classList.remove('hidden');
+
+            // Give the user a moment to read, then redirect
+            setTimeout(() => { window.location.href = redirect; }, 800);
+
+            // Also render a fallback action
+            const btn = document.createElement('button');
+            btn.textContent = 'Open payment page';
+            btn.onclick = () => (window.location.href = redirect);
+            const actions = document.querySelector('.actions');
+            actions.appendChild(btn);
+            return;
+          }
+
+          // If no redirect URL is provided, show the response for debugging
+          titleEl.textContent = 'Payment session created (no redirect URL)';
+          subtitleEl.textContent = 'We could not find a payment link in the response.';
+          spinnerEl.classList.add('hidden');
+          errorEl.classList.remove('hidden');
+          errorEl.textContent = typeof body === 'string'
+            ? body
+            : JSON.stringify(body, null, 2);
+          retryBtn.classList.remove('hidden');
+          closeBtn.classList.remove('hidden');
+
+        } catch (err) {
+          showError('Network or CORS error while contacting FlexPay.', String(err));
+        }
+      }
+
+      retryBtn.addEventListener('click', startPayment);
+
+      // Auto-start shortly after page load
+      setTimeout(startPayment, 500);
+    })();
+  </script>
 </body>
 </html>
