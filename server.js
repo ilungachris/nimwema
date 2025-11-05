@@ -290,31 +290,55 @@ if (!orderNumber) {
 });
 
 // CALLBACK
+// CALLBACK (more tolerant fields)
 app.post('/api/payment/flexpay/callback', async (req, res) => {
   try {
     const body = req.body || {};
-    const code = String(body?.code ?? '');
-    const orderNumber = body?.orderNumber;
-    const providerRef = body?.provider_reference || body?.providerReference || null;
+    // Accept multiple shapes for orderNumber and status/code
+    const orderNumber =
+      body?.orderNumber ??
+      body?.order_number ??
+      body?.transaction?.orderNumber ??
+      body?.payment?.orderNumber ??
+      null;
 
-    if (!orderNumber) return res.status(400).json({ ok: false });
+    const rawCode =
+      body?.code ??
+      body?.status ??
+      body?.transaction?.status ??
+      body?.payment?.status ??
+      '';
+
+    const code = String(rawCode).toUpperCase(); // normalize
+
+    if (!orderNumber) {
+      console.warn('FlexPay callback missing orderNumber:', body);
+      return res.status(400).json({ ok: false });
+    }
 
     const orderId = orderByFlexpayNo[orderNumber];
-    if (!orderId || !global.orders[orderId]) return res.json({ ok: true });
+    if (!orderId || !global.orders[orderId]) {
+      console.warn('FlexPay callback unknown orderNumber:', orderNumber);
+      return res.json({ ok: true }); // ack anyway
+    }
 
-    const isSuccess = (code === '0' || code === 0);
+    // Success if numeric 0 OR SUCCESS
+    const isSuccess = (code === '0' || code === 'SUCCESS');
     global.orders[orderId].status = isSuccess ? 'paid' : 'failed';
-    global.orders[orderId].provider_reference = providerRef;
+    global.orders[orderId].provider_reference =
+      body?.provider_reference || body?.providerReference || global.orders[orderId].provider_reference || null;
     global.orders[orderId].updatedAt = new Date().toISOString();
 
     return res.json({ ok: true });
   } catch (err) {
     console.error('FlexPay callback error:', err);
-    return res.json({ ok: true });
+    return res.json({ ok: true }); // still 200 to avoid retry storms
   }
 });
 
+
 // CHECK (proxies FlexPay /check/{orderNumber})
+// CHECK (proxies FlexPay /check/{orderNumber} + honors local callback state)
 app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
   try {
     const { orderNumber } = req.params;
@@ -322,15 +346,29 @@ app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
 
     assertFlexpayEnv();
 
-    const fpRes = await fetch(`${FLEXPAY_BASE_URL}/check/${orderNumber}`, {
+    // Call FlexPay check
+    const base = FLEXPAY_BASE_URL.replace(/\/+$/,'').replace(/\/paymentService$/,'');
+    const fpRes = await fetch(`${base}/check/${orderNumber}`, {
       method: 'GET',
       headers: {
-        'Authorization': getFlexpayAuthHeader(),
+        'Authorization': `Bearer ${FLEXPAY_TOKEN}`,
         'Accept': 'application/json'
       }
     });
 
     const data = await fpRes.json().catch(() => ({}));
+
+    // Default status from FlexPay response
+    let status = data?.transaction?.status;
+
+    // If our local order already knows the answer (from callback), override
+    const orderId = orderByFlexpayNo[orderNumber];
+    if (orderId && global.orders[orderId]) {
+      const local = global.orders[orderId].status;
+      if (local === 'paid') status = 0;
+      if (local === 'failed') status = 1;
+    }
+
     if (!fpRes.ok) {
       return res.status(fpRes.status).json({
         success: false,
@@ -339,20 +377,21 @@ app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
       });
     }
 
-    const orderId = orderByFlexpayNo[orderNumber];
-    const transaction = data?.transaction;
-    if (orderId && transaction && global.orders[orderId]) {
-      if (transaction.status === 0) global.orders[orderId].status = 'paid';
-      if (transaction.status === 1) global.orders[orderId].status = 'failed';
-      global.orders[orderId].updatedAt = new Date().toISOString();
-    }
-
-    return res.json({ success: true, ...data });
+    // Return the merged status so the front-end can finish
+    return res.json({
+      success: true,
+      transaction: {
+        ...(data?.transaction || {}),
+        orderNumber,
+        status
+      }
+    });
   } catch (err) {
     console.error('FlexPay check error:', err);
     return res.status(500).json({ success: false, message: 'Server error (check)' });
   }
 });
+
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
