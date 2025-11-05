@@ -210,7 +210,7 @@ if (paymentMethodId) {
 }
 
 if (!paymentMethod?.id) {
-    paymentMethod = 'flexpay';
+    paymentMethod = 'flexpaycard';
 }
 
 
