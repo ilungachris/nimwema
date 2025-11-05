@@ -800,7 +800,7 @@ async function processFlexPayPayment(formData) {
     if (!orderId) throw new Error('ID de commande manquant');
 
     // 2) Initiate FlexPay via server
-    const initRes = await fetch('/api/payment/flexpay/initiate', {
+    /** const initRes = await fetch('/api/payment/flexpay/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -814,7 +814,45 @@ async function processFlexPayPayment(formData) {
     if (!initRes.ok || !initData?.success || !initData?.orderNumber) {
       throw new Error(initData?.message || 'Échec d’initialisation FlexPay');
     }
-    const orderNumber = initData.orderNumber;
+    const orderNumber = initData.orderNumber; **/
+	// 2) Initiate FlexPay via server
+// --- Minimal add: compute amount in CDF for FlexPay (no other changes) ---
+const qty = formData.quantity || 1;
+let base = (selectedAmount || 0) * qty;
+
+// Convert to CDF if current currency is USD
+let amountCDF = ((formData.currency || currentCurrency) === 'USD')
+  ? convertToCDF(base)  // your existing helper (already rounds to 1000)
+  : base;
+
+// Add fees if sender chose to cover them
+if (formData.coverFees) {
+  const fee = Math.ceil(amountCDF * (FEE_PERCENTAGE / 100));
+  amountCDF += fee;
+}
+
+// Ensure integer CDF amount
+amountCDF = Math.ceil(amountCDF);
+
+// Optional debug (remove later):
+// console.log('FlexPay amountCDF:', { qty, base, amountCDF, currency: (formData.currency || currentCurrency) });
+
+const initRes = await fetch('/api/payment/flexpay/initiate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    orderId,
+    amount: amountCDF,          // <-- send computed CDF amount
+    currency: 'CDF',            // FlexPay v1: CDF (per your setup)
+    phone: formData.senderPhone
+  })
+});
+const initData = await initRes.json();
+if (!initRes.ok || !initData?.success || !initData?.orderNumber) {
+  throw new Error(initData?.message || 'Échec d’initialisation FlexPay');
+}
+const orderNumber = initData.orderNumber;
+
 
     // 3) Poll check endpoint up to ~2 minutes
     const started = Date.now();
