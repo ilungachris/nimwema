@@ -203,9 +203,7 @@ const fpPhone = msisdn;
 
 
 
-// Example: processFlexPayPayment function in server.js
-async function processFlexPayPayment(formData, paymentMethod = 'flexpay') {  // Default to 'flexpay' for backward compat
-    // ... other logic to extract fpPhone, reference, amt, cur ...
+
     
     const payloadType = paymentMethod === 'flexpaycard' ? '2' : '1';  // Dynamic type
     const payload = {
@@ -216,15 +214,6 @@ async function processFlexPayPayment(formData, paymentMethod = 'flexpay') {  // 
         amount: String(amt),
         currency: cur,
         callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
-    };
-    
-    // ... rest of the function (e.g., API call with payload) ...
-}
-
-// If processFlexPayPaymentCard is separate, it can call the above or duplicate the logic
-async function processFlexPayPaymentCard(formData) {
-    await processFlexPayPayment(formData, 'flexpaycard');  // Pass the method to trigger type '2'
-}
 
 
 
