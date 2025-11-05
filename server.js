@@ -202,6 +202,18 @@ const fpPhone = msisdn;
 
 
 
+let { paymentMethodId } = req.body; // Or your payload
+
+let paymentMethod;
+if (paymentMethodId) {
+    paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId).catch(() => null);
+}
+
+if (!paymentMethod?.id) {
+    paymentMethod = 'flexpay';
+}
+
+
 
 
     
@@ -214,6 +226,9 @@ const fpPhone = msisdn;
         amount: String(amt),
         currency: cur,
         callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
+    }
+    
+ 
 
 
 
