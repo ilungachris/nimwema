@@ -34,16 +34,15 @@ app.use(session({
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------------- Nimwema payment config (ADD) ----------------
+// ---------------- Nimwema payment config ----------------
 const FLEXPAY_BASE_URL = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
 const FLEXPAY_MERCHANT = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
-const FLEXPAY_TOKEN    = process.env.FLEXPAY_TOKEN; // secret (Render env)
+const FLEXPAY_TOKEN    = process.env.FLEXPAY_TOKEN?.trim();
 const FLEXPAY_CURRENCY = (process.env.FLEXPAY_CURRENCY || 'CDF').toUpperCase();
 const APP_BASE_URL     = process.env.APP_BASE_URL || 'https://nimwema-platform.onrender.com';
 
-// In-memory store (you requested this)
-global.orders = global.orders || {};   // { [orderId]: {...} }
-const orderByFlexpayNo = {};           // { [orderNumber]: orderId }
+global.orders = global.orders || {};
+const orderByFlexpayNo = {};
 
 function buildReference() {
   const ts = Date.now();
@@ -61,200 +60,92 @@ function assertFlexpayEnv() {
   }
 }
 
+// Helper to normalize Bearer header safely
+function getFlexpayAuthHeader() {
+  let t = (FLEXPAY_TOKEN || '').trim();
+  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+    t = t.slice(1, -1).trim();
+  }
+  if (/^Bearer\s+/i.test(t)) return t;
+  return `Bearer ${t}`;
+}
+
 // ========== API ENDPOINTS ==========
 
-// EXCHANGE RATE API - ALREADY EXISTS, KEEPING AS IS
+// Exchange Rate (simple fallback)
 app.get('/api/exchange-rate', async (req, res) => {
-    try {
-        res.json({
-            success: true,
-            rate: 2200,
-            currency: 'CDF',
-            base: 'USD',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error('Exchange rate error:', error);
-        res.json({
-            success: true,
-            rate: 2200,
-            currency: 'CDF',
-            base: 'USD',
-            timestamp: new Date().toISOString()
-        });
-    }
+  res.json({
+    success: true,
+    rate: 2200,
+    currency: 'CDF',
+    base: 'USD',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// ORDERS API - ALREADY EXISTS, KEEPING AS IS
+// Create order (test)
 app.post('/api/orders/create', async (req, res) => {
-    try {
-        const orderData = req.body;
-        const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        
-        if (!global.orders) global.orders = {};
-        global.orders[orderId] = {
-            ...orderData,
-            id: orderId,
-            status: 'pending',
-            createdAt: new Date()
-        };
-        
-        res.json({
-            success: true,
-            orderId: orderId,
-            message: 'Order created successfully'
-        });
-    } catch (error) {
-        console.error('Order creation error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to create order'
-        });
-    }
+  try {
+    const orderData = req.body;
+    const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    global.orders[orderId] = {
+      ...orderData,
+      id: orderId,
+      status: 'pending',
+      createdAt: new Date()
+    };
+    res.json({ success: true, orderId, message: 'Order created successfully' });
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create order' });
+  }
 });
 
-// VOUCHERS CREATE PENDING API - previously missing orderId in response
+// Vouchers: create pending
 app.post('/api/vouchers/create-pending', async (req, res) => {
-    try {
-        const orderData = req.body;
-        const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        
-        if (!global.orders) global.orders = {};
-        global.orders[orderId] = {
-            ...orderData,
-            id: orderId,
-            status: 'pending',
-            createdAt: new Date()
-        };
-        
-        res.json({
-            success: true,
-            orderId, // (ADD) make it easy for front-end
-            order: {
-                id: orderId,
-                ...orderData,
-                status: 'pending',
-                createdAt: new Date()
-            },
-            message: 'Pending order created successfully'
-        });
-    } catch (error) {
-        console.error('Create pending order error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to create pending order'
-        });
-    }
+  try {
+    const orderData = req.body;
+    const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    global.orders[orderId] = {
+      ...orderData,
+      id: orderId,
+      status: 'pending',
+      createdAt: new Date()
+    };
+    res.json({
+      success: true,
+      orderId,
+      order: { id: orderId, ...orderData, status: 'pending', createdAt: new Date() },
+      message: 'Pending order created successfully'
+    });
+  } catch (error) {
+    console.error('Create pending order error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create pending order' });
+  }
 });
 
 /* ===========================
-   FLEXPAY PAYMENT API (FIXED)
-   ===========================
-   - Replaces the previous insecure GET-with-token route
-   - Adds callback and real check
-*/
+   FLEXPAY PAYMENT API (FINAL)
+   =========================== */
 
-// INITIATE (REPLACED: removes token-in-URL, uses POST JSON + Bearer header)
-/**
+// INITIATE (POST JSON + Bearer; safer errors)
 app.post('/api/payment/flexpay/initiate', async (req, res) => {
   try {
     const { orderId, amount, currency, phone } = req.body || {};
-    if (!orderId || !amount || !phone) {
-      return res.status(400).json({ success: false, message: 'orderId, amount, phone are required' });
-    }
-    assertFlexpayEnv();
-
-    const reference = buildReference();
-    const cur = (currency || FLEXPAY_CURRENCY || 'CDF').toUpperCase();
-
-    global.orders[orderId] = {
-      ...(global.orders[orderId] || {}),
-      id: orderId,
-      status: 'pending',
-      gateway: 'flexpay',
-      currency: cur,
-      amount,
-      reference,
-      orderNumber: null,
-      phone,
-      provider_reference: null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const payload = {
-      merchant: FLEXPAY_MERCHANT,
-      type: "1",               // 1 = MoMo
-      phone: phone,            // payer MoMo
-      reference: reference,    // NM-{timestamp}-{6rand}
-      amount: String(amount),
-      currency: cur,           // CDF
-      callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
-    };
-
-    const fpRes = await fetch(`${FLEXPAY_BASE_URL}/paymentService`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FLEXPAY_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await fpRes.json().catch(() => ({}));
-    if (!fpRes.ok) {
-      return res.status(fpRes.status).json({ success: false, message: data?.message || 'FlexPay error', data });
-    }
-
-    const orderNumber = data?.orderNumber;
-    if (!orderNumber) {
-      return res.status(502).json({ success: false, message: 'Missing orderNumber from FlexPay', data });
-    }
-
-    orderByFlexpayNo[orderNumber] = orderId;
-    global.orders[orderId].orderNumber = orderNumber;
-    global.orders[orderId].updatedAt = new Date().toISOString();
-
-    return res.json({ success: true, orderNumber, reference });
-  } catch (error) {
-    console.error('FlexPay initiation error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Payment service unavailable'
-    });
-  }
-}); **/
-
-
-// INITIATE (POST JSON + Bearer; safer errors; integer CDF amount)
-app.post('/api/payment/flexpay/initiate', async (req, res) => {
-  try {
-    const { orderId, amount, currency, phone } = req.body || {};
-
-    // Validate required fields
     if (!orderId || amount == null || !phone) {
       return res.status(400).json({ success: false, message: 'orderId, amount, phone are required' });
     }
 
-    // Coerce amount to positive integer (CDF expected by FlexPay v1)
     let amt = Number(amount);
-    if (!Number.isFinite(amt)) {
-      return res.status(400).json({ success: false, message: 'amount must be a number' });
-    }
-    amt = Math.max(1, Math.ceil(amt)); // integer >= 1
+    if (!Number.isFinite(amt)) return res.status(400).json({ success: false, message: 'amount must be a number' });
+    amt = Math.max(1, Math.ceil(amt));
 
-    // Ensure env is present
     assertFlexpayEnv();
-
-    // Guard fetch availability (Node 18+ has it; otherwise advise)
-    if (typeof fetch !== 'function') {
-      throw new Error('fetch is not available (ensure Node 18+ or add node-fetch polyfill)');
-    }
+    if (typeof fetch !== 'function') throw new Error('fetch not available (Node 18+ required)');
 
     const reference = buildReference();
     const cur = (currency || FLEXPAY_CURRENCY || 'CDF').toUpperCase();
 
-    // Track locally
     global.orders[orderId] = {
       ...(global.orders[orderId] || {}),
       id: orderId,
@@ -263,45 +154,40 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
       currency: cur,
       amount: amt,
       reference,
-      orderNumber: null,
       phone,
-      provider_reference: null,
       updatedAt: new Date().toISOString(),
     };
 
-    // Payload per FlexPay spec
     const payload = {
       merchant: FLEXPAY_MERCHANT,
-      type: "1",                    // 1 = MoMo
-      phone: String(phone).trim(),  // payer MoMo
-      reference: reference,         // NM-{timestamp}-{6rand}
-      amount: String(amt),          // send as string (spec accepts)
-      currency: cur,                // CDF (for now)
+      type: "1",
+      phone: String(phone).trim(),
+      reference,
+      amount: String(amt),
+      currency: cur,
       callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
     };
 
-    // Call FlexPay
     const url = `${FLEXPAY_BASE_URL.replace(/\/+$/,'')}/paymentService`;
     const fpRes = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${FLEXPAY_TOKEN}`,
+        'Authorization': getFlexpayAuthHeader(),
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
       body: JSON.stringify(payload)
     });
 
-    // Try JSON first; fall back to text for diagnostics
-    let data;
     const rawText = await fpRes.text();
+    let data;
     try { data = rawText ? JSON.parse(rawText) : {}; } catch { data = { raw: rawText }; }
 
     if (!fpRes.ok) {
-      // Surface FlexPay response to the client for quick diagnosis
+      console.warn('FlexPay non-OK:', fpRes.status, data);
       return res.status(fpRes.status).json({
         success: false,
-        message: data?.message || `FlexPay error (HTTP ${fpRes.status})`,
+        message: data?.message || data?.error || data?.error_description || `FlexPay HTTP ${fpRes.status}`,
         data
       });
     }
@@ -311,7 +197,6 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
       return res.status(502).json({ success: false, message: 'Missing orderNumber from FlexPay', data });
     }
 
-    // Map orderNumber -> orderId
     orderByFlexpayNo[orderNumber] = orderId;
     global.orders[orderId].orderNumber = orderNumber;
     global.orders[orderId].updatedAt = new Date().toISOString();
@@ -319,16 +204,11 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
     return res.json({ success: true, orderNumber, reference });
   } catch (error) {
     console.error('FlexPay initiation error:', error);
-    return res.status(500).json({
-      success: false,
-      message: `FlexPay fetch error: ${error.message}`
-    });
+    res.status(500).json({ success: false, message: `FlexPay fetch error: ${error.message}` });
   }
 });
 
-
-
-// CALLBACK (NEW)
+// CALLBACK
 app.post('/api/payment/flexpay/callback', async (req, res) => {
   try {
     const body = req.body || {};
@@ -336,16 +216,10 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
     const orderNumber = body?.orderNumber;
     const providerRef = body?.provider_reference || body?.providerReference || null;
 
-    if (!orderNumber) {
-      console.warn('FlexPay callback missing orderNumber:', body);
-      return res.status(400).json({ ok: false });
-    }
+    if (!orderNumber) return res.status(400).json({ ok: false });
 
     const orderId = orderByFlexpayNo[orderNumber];
-    if (!orderId || !global.orders[orderId]) {
-      console.warn('FlexPay callback unknown orderNumber:', orderNumber);
-      return res.json({ ok: true }); // ack anyway
-    }
+    if (!orderId || !global.orders[orderId]) return res.json({ ok: true });
 
     const isSuccess = (code === '0' || code === 0);
     global.orders[orderId].status = isSuccess ? 'paid' : 'failed';
@@ -355,11 +229,11 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     console.error('FlexPay callback error:', err);
-    return res.json({ ok: true }); // still 200 to avoid retry storms
+    return res.json({ ok: true });
   }
 });
 
-// CHECK (REPLACED: now proxies FlexPay /check/{orderNumber})
+// CHECK (proxies FlexPay /check/{orderNumber})
 app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
   try {
     const { orderNumber } = req.params;
@@ -370,14 +244,18 @@ app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
     const fpRes = await fetch(`${FLEXPAY_BASE_URL}/check/${orderNumber}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${FLEXPAY_TOKEN}`,
+        'Authorization': getFlexpayAuthHeader(),
         'Accept': 'application/json'
       }
     });
 
     const data = await fpRes.json().catch(() => ({}));
     if (!fpRes.ok) {
-      return res.status(fpRes.status).json({ success: false, message: data?.message || 'FlexPay check error', data });
+      return res.status(fpRes.status).json({
+        success: false,
+        message: data?.message || data?.error || data?.error_description || 'FlexPay check error',
+        data
+      });
     }
 
     const orderId = orderByFlexpayNo[orderNumber];
@@ -395,52 +273,18 @@ app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
   }
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
 
 // ========== ROUTES ==========
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/request.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'request.html')));
+app.get('/send.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'send.html')));
+app.get('/dashboard.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/sender-dashboard.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sender-dashboard.html')));
+app.get('/redeem.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'redeem.html')));
 
-// Serve all HTML files
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/request.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'request.html'));
-});
-
-app.get('/send.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'send.html'));
-});
-
-app.get('/dashboard.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
-app.get('/sender-dashboard.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sender-dashboard.html'));
-});
-
-app.get('/redeem.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'redeem.html'));
-});
-
-// Quick debug: check FlexPay env and fetch availability
-app.get('/api/debug/flexpay-env', (req, res) => {
-  res.json({
-    FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL,
-    FLEXPAY_MERCHANT: !!process.env.FLEXPAY_MERCHANT,
-    FLEXPAY_TOKEN: !!process.env.FLEXPAY_TOKEN,
-    APP_BASE_URL: !!process.env.APP_BASE_URL,
-    node_version: process.version,
-    has_fetch: !!global.fetch
-  });
-});
-
-
-// --- Debug: check FlexPay env + fetch availability (ADD) ---
+// Debug FlexPay env
 app.get('/api/debug/flexpay-env', (req, res) => {
   res.json({
     FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL,
@@ -452,15 +296,11 @@ app.get('/api/debug/flexpay-env', (req, res) => {
   });
 });
 
-
 // ========== START SERVER ==========
-
-
-
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📱 Access your app at: http://localhost:${PORT}`);
-    console.log('✅ All API endpoints loaded and working!');
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Access your app at: http://localhost:${PORT}`);
+  console.log('✅ All API endpoints loaded and working!');
 });
 
 module.exports = app;
