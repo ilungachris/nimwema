@@ -155,6 +155,7 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
 */
 
 // INITIATE (REPLACED: removes token-in-URL, uses POST JSON + Bearer header)
+/**
 app.post('/api/payment/flexpay/initiate', async (req, res) => {
   try {
     const { orderId, amount, currency, phone } = req.body || {};
@@ -222,7 +223,110 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
       message: 'Payment service unavailable'
     });
   }
+}); **/
+
+
+// INITIATE (POST JSON + Bearer; safer errors; integer CDF amount)
+app.post('/api/payment/flexpay/initiate', async (req, res) => {
+  try {
+    const { orderId, amount, currency, phone } = req.body || {};
+
+    // Validate required fields
+    if (!orderId || amount == null || !phone) {
+      return res.status(400).json({ success: false, message: 'orderId, amount, phone are required' });
+    }
+
+    // Coerce amount to positive integer (CDF expected by FlexPay v1)
+    let amt = Number(amount);
+    if (!Number.isFinite(amt)) {
+      return res.status(400).json({ success: false, message: 'amount must be a number' });
+    }
+    amt = Math.max(1, Math.ceil(amt)); // integer >= 1
+
+    // Ensure env is present
+    assertFlexpayEnv();
+
+    // Guard fetch availability (Node 18+ has it; otherwise advise)
+    if (typeof fetch !== 'function') {
+      throw new Error('fetch is not available (ensure Node 18+ or add node-fetch polyfill)');
+    }
+
+    const reference = buildReference();
+    const cur = (currency || FLEXPAY_CURRENCY || 'CDF').toUpperCase();
+
+    // Track locally
+    global.orders[orderId] = {
+      ...(global.orders[orderId] || {}),
+      id: orderId,
+      status: 'pending',
+      gateway: 'flexpay',
+      currency: cur,
+      amount: amt,
+      reference,
+      orderNumber: null,
+      phone,
+      provider_reference: null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Payload per FlexPay spec
+    const payload = {
+      merchant: FLEXPAY_MERCHANT,
+      type: "1",                    // 1 = MoMo
+      phone: String(phone).trim(),  // payer MoMo
+      reference: reference,         // NM-{timestamp}-{6rand}
+      amount: String(amt),          // send as string (spec accepts)
+      currency: cur,                // CDF (for now)
+      callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
+    };
+
+    // Call FlexPay
+    const url = `${FLEXPAY_BASE_URL.replace(/\/+$/,'')}/paymentService`;
+    const fpRes = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLEXPAY_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    // Try JSON first; fall back to text for diagnostics
+    let data;
+    const rawText = await fpRes.text();
+    try { data = rawText ? JSON.parse(rawText) : {}; } catch { data = { raw: rawText }; }
+
+    if (!fpRes.ok) {
+      // Surface FlexPay response to the client for quick diagnosis
+      return res.status(fpRes.status).json({
+        success: false,
+        message: data?.message || `FlexPay error (HTTP ${fpRes.status})`,
+        data
+      });
+    }
+
+    const orderNumber = data?.orderNumber;
+    if (!orderNumber) {
+      return res.status(502).json({ success: false, message: 'Missing orderNumber from FlexPay', data });
+    }
+
+    // Map orderNumber -> orderId
+    orderByFlexpayNo[orderNumber] = orderId;
+    global.orders[orderId].orderNumber = orderNumber;
+    global.orders[orderId].updatedAt = new Date().toISOString();
+
+    return res.json({ success: true, orderNumber, reference });
+  } catch (error) {
+    console.error('FlexPay initiation error:', error);
+    return res.status(500).json({
+      success: false,
+      message: `FlexPay fetch error: ${error.message}`
+    });
+  }
 });
+
+
 
 // CALLBACK (NEW)
 app.post('/api/payment/flexpay/callback', async (req, res) => {
@@ -323,7 +427,35 @@ app.get('/redeem.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'redeem.html'));
 });
 
+// Quick debug: check FlexPay env and fetch availability
+app.get('/api/debug/flexpay-env', (req, res) => {
+  res.json({
+    FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL,
+    FLEXPAY_MERCHANT: !!process.env.FLEXPAY_MERCHANT,
+    FLEXPAY_TOKEN: !!process.env.FLEXPAY_TOKEN,
+    APP_BASE_URL: !!process.env.APP_BASE_URL,
+    node_version: process.version,
+    has_fetch: !!global.fetch
+  });
+});
+
+
+// --- Debug: check FlexPay env + fetch availability (ADD) ---
+app.get('/api/debug/flexpay-env', (req, res) => {
+  res.json({
+    FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL,
+    FLEXPAY_MERCHANT: !!process.env.FLEXPAY_MERCHANT,
+    FLEXPAY_TOKEN: !!process.env.FLEXPAY_TOKEN,
+    APP_BASE_URL: !!process.env.APP_BASE_URL,
+    node_version: process.version,
+    has_fetch: typeof fetch === 'function'
+  });
+});
+
+
 // ========== START SERVER ==========
+
+
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
