@@ -158,10 +158,68 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
       updatedAt: new Date().toISOString(),
     };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- Normalize sender phone to MSISDN 243######### (no plus, 12 digits) ---
+const msisdnRaw = String(phone || '');
+let msisdn = msisdnRaw.replace(/[^\d]/g, ''); // strip non-digits
+
+// Cases: +243######### | 243######### | 0######### (local) | ######### (9-digit local)
+if (msisdn.startsWith('243') && msisdn.length === 12) {
+  // ok
+} else if (msisdn.startsWith('0') && msisdn.length === 10) {
+  msisdn = '243' + msisdn.slice(1);
+} else if (!msisdn.startsWith('243') && msisdn.length === 9) {
+  // e.g. 812345678 -> 243812345678
+  msisdn = '243' + msisdn;
+} else if (msisdn.startsWith('243') && msisdn.length > 12) {
+  msisdn = msisdn.slice(0, 12); // defensive trim
+}
+
+// Final check
+if (!(msisdn.startsWith('243') && msisdn.length === 12)) {
+  return res.status(400).json({
+    success: false,
+    message: 'Numéro MoMo invalide. Format attendu: 243######### (12 chiffres, sans +).',
+    data: { provided: msisdnRaw }
+  });
+}
+
+const fpPhone = msisdn;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     const payload = {
       merchant: FLEXPAY_MERCHANT,
       type: "1",
-      phone: String(phone).trim(),
+      phone: fpPhone,  
       reference,
       amount: String(amt),
       currency: cur,
