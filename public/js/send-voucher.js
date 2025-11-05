@@ -7,6 +7,12 @@ const FEE_PERCENTAGE = 3.5;
 const MAX_RECIPIENTS_PER_BATCH = 50;
 const MAX_TOTAL_QUANTITY = 50;
 
+
+// Payment result pages
+const PAYMENT_SUCCESS_URL = '/payment-success.html';
+const PAYMENT_CANCEL_URL  = '/payment-cancel.html';
+
+
 // State
 let currentCurrency = 'USD';
 let exchangeRate = DEFAULT_EXCHANGE_RATE;
@@ -462,7 +468,9 @@ async function processFlexPayPayment(formData) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId })
       }).catch(() => {});
-      window.location.href = `/thank-you.html?order=${encodeURIComponent(orderId)}`;
+      /** window.location.href = `/thank-you.html?order=${encodeURIComponent(orderId)}`;**/
+	  window.location.href = `${PAYMENT_SUCCESS_URL}?order=${encodeURIComponent(orderId)}`;
+
     }
 
     while (Date.now() - started < timeoutMs) {
@@ -474,13 +482,29 @@ async function processFlexPayPayment(formData) {
         await finalizeAndRedirect();
         return;
       }
-      if (status === 1) throw new Error('Paiement échoué (FlexPay)');
+     /** if (status === 1) throw new Error('Paiement échoué (FlexPay)'); **/
+	  
+	  
+	  
+	   if (status === 1) {
+    window.location.href = `${PAYMENT_CANCEL_URL}?order=${encodeURIComponent(orderId)}`;
+    return;
+  }
     }
 
     throw new Error("Délai dépassé, statut de paiement inconnu. Réessayez s.v.p.");
   } catch (err) {
     console.error('FlexPay front-end error:', err);
     window.Nimwema?.showNotification?.(err.message || 'Erreur de paiement', 'error');
+	
+	
+	
+	  // Optional: route unknown/error to cancel page
+  try { window.location.href = `${PAYMENT_CANCEL_URL}`; } catch {}
+	
+	
+	
+	
   } finally {
     overlay.remove();
   }
