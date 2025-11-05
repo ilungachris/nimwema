@@ -509,7 +509,15 @@ function checkForPrefilledData() {
   }
 }
 
+
+
+
+
+
+
+
 // Handle form submission
+/**
 async function handleFormSubmit(e) {
   e.preventDefault();
   
@@ -563,7 +571,6 @@ async function handleFormSubmit(e) {
       }
     }
   }
-  
   // Show loading
   const form = e.target;
   form.classList.add('form-loading');
@@ -582,7 +589,11 @@ async function handleFormSubmit(e) {
     window.Nimwema.showNotification('Erreur lors du paiement', 'error');
     form.classList.remove('form-loading');
   }
-}
+} **/
+
+
+
+
 
 // Process FlexPay payment
 /** async function processFlexPayPayment(formData) {
@@ -609,6 +620,118 @@ async function handleFormSubmit(e) {
     }
   }
 **/
+
+
+
+
+
+
+
+
+
+
+
+
+// Handle form submission
+async function handleFormSubmit(e) {
+  e.preventDefault();
+  
+  // Validate amount
+  if (!selectedAmount || selectedAmount <= 0) {
+    window.Nimwema.showNotification('Veuillez sélectionner un montant', 'error');
+    return;
+  }
+  
+  // Get form data
+  const formData = {
+    amount: selectedAmount,
+    currency: currentCurrency,
+    quantity: parseInt(document.getElementById('quantity').value),
+    senderName: document.getElementById('senderName').value,
+    hideIdentity: document.getElementById('hideIdentity').checked,
+    message: document.getElementById('message').value,
+    coverFees: document.getElementById('coverFees').checked,
+    paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+    recipientType: document.querySelector('input[name="recipientType"]:checked').value,
+    recipients: []
+  };
+
+  // ✅ minimal add: read the visible sender phone so FlexPay uses it (no popup)
+  const senderPhoneEl = document.getElementById('senderPhone');
+  if (senderPhoneEl) {
+    formData.senderPhone = (senderPhoneEl.value || '').trim();
+  }
+
+  // Get recipients
+  if (formData.recipientType === 'waiting_list') {
+    const selectedCheckboxes = document.querySelectorAll('.waiting-list-checkbox:checked');
+    formData.recipients = Array.from(selectedCheckboxes).map(cb => {
+      const request = waitingListRequests.find(r => r.id === parseInt(cb.value));
+      return {
+        phone: request.phone,
+        name: request.fullName,
+        requestId: request.id
+      };
+    });
+    
+    if (formData.recipients.length === 0) {
+      window.Nimwema.showNotification('Veuillez sélectionner au moins un destinataire', 'error');
+      return;
+    }
+  } else {
+    const phoneInputs = document.querySelectorAll('.recipient-phone');
+    formData.recipients = Array.from(phoneInputs).map(input => ({
+      phone: input.value.trim()
+    }));
+    
+    // Validate phones
+    for (const recipient of formData.recipients) {
+      if (!recipient.phone || recipient.phone.length < 10) {
+        window.Nimwema.showNotification('Veuillez entrer des numéros valides', 'error');
+        return;
+      }
+    }
+  }
+  
+  // Show loading
+  const form = e.target;
+  form.classList.add('form-loading');
+  
+  try {
+    // Route to the selected payment method
+    if (formData.paymentMethod === 'flexpay') {
+      // We deliberately do NOT open the phone popup here because we use the main form phone.
+      await processFlexPayPayment(formData);
+    } else if (formData.paymentMethod === 'flutterwave') {
+      await processFlutterwavePayment(formData);
+    } else if (formData.paymentMethod === 'cash' || formData.paymentMethod === 'bank') {
+      await processManualPayment(formData);
+    }
+  } catch (error) {
+    console.error('Payment error:', error);
+    window.Nimwema.showNotification('Erreur lors du paiement', 'error');
+    form.classList.remove('form-loading');
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Process FlexPay payment - SIMPLE DIRECT REDIRECT
 // COPY PASTE THIS FUNCTION to replace processFlexPayPayment in your send-voucher.js
