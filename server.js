@@ -192,10 +192,33 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
       });
     }
 
-    const orderNumber = data?.orderNumber;
-    if (!orderNumber) {
-      return res.status(502).json({ success: false, message: 'Missing orderNumber from FlexPay', data });
-    }
+    // Try common variants/nesting used by gateways
+const orderNumber =
+  data?.orderNumber ??
+  data?.order_number ??
+  data?.orderNo ??
+  data?.payment?.orderNumber ??
+  data?.transaction?.orderNumber ??
+  null;
+
+if (!orderNumber) {
+  const hint =
+    data?.message ||
+    data?.statusMessage ||
+    data?.status ||
+    data?.error_description ||
+    data?.error ||
+    (typeof data === 'string' ? data : '') ||
+    (data?.raw ? String(data.raw) : '');
+
+  console.warn('FlexPay initiate 200 but no orderNumber:', data);
+  return res.status(400).json({
+    success: false,
+    message: hint || 'FlexPay accepted request but did not return orderNumber',
+    data
+  });
+}
+
 
     orderByFlexpayNo[orderNumber] = orderId;
     global.orders[orderId].orderNumber = orderNumber;
