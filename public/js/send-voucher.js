@@ -2,7 +2,7 @@
 
 // Configuration
 const PRESET_AMOUNTS_USD = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
-const DEFAULT_EXCHANGE_RATE = 2800; // 1 USD = 2800 CDF
+const DEFAULT_EXCHANGE_RATE = 2200; // 1 USD = 2800 CDF
 const FEE_PERCENTAGE = 3.5;
 const MAX_RECIPIENTS_PER_BATCH = 50;
 const MAX_TOTAL_QUANTITY = 50;
@@ -383,7 +383,7 @@ async function handleFormSubmit(e) {
 
   try {
     if (formData.paymentMethod === 'flexpay') await processFlexPayPayment(formData);
-    else if (formData.paymentMethod === 'flutterwave') await processFlutterwavePayment(formData);
+    else if (formData.paymentMethod === 'flexpaycard') await processFlexPayPaymentCard(formData);
     else if (['cash', 'bank'].includes(formData.paymentMethod)) await processManualPayment(formData);
   } catch (error) {
     console.error('Payment error:', error);
@@ -392,7 +392,7 @@ async function handleFormSubmit(e) {
   }
 }
 
-// Process FlexPay payment (final clean)
+// Process FlexPay payment MoMo (final clean)
 async function processFlexPayPayment(formData) {
   const nm_maskDRC = raw => {
     let v = String(raw || '').replace(/[^\d+]/g, '');
@@ -402,12 +402,12 @@ async function processFlexPayPayment(formData) {
   const nm_isDRC = v => /^\+243\d{9}$/.test(String(v || '').trim());
 
   if (!formData.senderPhone) {
-    window.Nimwema?.showNotification?.('Entrez votre numéro MoMo (+243…)', 'error');
+    window.Nimwema?.showNotification?.('Entrez votre numéro Mobile Money (+243…)', 'error');
     return;
   }
   formData.senderPhone = nm_maskDRC(formData.senderPhone);
   if (!nm_isDRC(formData.senderPhone)) {
-    window.Nimwema?.showNotification?.('Pour FlexPay MoMo, utilisez un numéro DRC au format +243#########', 'error');
+    window.Nimwema?.showNotification?.('Pour FlexPay Mobile Money, utilisez un numéro DRC au format +243#########', 'error');
     return;
   }
 
@@ -418,7 +418,126 @@ async function processFlexPayPayment(formData) {
     <div style="background:#fff;padding:24px 28px;border-radius:10px;text-align:center;min-width:280px">
       <div style="width:40px;height:40px;border:4px solid #eee;border-top:4px solid #4caf50;border-radius:50%;
       animation:spin 1s linear infinite;margin:0 auto 12px"></div>
-      <div>Connexion à FlexPay…</div>
+      <div>Connexion à FlexPay…</br>Vérifier votre téléphone</div>
+      <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  try {
+    const pendingRes = await fetch('/api/vouchers/create-pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    const pending = await pendingRes.json();
+    if (!pendingRes.ok || !pending?.success) throw new Error(pending?.message || 'Impossible de créer la commande');
+    const orderId = pending?.orderId || pending?.order?.id;
+    if (!orderId) throw new Error('ID de commande manquant');
+
+    const qty = formData.quantity || 1;
+    let base = (selectedAmount || 0) * qty;
+    let amountCDF =
+      (formData.currency || currentCurrency) === 'USD' ? convertToCDF(base) : base;
+    if (formData.coverFees) amountCDF += Math.ceil(amountCDF * (FEE_PERCENTAGE / 100));
+    amountCDF = Math.ceil(amountCDF);
+
+    const initRes = await fetch('/api/payment/flexpay/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId,
+        amount: amountCDF,
+        currency: 'CDF',
+        phone: formData.senderPhone
+      })
+    });
+    const initData = await initRes.json();
+    if (!initRes.ok || !initData?.success || !initData?.orderNumber) {
+      console.error('FlexPay initData:', initData);
+      throw new Error(initData?.message || initData?.data?.message || 'Échec d’initialisation FlexPay');
+    }
+    const orderNumber = initData.orderNumber;
+
+    const started = Date.now();
+    const timeoutMs = 2 * 60 * 1000;
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+
+    async function finalizeAndRedirect() {
+      await fetch('/api/vouchers/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId })
+      }).catch(() => {});
+      /** window.location.href = `/thank-you.html?order=${encodeURIComponent(orderId)}`;**/
+	  window.location.href = `${PAYMENT_SUCCESS_URL}?order=${encodeURIComponent(orderId)}`;
+
+    }
+
+    while (Date.now() - started < timeoutMs) {
+      await delay(4500);
+      const chkRes = await fetch(`/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}`);
+      const chk = await chkRes.json().catch(() => ({}));
+      const status = chk?.transaction?.status;
+      if (status === 0) {
+        await finalizeAndRedirect();
+        return;
+      }
+     /** if (status === 1) throw new Error('Paiement échoué (FlexPay)'); **/
+	  
+	  
+	  
+	   if (status === 1) {
+    window.location.href = `${PAYMENT_CANCEL_URL}?order=${encodeURIComponent(orderId)}`;
+    return;
+  }
+    }
+
+    throw new Error("Délai dépassé, statut de paiement inconnu. Réessayez s.v.p.");
+  } catch (err) {
+    console.error('FlexPay front-end error:', err);
+    window.Nimwema?.showNotification?.(err.message || 'Erreur de paiement', 'error');
+	
+	
+	
+	  // Optional: route unknown/error to cancel page
+  try { window.location.href = `${PAYMENT_CANCEL_URL}`; } catch {}
+	
+	
+	
+	
+  } finally {
+    overlay.remove();
+  }
+}
+
+/** &&&&&&**/
+// Process FlexPay payment MoMo (final clean)
+async function processFlexPayPaymentCard(formData) {
+  const nm_maskDRC = raw => {
+    let v = String(raw || '').replace(/[^\d+]/g, '');
+    if (!v.startsWith('+243')) v = '+243' + v.replace(/\D/g, '').replace(/^243?/, '');
+    return '+243' + v.replace('+243', '').replace(/\D/g, '').slice(0, 9);
+  };
+  const nm_isDRC = v => /^\+243\d{9}$/.test(String(v || '').trim());
+
+  if (!formData.senderPhone) {
+    window.Nimwema?.showNotification?.('Entrez votre numéro Mobile Money (+243…)', 'error');
+    return;
+  }
+  formData.senderPhone = nm_maskDRC(formData.senderPhone);
+  if (!nm_isDRC(formData.senderPhone)) {
+    window.Nimwema?.showNotification?.('Pour FlexPay Mobile Money, utilisez un numéro DRC au format +243#########', 'error');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText =
+    'position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:9999';
+  overlay.innerHTML = `
+    <div style="background:#fff;padding:24px 28px;border-radius:10px;text-align:center;min-width:280px">
+      <div style="width:40px;height:40px;border:4px solid #eee;border-top:4px solid #4caf50;border-radius:50%;
+      animation:spin 1s linear infinite;margin:0 auto 12px"></div>
+      <div>Connexion à FlexPay…</br>Paiement par Carte bancaire</div>
       <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
     </div>`;
   document.body.appendChild(overlay);

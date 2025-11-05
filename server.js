@@ -191,7 +191,7 @@ if (msisdn.startsWith('243') && msisdn.length === 12) {
 if (!(msisdn.startsWith('243') && msisdn.length === 12)) {
   return res.status(400).json({
     success: false,
-    message: 'Numéro MoMo invalide. Format attendu: 243######### (12 chiffres, sans +).',
+    message: 'Numéro Mobile Money invalide. Format attendu: 243######### (12 chiffres, sans +).',
     data: { provided: msisdnRaw }
   });
 }
@@ -203,20 +203,41 @@ const fpPhone = msisdn;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Example: processFlexPayPayment function in server.js
+async function processFlexPayPayment(formData, paymentMethod = 'flexpay') {  // Default to 'flexpay' for backward compat
+    // ... other logic to extract fpPhone, reference, amt, cur ...
+    
+    const payloadType = paymentMethod === 'flexpaycard' ? '2' : '1';  // Dynamic type
     const payload = {
+        merchant: FLEXPAY_MERCHANT,
+        type: payloadType,  // Use the dynamic value
+        phone: fpPhone,
+        reference,
+        amount: String(amt),
+        currency: cur,
+        callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
+    };
+    
+    // ... rest of the function (e.g., API call with payload) ...
+}
+
+// If processFlexPayPaymentCard is separate, it can call the above or duplicate the logic
+async function processFlexPayPaymentCard(formData) {
+    await processFlexPayPayment(formData, 'flexpaycard');  // Pass the method to trigger type '2'
+}
+
+
+
+
+
+
+
+
+
+
+
+
+   /** const payload = {
       merchant: FLEXPAY_MERCHANT,
       type: "1",
       phone: fpPhone,  
@@ -224,7 +245,9 @@ const fpPhone = msisdn;
       amount: String(amt),
       currency: cur,
       callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
-    };
+    }; **/
+	
+	
 
     const url = `${FLEXPAY_BASE_URL.replace(/\/+$/,'')}/paymentService`;
     const fpRes = await fetch(url, {
