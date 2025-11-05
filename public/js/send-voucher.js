@@ -628,8 +628,23 @@ async function handleFormSubmit(e) {
 // Process FlexPay payment - FIXED VERSION
 // Process FlexPay payment - CPT FIXED VERSION
 async function processFlexPayPayment(formData) {
+  // --- Minimal add: local helpers to normalize & validate DRC MoMo ---
+  const nm_maskDRC = (raw) => {
+    let v = String(raw || '').replace(/[^\d+]/g, '');
+    if (!v.startsWith('+243')) v = '+243' + v.replace(/\D/g,'').replace(/^243?/, '');
+    return '+243' + v.replace('+243','').replace(/\D/g,'').slice(0,9);
+  };
+  const nm_isDRC = (v) => /^\+243\d{9}$/.test(String(v || '').trim());
+
+  // Always required
   if (!formData.senderPhone) {
     window.Nimwema?.showNotification?.('Entrez votre numéro MoMo (+243…)', 'error');
+    return;
+  }
+  // Normalize & validate for FlexPay MoMo (DRC only)
+  formData.senderPhone = nm_maskDRC(formData.senderPhone);
+  if (!nm_isDRC(formData.senderPhone)) {
+    window.Nimwema?.showNotification?.('Pour FlexPay MoMo, utilisez un numéro DRC au format +243#########', 'error');
     return;
   }
 
