@@ -993,10 +993,13 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
         reference,
         amount: String(amt),
         currency: cur,
-        callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`
-		console.log("Block payload executed. Variable 'payloadType' and 'paymentMethod' assigned:", payloadType,"and", paymentMethod);
-    }
+        callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+		};
     
+	console.log('FlexPay payload:', { payloadType, paymentMethod, payload });
+
+	
+	
     const url = `${FLEXPAY_BASE_URL.replace(/\/+$/,'')}/paymentService`;
     const fpRes = await fetch(url, {
       method: 'POST',
