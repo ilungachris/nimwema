@@ -8,6 +8,38 @@ function initRequestForm() {
   const form = document.getElementById('requestVoucherForm');
   if (!form) return;
   
+  
+  
+  
+  
+  
+  
+  
+   // If main.js auto-wired a submit handler, remove it (prevents double-submit)
+  try {
+     if (typeof window.handleRequestVoucher === 'function') {
+       form.removeEventListener('submit', window.handleRequestVoucher);
+     }
+   } catch (e) {
+    // non-fatal; continue
+   }
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   // Setup form validation
   setupFormValidation();
   
@@ -17,8 +49,8 @@ function initRequestForm() {
   // Setup phone formatting
   setupPhoneFormatting();
   
-  // Setup form submission
-  form.addEventListener('submit', handleFormSubmit);
+ // Attach submit handler in CAPTURE phase so we can stop others from firing
+  form.addEventListener('submit', handleFormSubmit, true);
 }
 
 // Toggle sender fields based on radio selection
