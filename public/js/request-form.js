@@ -157,7 +157,7 @@ function formatPhoneNumber(phone) {
   
   
   
-  -  // Remove all non-digit characters
+ // Remove all non-digit characters
  
   if (!phone) return '';
   // Remove all non-digit characters
