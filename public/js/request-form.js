@@ -355,12 +355,13 @@ async function handleFormSubmit(e) {
   
   try {
     // Submit to API
-    const response = await fetch('/api/vouchers/request', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
+
+     const REQUEST_URL = '/dev/api/voucher/simulate'; // TEMP until /api/vouchers/request is live
+     const response = await fetch(REQUEST_URL, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+ 
+       body: JSON.stringify({ ...formData, simulate: true })
     });
     
  
