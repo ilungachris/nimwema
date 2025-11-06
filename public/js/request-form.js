@@ -153,7 +153,20 @@ function validatePhoneNumber(phone) {
 // Format phone number
 function formatPhoneNumber(phone) {
   // Remove all non-digit characters
-  let cleaned = phone.replace(/\D/g, '');
+ 
+  
+  
+  
+  -  // Remove all non-digit characters
+ 
+  if (!phone) return '';
+  // Remove all non-digit characters
+  let cleaned = String(phone).replace(/\D/g, '');
+  
+  
+  
+  
+  
   
   // Add +243 if not present
   if (!cleaned.startsWith('243')) {
@@ -222,6 +235,15 @@ function clearForm() {
 // Handle form submission
 async function handleFormSubmit(e) {
   e.preventDefault();
+  
+  
+  
+  
+  
+  e.stopImmediatePropagation(); // ensure main.js handler doesn't also run
+  
+  
+  
   
   // Validate all fields
   let isValid = true;
@@ -309,7 +331,37 @@ async function handleFormSubmit(e) {
       body: JSON.stringify(formData)
     });
     
+ 
+ 
+ 
+ 
+ 
+ 
+
+    if (!response.ok) {
+      // Try to read text for debugging, but don't crash on JSON
+      const raw = await response.text().catch(()=>'');
+      const msg = response.status === 404
+        ? "Endpoint introuvable: /api/vouchers/request"
+        : `Erreur serveur (${response.status})`;
+     throw new Error(msg);
+    }
     const result = await response.json();
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
     
     if (result.success) {
       // Store request data for confirmation page
