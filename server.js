@@ -983,8 +983,10 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
 
     let { paymentMethodId } = req.body; // Or your payload
 
-    let paymentMethod = 'flexpaycard'; // MERGE: Simplified - removed stripe (not defined)
-
+    //let paymentMethod = 'flexpaycard';  MERGE: Simplified - removed stripe (not defined)
+console.log(
+  `Block payload executed. Variables  paymentMethod assigned:  ${paymentMethod}`
+);
     const payloadType = paymentMethod === 'flexpaycard' ? '2' : '1';  // Dynamic type
     const payload = {
         merchant: FLEXPAY_MERCHANT,
