@@ -982,7 +982,19 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
     const fpPhone = msisdn;
 
     let { paymentMethodId } = req.body; // Or your payload
-
+	
+	
+	
+	
+	
+	
+const {paymentMethod } = req.body;
+  console.log('Payment method received:', paymentMethod);
+  
+  
+  
+  
+  
     //let paymentMethod = 'flexpaycard';  MERGE: Simplified - removed stripe (not defined)
 console.log(
   `Block payload executed. Variables  paymentMethod assigned:  ${paymentMethod}`
