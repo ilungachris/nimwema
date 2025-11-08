@@ -1890,7 +1890,7 @@ app.post('/api/test-flexpay-card', async (req, res) => {
     const orderId = 'TEST_' + Date.now();
     const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
     
-    // Call FlexPay with ONLY type=2, NO card data
+    // Call FlexPay with card data but NO NAME
     const result = await flexpayService.initiateCardPayment({
       amount: amount,
       currency: currency,
@@ -1900,8 +1900,11 @@ app.post('/api/test-flexpay-card', async (req, res) => {
       cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
       declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
       homeUrl: `${APP_BASE_URL}`,
-      description: `Test Order ${orderId}`
-      // ✅ NO CARD DATA SENT!
+      description: `Test Order ${orderId}`,
+      cardNumber: req.body.cardNumber,
+      expiryMonth: req.body.expiryMonth,
+      expiryYear: req.body.expiryYear,
+      cvv: req.body.cvv
     });
     
     console.log('🧪 TEST Result:', result);

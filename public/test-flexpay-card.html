@@ -89,11 +89,31 @@
         
         <div class="info">
             <strong>📋 Test Purpose:</strong><br>
-            This test sends ONLY type=2 to FlexPay (no card data).<br>
-            FlexPay should return a redirectUrl to their hosted payment page.
+            This test sends card data to FlexPay WITHOUT card holder name.<br>
+            Testing if FlexPay accepts payment without the name field.
         </div>
 
         <form id="testForm">
+            <div class="form-group">
+                <label>Card Number:</label>
+                <input type="text" id="cardNumber" value="4204730026990372" required>
+            </div>
+
+            <div class="form-group">
+                <label>Expiry Month:</label>
+                <input type="number" id="expiryMonth" value="4" min="1" max="12" required>
+            </div>
+
+            <div class="form-group">
+                <label>Expiry Year:</label>
+                <input type="number" id="expiryYear" value="26" required>
+            </div>
+
+            <div class="form-group">
+                <label>CVV:</label>
+                <input type="text" id="cvv" value="467" required>
+            </div>
+
             <div class="form-group">
                 <label>Amount (CDF):</label>
                 <input type="number" id="amount" value="1000" required>
@@ -107,7 +127,7 @@
                 </select>
             </div>
 
-            <button type="submit">🚀 Test FlexPay Card (Type 2)</button>
+            <button type="submit">🚀 Test FlexPay Card (NO NAME)</button>
         </form>
 
         <div id="result" class="result"></div>
@@ -117,11 +137,15 @@
         document.getElementById('testForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const cardNumber = document.getElementById('cardNumber').value;
+            const expiryMonth = document.getElementById('expiryMonth').value;
+            const expiryYear = document.getElementById('expiryYear').value;
+            const cvv = document.getElementById('cvv').value;
             const amount = document.getElementById('amount').value;
             const currency = document.getElementById('currency').value;
             const resultDiv = document.getElementById('result');
             
-            resultDiv.innerHTML = '<p>⏳ Testing FlexPay Type 2 (no card data)...</p>';
+            resultDiv.innerHTML = '<p>⏳ Testing FlexPay with card data (NO NAME)...</p>';
             resultDiv.className = 'result';
             resultDiv.style.display = 'block';
             
@@ -130,7 +154,14 @@
                 const response = await fetch('/api/test-flexpay-card', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount, currency })
+                    body: JSON.stringify({ 
+                        cardNumber, 
+                        expiryMonth: parseInt(expiryMonth), 
+                        expiryYear: parseInt(expiryYear), 
+                        cvv, 
+                        amount, 
+                        currency 
+                    })
                 });
                 
                 const data = await response.json();
