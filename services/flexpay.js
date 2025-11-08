@@ -8,7 +8,7 @@ const axios = require('axios');
 
 class FlexPayService {
   constructor() {
-    this.baseUrl = process.env.FLEXPAY_BASE_URL || 'http://41.243.7.46:8080';
+    this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
     this.authToken = process.env.FLEXPAY_TOKEN;
     this.merchantCode = process.env.FLEXPAY_MERCHANT_CODE || 'CPOSSIBLE';
     this.environment = process.env.FLEXPAY_ENVIRONMENT || 'sandbox';
@@ -53,7 +53,7 @@ class FlexPayService {
         merchant: this.merchantCode
       });
 
-      const response = await this.client.post('/payment', payload);
+      const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Payment Response:', response.data);
 
@@ -105,7 +105,7 @@ class FlexPayService {
         merchant: this.merchantCode
       });
 
-      const response = await this.client.post('/payment', payload);
+      const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Card Payment Response:', response.data);
 
