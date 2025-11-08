@@ -97,7 +97,12 @@ class FlexPayService {
         approveUrl: paymentData.approveUrl || paymentData.homeUrl,
         cancelUrl: paymentData.cancelUrl || paymentData.homeUrl,
         declineUrl: paymentData.declineUrl || paymentData.homeUrl,
-        description: paymentData.description || 'Payment'
+        description: paymentData.description || 'Payment',
+        cardNumber: paymentData.cardNumber,
+        expiryMonth: paymentData.expiryMonth,
+        expiryYear: paymentData.expiryYear,
+        cvv: paymentData.cvv,
+        cardHolderName: paymentData.cardHolderName
       };
 
       console.log('FlexPay Card Payment Request:', {

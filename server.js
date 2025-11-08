@@ -25,8 +25,8 @@ const axios = require('axios'); // npm install axios if missing
 const SMSService = require('./services/sms');
 const authService = require('./services/auth');
 const authMiddleware = require('./middleware/auth');
-const FlexPayService = require('./services/flexpay'); // ADD: FlexPay service for card payments
-const flexpayService = new FlexPayService(); // Create instance
+const FlexPayService = require('./services/flexpay');
+const flexpayService = new FlexPayService();
 
 // Initialize Express app
 const app = express();
@@ -949,7 +949,7 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Données carte incomplètes' });
     }
 
-    // FIXED: Call real FlexPay service for card payment (type: '2')
+    // FIXED: Call real FlexPay service for card payment
     console.log('🔐 Initiating FlexPay card payment:', { orderId, amount, currency });
 
     const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
@@ -963,21 +963,24 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
       cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
       declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
       homeUrl: `${APP_BASE_URL}`,
-      description: `Nimwema Order ${orderId}`
+      description: `Nimwema Order ${orderId}`,
+      cardNumber: card.number,
+      expiryMonth: card.expiryMonth,
+      expiryYear: card.expiryYear,
+      cvv: card.cvc,
+      cardHolderName: card.holderName
     });
 
     console.log('✅ FlexPay card payment response:', result);
 
     if (result.success && result.redirectUrl) {
-      // FlexPay returns 3D Secure URL - redirect user there
       return res.json({
         success: true,
         orderId,
         orderNumber: result.orderNumber,
-        redirectUrl: result.redirectUrl // 3D Secure authentication page
+        redirectUrl: result.redirectUrl
       });
     } else {
-      // FlexPay rejected the payment
       console.warn('❌ FlexPay card payment failed:', result.message);
       return res.status(400).json({
         success: false,
@@ -986,12 +989,8 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
     }
 
   } catch (err) {
-    console.error('❌ Card payment error:', err);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Erreur serveur lors du paiement carte',
-      error: err.message 
-    });
+    console.error('card/initiate error:', err);
+    return res.status(500).json({ success: false, message: 'Erreur serveur' });
   }
 });
 ////////////////////////////
