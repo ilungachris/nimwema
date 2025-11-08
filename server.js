@@ -922,7 +922,59 @@ app.post('/api/vouchers/create', async (req, res) => {
 
 // /* ===========================
 //    FLEXPAY PAYMENT API (KEPT FROM CURRENT - WORKING)
+
 //    =========================== */
+
+
+
+
+
+
+
+
+
+
+// for check-out card route
+
+app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
+  try {
+    const { orderId, amount, currency, card, email, type } = req.body || {};
+
+    // Minimal validation (keeps errors clear in the UI):
+    if (!orderId) return res.status(400).json({ success: false, message: 'orderId manquant' });
+    if (!amount || !currency) return res.status(400).json({ success: false, message: 'Montant ou devise manquant' });
+    if (!card || !card.holderName || !card.number || !card.expiryMonth || !card.expiryYear || !card.cvc) {
+      return res.status(400).json({ success: false, message: 'Données carte incomplètes' });
+    }
+
+    // ---- STUB behavior (no gateway yet): succeed and send user to success page
+    // Later: replace this block with a real FlexPay call using `type === '2'` for card.
+    return res.json({
+      success: true,
+      orderId,
+      // If you prefer to let the front-end handle navigation, omit redirectUrl.
+      // Providing redirectUrl mirrors many gateways and works with current JS.
+      redirectUrl: `/payment-success.html?order=${encodeURIComponent(orderId)}`
+    });
+
+  } catch (err) {
+    console.error('card/initiate error:', err);
+    return res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
+////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
 
 // INITIATE (POST JSON + Bearer; safer errors)
 app.post('/api/payment/flexpay/initiate', async (req, res) => {
