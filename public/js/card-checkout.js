@@ -145,6 +145,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+		
+console.log('Payment load is this:', payload);
 
         if (!res.ok) {
           const raw = await res.text().catch(()=>'');
