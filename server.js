@@ -1816,7 +1816,133 @@ app.get('/api/merchants/approved', async (req, res) => {
     console.error('Error getting merchants:', error);
     res.status(500).json({ error: error.message });
   }
+})
+
+
+
+
+
+
+
+
+
+
+// 🧪 TEST ENDPOINT: FlexPay Card WITH card holder name
+
+// 🌐 TEST ENDPOINT: FlexPay Hosted Page (redirect to FlexPay)
+app.post('/api/test-flexpay-hosted', async (req, res) => {
+  try {
+    const { amount, currency } = req.body;
+    
+    console.log('🌐 TEST: FlexPay hosted page (no card data)');
+    
+    const orderId = 'TEST_' + Date.now();
+    const APP_BASE_URL = process.env.BASE_URL || `http://localhost:3000`;
+    
+    // Call FlexPay WITHOUT card data (hosted page)
+    const result = await flexpayService.initiateHostedCardPayment({
+      amount: amount,
+      currency: currency,
+      reference: orderId,
+      callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+      approveUrl: `${APP_BASE_URL}/payment-success.html?order=${orderId}`,
+      cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
+      declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
+      description: `Test Order ${orderId}`
+    });
+    
+    console.log('🌐 TEST Result:', result);
+    
+    // Return result to test page
+    res.json({
+      success: result.success,
+      redirectUrl: result.redirectUrl,
+      orderNumber: result.orderNumber,
+      message: result.message,
+      reference: orderId
+    });
+    
+  } catch (error) {
+    console.error('🌐 TEST Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: error.toString()
+    });
+  }
 });
+
+app.post('/api/test-flexpay-card', async (req, res) => {
+  try {
+    const { cardHolderName, cardNumber, expiryMonth, expiryYear, cvv, phone, postalCode, amount, currency } = req.body;
+    
+    console.log('🧪 TEST: FlexPay card payment WITH address fields');
+    
+    const orderId = 'TEST_' + Date.now();
+    const APP_BASE_URL = process.env.BASE_URL || `http://localhost:3000`;
+    
+    // Call FlexPay with ALL card data including NAME + ADDRESS
+    const result = await flexpayService.initiateCardPayment({
+      amount: amount,
+      currency: currency,
+      reference: orderId,
+      callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+      approveUrl: `${APP_BASE_URL}/payment-success.html?order=${orderId}`,
+      cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
+      declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
+      homeUrl: `${APP_BASE_URL}`,
+      description: `Test Order ${orderId}`,
+      cardNumber: cardNumber,
+      expiryMonth: expiryMonth,
+      expiryYear: expiryYear,
+      cvv: cvv,
+      cardHolderName: cardHolderName,  // Optional
+      phone: phone,  // ✅ NEW
+      postalCode: postalCode  // ✅ NEW
+    });
+    
+    console.log('🧪 TEST Result:', result);
+    
+    // Return result to test page
+    res.json({
+      success: result.success,
+      redirectUrl: result.redirectUrl,
+      orderNumber: result.orderNumber,
+      message: result.message,
+      reference: orderId
+    });
+    
+  } catch (error) {
+    console.error('🧪 TEST Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: error.toString()
+    });
+  }
+});
+//////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Health check (merged)
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));

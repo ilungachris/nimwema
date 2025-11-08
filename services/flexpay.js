@@ -8,8 +8,8 @@ const axios = require('axios');
 
 class FlexPayService {
   constructor() {
-    this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
-    this.authToken = process.env.FLEXPAY_TOKEN;
+    this.baseUrl = process.env.FLEXPAY_BASE_URL || 'http://41.243.7.46:8080';
+    this.authToken = process.env.FLEXPAY_AUTH_TOKEN;
     this.merchantCode = process.env.FLEXPAY_MERCHANT_CODE || 'CPOSSIBLE';
     this.environment = process.env.FLEXPAY_ENVIRONMENT || 'sandbox';
     
@@ -87,7 +87,6 @@ class FlexPayService {
    */
   async initiateCardPayment(paymentData) {
     try {
-      // Build payload with card data (if provided)
       const payload = {
         merchant: this.merchantCode,
         type: '2', // 2 = bank card
@@ -100,15 +99,22 @@ class FlexPayService {
         declineUrl: paymentData.declineUrl || paymentData.homeUrl,
         description: paymentData.description || 'Payment'
       };
-
-      // Add card data if provided
-      if (paymentData.cardNumber) payload.cardNumber = paymentData.cardNumber;
-      if (paymentData.expiryMonth) payload.expiryMonth = paymentData.expiryMonth;
-      if (paymentData.expiryYear) payload.expiryYear = paymentData.expiryYear;
-      if (paymentData.cvv) payload.cvv = paymentData.cvv;
-      if (paymentData.cardHolderName) payload.cardHolderName = paymentData.cardHolderName;
+       
+       // Add card data if provided (for direct card payment with 3D Secure)
+       if (paymentData.cardNumber) {
+         payload.cardNumber = paymentData.cardNumber;
+         payload.expiryMonth = parseInt(paymentData.expiryMonth);
+         payload.expiryYear = parseInt(paymentData.expiryYear);
+         payload.cvv = paymentData.cvv;
+         if (paymentData.cardHolderName) payload.cardHolderName = paymentData.cardHolderName; // REQUIRED by FlexPay
+        }
+        
+           if (paymentData.phone) payload.phone = paymentData.phone;
+        // Add billing address if provided
+        if (paymentData.postalCode) payload.postalCode = paymentData.postalCode;
 
       console.log('FlexPay Card Payment Request:', {
+         cvv: payload.cvv ? '***' : undefined, // Hide CVV in logs
         ...payload,
         merchant: this.merchantCode
       });
@@ -140,6 +146,64 @@ class FlexPayService {
    * @param {string} orderNumber - FlexPay order number
    * @returns {Promise<Object>} Transaction status
    */
+
+  /**
+   * Initiate a hosted card payment (redirect to FlexPay page)
+   * @param {Object} paymentData - Payment details
+   * @param {number} paymentData.amount - Payment amount
+   * @param {string} paymentData.currency - Currency (USD or CDF)
+   * @param {string} paymentData.reference - Your internal transaction reference
+   * @param {string} paymentData.description - Payment description
+   * @param {string} paymentData.callbackUrl - Webhook URL for payment result
+   * @param {string} paymentData.approveUrl - URL to redirect after successful payment
+   * @param {string} paymentData.cancelUrl - URL to redirect after cancelled payment
+   * @param {string} paymentData.declineUrl - URL to redirect after declined payment
+   * @returns {Promise<Object>} Payment response with redirect URL
+   */
+  async initiateHostedCardPayment(paymentData) {
+    try {
+      const payload = {
+        merchant: this.merchantCode,
+        type: '2', // 2 = bank card
+        reference: paymentData.reference,
+        amount: paymentData.amount.toString(),
+        currency: paymentData.currency || 'USD',
+        callbackUrl: paymentData.callbackUrl,
+        approveUrl: paymentData.approveUrl,
+        cancelUrl: paymentData.cancelUrl,
+        declineUrl: paymentData.declineUrl,
+        description: paymentData.description || 'Payment'
+        // NO CARD DATA - FlexPay will collect it on their hosted page
+      };
+
+      console.log('FlexPay Hosted Page Request:', {
+        ...payload,
+        merchant: this.merchantCode
+      });
+
+      // Use /payment endpoint for hosted page (not /paymentService)
+      const response = await this.client.post('/payment', payload);
+
+      console.log('FlexPay Hosted Page Response:', response.data);
+
+      return {
+        success: response.data.code === '0' || response.data.code === 0,
+        message: response.data.message,
+        orderNumber: response.data.orderNumber,
+        redirectUrl: response.data.url, // FlexPay returns URL to their hosted page
+        reference: paymentData.reference
+      };
+    } catch (error) {
+      console.error('FlexPay Hosted Page Error:', error.message);
+
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+        error: error.response?.data || error.message
+      };
+    }
+  }
+
   async checkTransaction(orderNumber) {
     try {
       const response = await this.client.post('/check', {
