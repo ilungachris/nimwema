@@ -106,7 +106,7 @@ class FlexPayService {
          payload.expiryMonth = parseInt(paymentData.expiryMonth);
          payload.expiryYear = parseInt(paymentData.expiryYear);
          payload.cvv = paymentData.cvv;
-         if (paymentData.cardHolderName) payload.cardHolderName = paymentData.cardHolderName; // REQUIRED by FlexPay
+         if (paymentData.cardHolderName) payload.cardholderName = paymentData.cardHolderName; // REQUIRED by FlexPay (lowercase 'h')
         }
         
            if (paymentData.phone) payload.phone = paymentData.phone;
@@ -181,8 +181,8 @@ class FlexPayService {
         merchant: this.merchantCode
       });
 
-      // Use /payment endpoint for hosted page (not /paymentService)
-      const response = await this.client.post('/payment', payload);
+      // Use /paymentService endpoint (FlexPay doesn't have /payment)
+      const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Hosted Page Response:', response.data);
 
