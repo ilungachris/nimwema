@@ -8,9 +8,9 @@ const axios = require('axios');
 
 class FlexPayService {
   constructor() {
-    this.baseUrl = process.env.FLEXPAY_BASE_URL || 'http://41.243.7.46:8080';
-    this.authToken = process.env.FLEXPAY_AUTH_TOKEN;
-    this.merchantCode = process.env.FLEXPAY_MERCHANT_CODE || 'CPOSSIBLE';
+    this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
+    this.authToken = process.env.FLEXPAY_TOKEN;
+    this.merchantCode = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
     this.environment = process.env.FLEXPAY_ENVIRONMENT || 'sandbox';
     
     // Create axios instance with default config
