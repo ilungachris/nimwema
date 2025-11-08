@@ -25,7 +25,8 @@ const axios = require('axios'); // npm install axios if missing
 const SMSService = require('./services/sms');
 const authService = require('./services/auth');
 const authMiddleware = require('./middleware/auth');
-const flexpayService = require('./services/flexpay'); // ADD: FlexPay service for card payments
+const FlexPayService = require('./services/flexpay'); // ADD: FlexPay service for card payments
+const flexpayService = new FlexPayService(); // Create instance
 
 // Initialize Express app
 const app = express();
