@@ -25,6 +25,7 @@ const axios = require('axios'); // npm install axios if missing
 const SMSService = require('./services/sms');
 const authService = require('./services/auth');
 const authMiddleware = require('./middleware/auth');
+const flexpayService = require('./services/flexpay'); // ADD: FlexPay service for card payments
 
 // Initialize Express app
 const app = express();
@@ -947,19 +948,49 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Données carte incomplètes' });
     }
 
-    // ---- STUB behavior (no gateway yet): succeed and send user to success page
-    // Later: replace this block with a real FlexPay call using `type === '2'` for card.
-    return res.json({
-      success: true,
-      orderId,
-      // If you prefer to let the front-end handle navigation, omit redirectUrl.
-      // Providing redirectUrl mirrors many gateways and works with current JS.
-      redirectUrl: `/payment-success.html?order=${encodeURIComponent(orderId)}`
+    // FIXED: Call real FlexPay service for card payment (type: '2')
+    console.log('🔐 Initiating FlexPay card payment:', { orderId, amount, currency });
+
+    const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
+    
+    const result = await flexpayService.initiateCardPayment({
+      amount: amount,
+      currency: currency,
+      reference: orderId,
+      callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+      approveUrl: `${APP_BASE_URL}/payment-success.html?order=${encodeURIComponent(orderId)}`,
+      cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+      declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+      homeUrl: `${APP_BASE_URL}`,
+      description: `Nimwema Order ${orderId}`
     });
 
+    console.log('✅ FlexPay card payment response:', result);
+
+    if (result.success && result.redirectUrl) {
+      // FlexPay returns 3D Secure URL - redirect user there
+      return res.json({
+        success: true,
+        orderId,
+        orderNumber: result.orderNumber,
+        redirectUrl: result.redirectUrl // 3D Secure authentication page
+      });
+    } else {
+      // FlexPay rejected the payment
+      console.warn('❌ FlexPay card payment failed:', result.message);
+      return res.status(400).json({
+        success: false,
+        message: result.message || 'Paiement carte refusé par FlexPay'
+      });
+    }
+
   } catch (err) {
-    console.error('card/initiate error:', err);
-    return res.status(500).json({ success: false, message: 'Erreur serveur' });
+    console.error('❌ Card payment error:', err);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erreur serveur lors du paiement carte',
+      error: err.message 
+    });
   }
 });
 ////////////////////////////
