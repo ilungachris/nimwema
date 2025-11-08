@@ -9,7 +9,7 @@ const axios = require('axios');
 class FlexPayService {
   constructor() {
     this.baseUrl = process.env.FLEXPAY_BASE_URL || 'http://41.243.7.46:8080';
-    this.authToken = process.env.FLEXPAY_AUTH_TOKEN;
+    this.authToken = process.env.FLEXPAY_TOKEN;
     this.merchantCode = process.env.FLEXPAY_MERCHANT_CODE || 'CPOSSIBLE';
     this.environment = process.env.FLEXPAY_ENVIRONMENT || 'sandbox';
     
