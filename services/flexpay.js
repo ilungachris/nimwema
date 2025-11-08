@@ -85,74 +85,9 @@ class FlexPayService {
    * @param {string} paymentData.homeUrl - URL to redirect after payment
    * @returns {Promise<Object>} Payment response with redirect URL
    */
-   
-   
-   
-   
-   
-   
-   // UPDATED FlexPay Service - Remove card fields from payload
-// This is what we'll test to see if FlexPay returns redirectUrl
-
-async initiateCardPayment(paymentData) {
-  try {
-    const payload = {
-      merchant: this.merchantCode,
-      type: '2', // 2 = bank card
-      reference: paymentData.reference,
-      amount: paymentData.amount.toString(),
-      currency: paymentData.currency || 'USD',
-      callbackUrl: paymentData.callbackUrl,
-      approveUrl: paymentData.approveUrl || paymentData.homeUrl,
-      cancelUrl: paymentData.cancelUrl || paymentData.homeUrl,
-      declineUrl: paymentData.declineUrl || paymentData.homeUrl,
-      description: paymentData.description || 'Payment'
-      // ✅ NO CARD DATA - Let FlexPay collect it on their page!
-    };
-
-    console.log('FlexPay Card Payment Request (NO CARD DATA):', {
-      ...payload,
-      merchant: this.merchantCode
-    });
-
-    const response = await this.client.post('/paymentService', payload);
-
-    console.log('FlexPay Card Payment Response:', response.data);
-
-    return {
-      success: response.data.code === '0' || response.data.code === 0,
-      message: response.data.message,
-      orderNumber: response.data.orderNumber,
-      redirectUrl: response.data.url, // FlexPay should return this!
-      reference: paymentData.reference
-    };
-  } catch (error) {
-    console.error('FlexPay Card Payment Error:', error.message);
-    
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-      error: error.response?.data || error.message
-    };
-  }
-}
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-  /** async initiateCardPayment(paymentData) {
+  async initiateCardPayment(paymentData) {
     try {
+      // Build payload with card data (if provided)
       const payload = {
         merchant: this.merchantCode,
         type: '2', // 2 = bank card
@@ -163,13 +98,15 @@ async initiateCardPayment(paymentData) {
         approveUrl: paymentData.approveUrl || paymentData.homeUrl,
         cancelUrl: paymentData.cancelUrl || paymentData.homeUrl,
         declineUrl: paymentData.declineUrl || paymentData.homeUrl,
-        description: paymentData.description || 'Payment',
-        cardNumber: paymentData.cardNumber,
-        expiryMonth: paymentData.expiryMonth,
-        expiryYear: paymentData.expiryYear,
-        cvv: paymentData.cvv,
-        cardHolderName: paymentData.cardHolderName
+        description: paymentData.description || 'Payment'
       };
+
+      // Add card data if provided
+      if (paymentData.cardNumber) payload.cardNumber = paymentData.cardNumber;
+      if (paymentData.expiryMonth) payload.expiryMonth = paymentData.expiryMonth;
+      if (paymentData.expiryYear) payload.expiryYear = paymentData.expiryYear;
+      if (paymentData.cvv) payload.cvv = paymentData.cvv;
+      if (paymentData.cardHolderName) payload.cardHolderName = paymentData.cardHolderName;
 
       console.log('FlexPay Card Payment Request:', {
         ...payload,
@@ -197,7 +134,7 @@ async initiateCardPayment(paymentData) {
       };
     }
   }
-**/ //////////////////////////////////////////////
+
   /**
    * Check transaction status
    * @param {string} orderNumber - FlexPay order number
