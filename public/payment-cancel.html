@@ -1,404 +1,179 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statut du Paiement - Nimwema</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/forms.css">
-    <style>
-        .status-container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .status-icon {
-            text-align: center;
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        .status-icon.pending {
-            color: #FFA726;
-        }
-
-        .status-icon.success {
-            color: #66BB6A;
-        }
-
-        .status-icon.failed {
-            color: #EF5350;
-        }
-
-        .status-title {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #111111;
-        }
-
-        .status-message {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-        }
-
-        .status-details {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: #666;
-        }
-
-        .detail-value {
-            color: #111111;
-        }
-
-        .loading-spinner {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #8BC34A;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 30px;
-        }
-
-        .action-buttons button {
-            flex: 1;
-        }
-
-        .instructions {
-            background: #E8F5E9;
-            border-left: 4px solid #8BC34A;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 4px;
-        }
-
-        .instructions h4 {
-            margin: 0 0 10px 0;
-            color: #111111;
-        }
-
-        .instructions p {
-            margin: 5px 0;
-            color: #666;
-            font-size: 0.875rem;
-        }
-    </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paiement annulé / refusé - Nimwema</title>
+  <meta name="description" content="Votre paiement a été annulé ou refusé.">
+  <!-- Fonts (match success page) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- Styles (match success page) -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/forms.css"/>
+  <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <h1>Nimwema</h1>
-                    <p class="tagline" data-i18n="tagline">La solidarité africaine, rendue simple</p>
-                </div>
-                <nav class="nav">
-                    <a href="index.html" data-i18n="nav_home">Accueil</a>
-                    <a href="request.html" data-i18n="nav_request">Demander</a>
-                    <a href="send.html" data-i18n="nav_send">Envoyer</a>
-                    <button id="languageToggle" class="language-toggle">EN</button>
-                </nav>
-            </div>
+  <!-- Header (same structure as success page) -->
+  <header class="header">
+    <div class="header-top">
+      <div class="language-selector">
+        <button class="lang-btn active" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="ln">LN</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <button class="login-btn" onclick="window.location.href='/login.html'">
+        <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+      </button>
+    </div>
+
+    <div class="header-main">
+      <a href="/" class="logo">NIM<span class="w">W</span>EMA</a>
+      <button class="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="section">
+    <div class="container">
+      <div class="confirmation-card">
+        <!-- Icon -->
+        <div class="confirmation-icon" style="background: var(--danger);">✕</div>
+
+        <!-- Title -->
+        <h1 class="confirmation-title" id="pageTitle">
+          Paiement annulé
+        </h1>
+
+        <!-- Message -->
+        <p class="confirmation-message" id="pageMessage">
+          L’opération a été annulée. Aucun débit n’a été effectué. Vous pouvez réessayer avec la même méthode ou en choisir une autre.
+        </p>
+
+        <!-- Details block (optional info from URL) -->
+        <div class="card" style="text-align:left; margin-bottom: var(--space-xl);">
+          <h3 style="margin-bottom: var(--space-md);" data-i18n="order_summary">Résumé</h3>
+          <ul style="list-style:none; padding:0; margin:0;">
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Commande</span>
+              <strong id="sumOrder">—</strong>
+            </li>
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Montant</span>
+              <strong id="sumAmount">—</strong>
+            </li>
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Devise</span>
+              <strong id="sumCurrency">—</strong>
+            </li>
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Motif</span>
+              <strong id="sumReason">Annulé</strong>
+            </li>
+          </ul>
+
+          <!-- Helpful hints -->
+          <div style="margin-top: var(--space-md); padding: var(--space-md); background: var(--paper); border-radius: var(--radius-input);">
+            <p class="text-small" style="margin:0;">
+              Astuce : si votre banque a refusé la transaction, vérifiez votre plafond de paiement en ligne ou essayez une autre carte / méthode de paiement.
+            </p>
+          </div>
         </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="container">
-        <div class="status-container">
-            <!-- Loading State -->
-            <div id="loadingState" class="loading-spinner">
-                <div class="spinner"></div>
-                <p data-i18n="checking_payment">Vérification du paiement en cours...</p>
-            </div>
-
-            <!-- Payment Status -->
-            <div id="statusContent" class="hidden">
-                <div class="status-icon" id="statusIcon">⏳</div>
-                <h2 class="status-title" id="statusTitle">Paiement en attente</h2>
-                <p class="status-message" id="statusMessage">Veuillez confirmer le paiement sur votre téléphone</p>
-
-                <div class="status-details" id="statusDetails">
-                    <!-- Details will be populated by JavaScript -->
-                </div>
-
-                <div class="instructions" id="instructions">
-                    <h4 data-i18n="payment_instructions">Instructions:</h4>
-                    <p id="instructionText">1. Vérifiez votre téléphone pour la notification de paiement</p>
-                    <p>2. Entrez votre code PIN pour confirmer</p>
-                    <p>3. Attendez la confirmation</p>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn-secondary" onclick="checkStatus()" id="refreshBtn">
-                        <span data-i18n="refresh_status">Actualiser le statut</span>
-                    </button>
-                    <button class="btn-primary hidden" onclick="goToVouchers()" id="viewVouchersBtn">
-                        <span data-i18n="view_vouchers">Voir mes bons</span>
-                    </button>
-                    <button class="btn-secondary" onclick="goHome()" id="homeBtn">
-                        <span data-i18n="back_home">Retour à l'accueil</span>
-                    </button>
-                </div>
-            </div>
+        <!-- Actions (mirror success style) -->
+        <div class="confirmation-actions">
+          <button class="btn btn-primary btn-large" id="retryBtn">
+            Réessayer le paiement
+          </button>
+          <button class="btn btn-secondary btn-large" id="changeMethodBtn">
+            Choisir une autre méthode
+          </button>
+          <button class="btn btn-secondary" onclick="window.location.href='/'">
+            <span data-i18n="back_home">Retour à l'accueil</span>
+          </button>
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Nimwema. <span data-i18n="footer_rights">Tous droits réservés.</span></p>
+        <!-- Contact/help -->
+        <div style="margin-top: var(--space-xl); padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input);">
+          <p style="font-size:16px; color:var(--grey-700); margin:0; text-align:center;">
+            Besoin d’aide ? <a href="/contact.html">Contactez le support</a>.
+          </p>
         </div>
-    </footer>
+      </div>
+    </div>
+  </main>
 
-    <script src="js/i18n.js"></script>
-    <script>
-        // Get order ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('order');
-        const orderNumber = urlParams.get('orderNumber');
+  <!-- Footer (match success page) -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+      </div>
+    </div>
+  </footer>
 
-        let checkInterval;
+  <!-- Scripts -->
+  <script src="/js/i18n.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      const order = qs.get('order') || '';
+      const reason = (qs.get('reason') || '').toLowerCase(); // e.g., 'cancelled' | 'canceled' | 'declined' | 'timeout'
+      const amount = parseInt(qs.get('amount') || '0', 10) || 0;
+      const currency = (qs.get('currency') || 'CDF').toUpperCase();
 
-        // Check payment status
-        async function checkStatus() {
-            try {
-                if (!orderNumber) {
-                    showError('Numéro de commande manquant');
-                    return;
-                }
+      // Fill summary
+      const fmt = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 });
+      document.getElementById('sumOrder').textContent = order || '—';
+      document.getElementById('sumAmount').textContent = amount ? fmt.format(amount) : '—';
+      document.getElementById('sumCurrency').textContent = currency || '—';
 
-                const response = await fetch(`/api/payment/flexpay/check/${orderNumber}`);
-                const data = await response.json();
+      // Map reason → UI text (works for both cancelled & declined)
+      let title = 'Paiement annulé';
+      let msg = "L’opération a été annulée. Aucun débit n’a été effectué. Vous pouvez réessayer avec la même méthode ou en choisir une autre.";
+      let reasonLabel = 'Annulé';
 
-                if (data.success) {
-                    displayStatus(data.transaction);
-                } else {
-                    // If transaction not found in FlexPay, check our order status
-                    checkOrderStatus();
-                }
-            } catch (error) {
-                console.error('Error checking status:', error);
-                // Fallback to checking order status
-                checkOrderStatus();
-            }
+      if (['declined','refused','refusé'].includes(reason)) {
+        title = 'Paiement refusé';
+        msg = "Votre banque a refusé la transaction. Vérifiez vos informations ou essayez une autre méthode de paiement.";
+        reasonLabel = 'Refusé';
+      } else if (['timeout','expired','time_out'].includes(reason)) {
+        title = 'Session expirée';
+        msg = "Le délai de confirmation a expiré. Veuillez relancer le paiement.";
+        reasonLabel = 'Expiré';
+      } else if (['canceled','cancelled','annule','annulé'].includes(reason)) {
+        // keep defaults
+      }
+
+      document.getElementById('pageTitle').textContent = title;
+      document.getElementById('pageMessage').textContent = msg;
+      document.getElementById('sumReason').textContent = reasonLabel;
+
+      // Buttons
+      document.getElementById('retryBtn').addEventListener('click', () => {
+        // Retry with same order if you use it server-side, else go to send
+        if (order) {
+          // If you have a dedicated retry endpoint or page, wire it here.
+          window.location.href = `/send.html?retry=1&order=${encodeURIComponent(order)}`;
+        } else {
+          window.location.href = '/send.html?retry=1';
         }
+      });
 
-        // Check order status in our system
-        async function checkOrderStatus() {
-            try {
-                const response = await fetch(`/api/orders/${orderId}`);
-                const data = await response.json();
+      document.getElementById('changeMethodBtn').addEventListener('click', () => {
+        const url = new URL('/send.html', location.origin);
+        url.searchParams.set('changeMethod', '1');
+        if (order) url.searchParams.set('order', order);
+        window.location.href = url.toString();
+      });
 
-                if (data.success) {
-                    displayOrderStatus(data.order);
-                } else {
-                    showError('Commande non trouvée');
-                }
-            } catch (error) {
-                console.error('Error checking order:', error);
-                showError('Erreur lors de la vérification');
-            }
-        }
-
-        // Display transaction status
-        function displayStatus(transaction) {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('statusContent').classList.remove('hidden');
-
-            const statusIcon = document.getElementById('statusIcon');
-            const statusTitle = document.getElementById('statusTitle');
-            const statusMessage = document.getElementById('statusMessage');
-            const statusDetails = document.getElementById('statusDetails');
-
-            if (transaction.status === 'success') {
-                statusIcon.textContent = '✅';
-                statusIcon.className = 'status-icon success';
-                statusTitle.textContent = 'Paiement réussi !';
-                statusMessage.textContent = 'Votre paiement a été confirmé avec succès';
-                document.getElementById('instructions').classList.add('hidden');
-                document.getElementById('viewVouchersBtn').classList.remove('hidden');
-                document.getElementById('refreshBtn').classList.add('hidden');
-                clearInterval(checkInterval);
-            } else {
-                statusIcon.textContent = '⏳';
-                statusIcon.className = 'status-icon pending';
-                statusTitle.textContent = 'Paiement en attente';
-                statusMessage.textContent = 'Veuillez confirmer le paiement sur votre téléphone';
-            }
-
-            statusDetails.innerHTML = `
-                <div class="detail-row">
-                    <span class="detail-label">Référence:</span>
-                    <span class="detail-value">${transaction.reference}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Numéro de commande:</span>
-                    <span class="detail-value">${transaction.orderNumber}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Montant:</span>
-                    <span class="detail-value">${transaction.amount} ${transaction.currency}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Date:</span>
-                    <span class="detail-value">${new Date(transaction.createdAt).toLocaleString('fr-FR')}</span>
-                </div>
-            `;
-        }
-
-        // Display order status
-        function displayOrderStatus(order) {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('statusContent').classList.remove('hidden');
-
-            const statusIcon = document.getElementById('statusIcon');
-            const statusTitle = document.getElementById('statusTitle');
-            const statusMessage = document.getElementById('statusMessage');
-            const statusDetails = document.getElementById('statusDetails');
-
-            if (order.status === 'paid') {
-                statusIcon.textContent = '✅';
-                statusIcon.className = 'status-icon success';
-                statusTitle.textContent = 'Paiement réussi !';
-                statusMessage.textContent = 'Votre paiement a été confirmé avec succès';
-                document.getElementById('instructions').classList.add('hidden');
-                document.getElementById('viewVouchersBtn').classList.remove('hidden');
-                document.getElementById('refreshBtn').classList.add('hidden');
-                clearInterval(checkInterval);
-            } else if (order.status === 'failed') {
-                statusIcon.textContent = '❌';
-                statusIcon.className = 'status-icon failed';
-                statusTitle.textContent = 'Paiement échoué';
-                statusMessage.textContent = 'Le paiement n\'a pas pu être traité';
-                document.getElementById('instructions').classList.add('hidden');
-                document.getElementById('refreshBtn').classList.add('hidden');
-                clearInterval(checkInterval);
-            } else {
-                statusIcon.textContent = '⏳';
-                statusIcon.className = 'status-icon pending';
-                statusTitle.textContent = 'Paiement en attente';
-                statusMessage.textContent = 'Veuillez confirmer le paiement sur votre téléphone';
-            }
-
-            statusDetails.innerHTML = `
-                <div class="detail-row">
-                    <span class="detail-label">Commande:</span>
-                    <span class="detail-value">${order.id}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Montant:</span>
-                    <span class="detail-value">${order.amount} ${order.currency}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Quantité:</span>
-                    <span class="detail-value">${order.quantity} bon(s)</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Statut:</span>
-                    <span class="detail-value">${getStatusText(order.status)}</span>
-                </div>
-            `;
-        }
-
-        // Show error
-        function showError(message) {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('statusContent').classList.remove('hidden');
-            
-            document.getElementById('statusIcon').textContent = '❌';
-            document.getElementById('statusIcon').className = 'status-icon failed';
-            document.getElementById('statusTitle').textContent = 'Erreur';
-            document.getElementById('statusMessage').textContent = message;
-            document.getElementById('statusDetails').innerHTML = '';
-            document.getElementById('instructions').classList.add('hidden');
-            document.getElementById('refreshBtn').classList.add('hidden');
-        }
-
-        // Get status text
-        function getStatusText(status) {
-            const statuses = {
-                'pending': 'En attente',
-                'paid': 'Payé',
-                'failed': 'Échoué'
-            };
-            return statuses[status] || status;
-        }
-
-        // Navigation functions
-        function goToVouchers() {
-            window.location.href = 'sender-dashboard.html';
-        }
-
-        function goHome() {
-            window.location.href = 'index.html';
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!orderId && !orderNumber) {
-                showError('Aucune commande spécifiée');
-                return;
-            }
-
-            // Check status immediately
-            checkStatus();
-
-            // Set up auto-refresh every 5 seconds for pending payments
-            checkInterval = setInterval(checkStatus, 5000);
-
-            // Stop checking after 5 minutes
-            setTimeout(() => {
-                clearInterval(checkInterval);
-            }, 300000);
-
-            // Apply translations
-            if (typeof applyTranslations === 'function') {
-                applyTranslations();
-            }
-        });
-    </script>
+      // Apply translations if available
+      if (typeof applyTranslations === 'function') applyTranslations();
+    })();
+  </script>
 </body>
 </html>
