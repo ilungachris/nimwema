@@ -9,7 +9,7 @@ const axios = require('axios');
 class FlexPayService {
   constructor() {
     this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
-    this.cardBaseUrl = 'https://cardpayment.flexpay.cd/v1/pay'; // Use the same backend as mobile money
+    this.cardBaseUrl = 'https://cardpayment.flexpay.cd/v2/pay'; // Use the same backend as mobile money
     this.MoMoBaseUrl = 'https://backend.flexpay.cd/api/rest/v1'; // Use the same backend as mobile money
 
 
