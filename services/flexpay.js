@@ -211,7 +211,7 @@ class FlexPayService {
     try {
       const payload = {
         merchant: this.merchantCode,
-		authorization: this.authToken
+		authorization: this.authToken,
         type: '2', // 2 = bank card
         reference: paymentData.reference,
         amount: paymentData.amount.toString(),
