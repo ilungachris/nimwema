@@ -74,7 +74,9 @@ app.use(session({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------------- Nimwema payment config (kept from current - FlexPay) ----------------
-const FLEXPAY_BASE_URL = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
+
+//const FLEXPAY_BASE_URL = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
+const FLEXPAY_BASE_URL = process.env.FLEXPAY_BASE_URL || 'https://cardpayment.flexpay.cd/v1.1/pay';
 const FLEXPAY_MERCHANT = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
 const FLEXPAY_TOKEN    = process.env.FLEXPAY_TOKEN?.trim();
 const FLEXPAY_CURRENCY = (process.env.FLEXPAY_CURRENCY || 'CDF').toUpperCase();
