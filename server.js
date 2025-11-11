@@ -1987,12 +1987,12 @@ reference: orderId,
 amount: amount,
 currency: currency,
 description: `Nimwema Order ${orderId}`,
-callback_url: `${BASE_URL}/test-flexpay-hosted.html?order=${encodeURIComponent(orderId)}`,
+callback_url: `${APP_BASE_URL}/test-flexpay-hosted.html?order=${encodeURIComponent(orderId)}`,
 // callback_url: `${APP_BASE_URL}/api/payment/flexpay/callback`,
-approve_url: `${BASE_URL}/test-flexpay-hosted.html?order=${encodeURIComponent(orderId)}`,
+approve_url: `${APP_BASE_URL}/test-flexpay-hosted.html?order=${encodeURIComponent(orderId)}`,
 //approve_url: `${APP_BASE_URL}/payment-success.html?order=${encodeURIComponent(orderId)}`,
-cancelUrl: `${BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
-declineUrl: `${BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
     });
     
     console.log('🌐 TEST Result:', result);
