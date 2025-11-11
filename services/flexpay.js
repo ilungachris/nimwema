@@ -256,10 +256,10 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
       amount: paymentData.amount.toString(),
       currency: paymentData.currency || 'USD',
       description: paymentData.description || 'Payment',
-      callback_url: paymentData.callbackUrl, // Use passed value (snake_case)
-      approve_url: paymentData.approveUrl,   // snake_case
-      cancel_url: paymentData.cancelUrl || paymentData.homeUrl,
-      decline_url: paymentData.declineUrl || paymentData.homeUrl
+      callbackurl: paymentData.callbackUrl, // Use passed value (snake_case)
+      approveurl: paymentData.approveUrl,   // snake_case
+      cancelurl: paymentData.cancelUrl || paymentData.homeUrl,
+      declineurl: paymentData.declineUrl || paymentData.homeUrl
       // NO card data for hosted
     };
 
