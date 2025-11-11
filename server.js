@@ -299,7 +299,8 @@ app.get('/api/exchange-rate', async (req, res) => {
 app.post('/api/orders/create', async (req, res) => {
   try {
     const orderData = req.body;
-    const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // Generate shorter order ID (max 25 chars for FlexPay)
+    const orderId = 'O' + Date.now().toString().slice(-10) + Math.random().toString(36).substr(2, 7).toUpperCase();
     global.orders[orderId] = {
       ...orderData,
       id: orderId,
@@ -319,7 +320,8 @@ app.post('/api/orders/create', async (req, res) => {
 app.post('/api/vouchers/create-pending', async (req, res) => {
   try {
     const orderData = req.body;
-    const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // Generate shorter order ID (max 25 chars for FlexPay)
+    const orderId = 'O' + Date.now().toString().slice(-10) + Math.random().toString(36).substr(2, 7).toUpperCase();
     global.orders[orderId] = {
       ...orderData,
       id: orderId,
@@ -1138,24 +1140,39 @@ app.post('/api/payment/flexpay/generate-link', async (req, res) => {
     if (!orderId) return res.status(400).json({ success: false, message: 'orderId manquant' });
     if (!amount || !currency) return res.status(400).json({ success: false, message: 'Montant ou devise manquant' });
 
-    console.log('🔗 Generating FlexPay payment link:', { orderId, amount, currency });
+    console.log('🔗 Generating FlexPay hosted payment:', { orderId, amount, currency });
 
-    // Generate payment link
-    const paymentLink = flexpayService.generatePaymentLink({
+    const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
+
+    // Use the working hosted card payment integration
+    const result = await flexpayService.initiateHostedCardPayment({
+      merchant: FLEXPAY_MERCHANT,
+      reference: orderId,
       amount: amount,
       currency: currency,
-        reference: orderId,
-        callbackUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/payment-callback.html?reference=${orderId}`
+      description: `Nimwema Order ${orderId}`,
+      callback_url: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+      approve_url: `${APP_BASE_URL}/payment-success.html?order=${encodeURIComponent(orderId)}`,
+      cancel_url: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+      decline_url: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`
     });
 
-    console.log('✅ Payment link generated:', paymentLink);
+    console.log('✅ FlexPay hosted payment result:', result);
 
-    return res.json({
-      success: true,
-      orderId,
-      paymentLink: paymentLink,
-      message: 'Lien de paiement généré avec succès'
-    });
+    if (result.success && result.redirectUrl) {
+      return res.json({
+        success: true,
+        orderId,
+        paymentLink: result.redirectUrl,
+        orderNumber: result.orderNumber,
+        message: 'Lien de paiement généré avec succès'
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: result.message || 'Échec de la génération du lien de paiement'
+      });
+    }
 
   } catch (err) {
     console.error('generate-link error:', err);

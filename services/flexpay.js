@@ -7,47 +7,10 @@
 const axios = require('axios');
 
 class FlexPayService {
- constructor() {
-  this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1'; // Mobile default
-  this.cardBaseUrl = process.env.FLEXPAY_BASE_URL || 'https://cardpayment.flexpay.cd/v2/pay'; // Card: Use env or V2 (PDF)
-  this.authToken = process.env.FLEXPAY_TOKEN?.trim(); // Assume JWT (no Bearer yet)
-  this.merchantCode = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
-  this.environment = process.env.FLEXPAY_ENVIRONMENT || 'prod';
-
-  // Mobile client (header auth)
-  this.client = axios.create({
-    baseURL: this.baseUrl,
-    headers: {
-      'Authorization': `Bearer ${this.authToken}`, // Mobile uses header
-      'Content-Type': 'application/json'
-    },
-    timeout: 30000
-  });
-
-  // Card client (NO header auth; body only)
-  this.cardClient = axios.create({
-    baseURL: this.cardBaseUrl,
-    headers: {
-      'Content-Type': 'application/json' // Only this
-    },
-    timeout: 30000
-  });
-
-  // Default callback (fallback)
-  this.callbackUrl = `${process.env.APP_BASE_URL || 'http://localhost:3000'}/api/payment/flexpay/callback`;
-}
-/** constructor() {
+  constructor() {
     this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
-    this.cardBaseUrl = 'https://cardpayment.flexpay.cd/v2/pay'; // Use the same backend as mobile money
-    this.MoMoBaseUrl = 'https://backend.flexpay.cd/api/rest/v1'; // Use the same backend as mobile money
-
-
-this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
-
-
-
-
-	this.authToken = process.env.FLEXPAY_TOKEN;
+    this.cardBaseUrl = 'https://cardpayment.flexpay.cd/v1.1'; // Try v1.1 as mentioned in DOCX filename
+    this.authToken = process.env.FLEXPAY_TOKEN;
     this.merchantCode = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
     this.environment = process.env.FLEXPAY_ENVIRONMENT || 'prod'; // Use production environment
     
@@ -59,22 +22,17 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
         'Content-Type': 'application/json'
       },
       timeout: 30000 // 30 seconds
-    }); 
-	
+    });
 
-    // Create axios instance for card payments
+    // Create axios instance for card payments (NO Authorization header - token goes in body)
     this.cardClient = axios.create({
       baseURL: this.cardBaseUrl,
       headers: {
-        'Authorization': `Bearer ${this.authToken}`,
         'Content-Type': 'application/json'
       },
       timeout: 30000 // 30 seconds
     });
-  }**/
-	
-	
-	///////////////////////////////////////////
+  }
 
   /**
    * Initiate a mobile money payment
@@ -104,7 +62,7 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
         ...payload,
         merchant: this.merchantCode
       });
-// we may need to change this next line to use https://backend.flexpay.cd/api/rest/v1/ in this.client
+
       const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Payment Response:', response.data);
@@ -246,80 +204,36 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
    * @param {string} paymentData.declineUrl - URL to redirect after declined payment
    * @returns {Promise<Object>} Payment response with redirect URL
    */
-   
-   async initiateHostedCardPayment(paymentData) {
-  try {
-    const payload = {
-      authorization: `Bearer ${this.authToken}`, // Prefix Bearer (PDF example)
-      merchant: this.merchantCode,
-      reference: paymentData.reference,
-      amount: paymentData.amount.toString(),
-      currency: paymentData.currency || 'USD',
-      description: paymentData.description || 'Payment',
-      callbackurl: paymentData.callbackUrl, // Use passed value (snake_case)
-      approveurl: paymentData.approveUrl,   // snake_case
-      cancelurl: paymentData.cancelUrl || paymentData.homeUrl,
-      declineurl: paymentData.declineUrl || paymentData.homeUrl
-      // NO card data for hosted
-    };
-
-    console.log('FlexPay Hosted Request URL:', this.cardClient.defaults.baseURL);
-    console.log('FlexPay Hosted Payload:', { ...payload, authorization: '***' }); // Hide token
-
-    // POST to card endpoint (empty path = /v2/pay)
-    const response = await this.cardClient.post('', payload);
-
-    console.log('FlexPay Hosted Response:', response.data);
-
-    return {
-      success: response.data.code === '0',
-      message: response.data.message,
-      orderNumber: response.data.orderNumber,
-      redirectUrl: response.data.url, // V2 field for hosted page
-      reference: paymentData.reference
-    };
-  } catch (error) {
-    console.error('FlexPay Hosted Error:', {
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data,
-      url: this.cardClient.defaults.baseURL
-    });
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-      error: error.response?.data || error.toString()
-    };
-  }
-}
-
-///////////////
- /** async initiateHostedCardPayment(paymentData) {
+  async initiateHostedCardPayment(paymentData) {
     try {
+      // Build payload according to PDF documentation - authorization needs "Bearer " prefix
       const payload = {
-        authorization: this.authToken,
-		merchant: this.merchantCode,
+        authorization: `Bearer ${this.authToken}`,
+        merchant: paymentData.merchant || this.merchantCode,
         reference: paymentData.reference,
-        amount: paymentData.amount.toString(),
+        amount: paymentData.amount,
         currency: paymentData.currency || 'USD',
         description: paymentData.description || 'Payment',
-		callbackUrl: this.callbackUrl,
-        approveUrl: this.callbackUrl,
-        cancelUrl: paymentData.cancelUrl,
-        declineUrl: paymentData.declineUrl
-        
-        // NO CARD DATA - FlexPay will collect it on their hosted page
-      }; **/
-	  
-	  /////////////////////////////////////
+        callback_url: paymentData.callbackurl || paymentData.callback_url || paymentData.callbackUrl,
+        approve_url: paymentData.approveurl || paymentData.approve_url || paymentData.approveUrl,
+        cancel_url: paymentData.cancelurl || paymentData.cancel_url || paymentData.cancelUrl,
+        decline_url: paymentData.declineurl || paymentData.decline_url || paymentData.declineUrl
+      };
 
-    /**  console.log('FlexPay Hosted Page Request:', {
+      console.log('FlexPay Hosted Page Request:', {
         ...payload,
-        merchant: this.merchantCode
-      });  **/
+        authorization: this.authToken ? `${this.authToken.substring(0, 20)}...` : 'MISSING'
+      });
+      
+      console.log('Token check:', {
+        tokenExists: !!this.authToken,
+        tokenLength: this.authToken?.length,
+        tokenStart: this.authToken?.substring(0, 30),
+        authorizationFieldLength: payload.authorization?.length,
+        authorizationStart: payload.authorization?.substring(0, 50)
+      });
 
-      // Use /paymentService endpoint (FlexPay doesn't have /payment)
-     /** const response = await this.client.post('/paymentService', payload);
+      const response = await this.cardClient.post('/pay', payload);
 
       console.log('FlexPay Hosted Page Response:', response.data);
 
@@ -327,11 +241,12 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
         success: response.data.code === '0' || response.data.code === 0,
         message: response.data.message,
         orderNumber: response.data.orderNumber,
-        redirectUrl: response.data.url, // FlexPay returns URL to their hosted page
+        redirectUrl: response.data.url,
         reference: paymentData.reference
       };
     } catch (error) {
       console.error('FlexPay Hosted Page Error:', error.message);
+      console.error('FlexPay Error Response:', error.response?.data);
 
       return {
         success: false,
@@ -340,9 +255,7 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
       };
     }
   }
-**/
 
-/////////////////////////////////////
   async checkTransaction(orderNumber) {
     try {
       const response = await this.client.post('/check', {
