@@ -216,17 +216,17 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
   async initiateHostedCardPayment(paymentData) {
     try {
       const payload = {
-        merchant: this.merchantCode,
-		authorization: this.authToken,
-        type: '2', // 2 = bank card
+        authorization: this.authToken,
+		merchant: this.merchantCode,
         reference: paymentData.reference,
         amount: paymentData.amount.toString(),
         currency: paymentData.currency || 'USD',
-        callbackUrl: this.callbackUrl,
+        description: paymentData.description || 'Payment,
+		callbackUrl: this.callbackUrl,
         approveUrl: this.callbackUrl,
         cancelUrl: paymentData.cancelUrl,
-        declineUrl: paymentData.declineUrl,
-        description: paymentData.description || 'Payment'
+        declineUrl: paymentData.declineUrl
+        
         // NO CARD DATA - FlexPay will collect it on their hosted page
       };
 
