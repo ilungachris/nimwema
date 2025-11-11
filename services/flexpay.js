@@ -13,7 +13,7 @@ class FlexPayService {
     this.MoMoBaseUrl = 'https://backend.flexpay.cd/api/rest/v1'; // Use the same backend as mobile money
 
 
-this.callbackUrl = process.env.APP_BASE_URL + '/test-flexpay-hosted.html';
+this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
 
 
 
