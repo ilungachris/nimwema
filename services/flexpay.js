@@ -12,6 +12,12 @@ class FlexPayService {
     this.cardBaseUrl = 'https://cardpayment.flexpay.cd/v1.1/pay'; // Use the same backend as mobile money
     this.MoMoBaseUrl = 'https://backend.flexpay.cd/api/rest/v1'; // Use the same backend as mobile money
 
+
+this.callbackUrl = process.env.APP_BASE_URL + '/test-flexpay-hosted.html';
+
+
+
+
 	this.authToken = process.env.FLEXPAY_TOKEN;
     this.merchantCode = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
     this.environment = process.env.FLEXPAY_ENVIRONMENT || 'prod'; // Use production environment
@@ -216,8 +222,8 @@ class FlexPayService {
         reference: paymentData.reference,
         amount: paymentData.amount.toString(),
         currency: paymentData.currency || 'USD',
-        callbackUrl: paymentData.callbackUrl,
-        approveUrl: paymentData.approveUrl,
+        callbackUrl: this.callbackUrl,
+        approveUrl: this.callbackUrl,
         cancelUrl: paymentData.cancelUrl,
         declineUrl: paymentData.declineUrl,
         description: paymentData.description || 'Payment'
