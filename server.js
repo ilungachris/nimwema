@@ -1065,7 +1065,20 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
       cardHolderName: card.holderName
     }); **/
 	
-	const result = await flexpayService.initiateCardPayment({
+console.log('Calling FlexPay with env:', { FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL });
+	const result = await flexpayService.initiateHostedCardPayment({
+  authorization: `${FLEXPAY_TOKEN}`, // Unused now, but harmless
+  merchant: `${FLEXPAY_MERCHANT}`,
+  reference: orderId,
+  amount: amount,
+  currency: currency,
+  description: `Nimwema Order ${orderId}`,
+  callbackUrl: `${APP_BASE_URL}/test-flexpay-hosted.html?order=${encodeURIComponent(orderId)}`, // camel
+  approveUrl: `${APP_BASE_URL}/test-flexpay-hosted.html?order=${encodeURIComponent(orderId)}`,
+  cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+  declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`
+});
+	/**const result = await flexpayService.initiateCardPayment({
 authorization: `${FLEXPAY_TOKEN}`,
 merchant:`${FLEXPAY_MERCHANT}`,
 reference: orderId,
@@ -1076,9 +1089,11 @@ callback_url: `${APP_BASE_URL}/api/payment/flexpay/callback`,
 approve_url: `${APP_BASE_URL}/payment-success.html?order=${encodeURIComponent(orderId)}`,
 cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
 declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
-    });  
+    });  **/
 	
     console.log('✅ FlexPay card payment response:', result);
+	
+	console.log('FlexPay result:', result);
 
     if (result.success && result.redirectUrl) {
       return res.json({
