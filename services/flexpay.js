@@ -221,7 +221,7 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
         reference: paymentData.reference,
         amount: paymentData.amount.toString(),
         currency: paymentData.currency || 'USD',
-        description: paymentData.description || 'Payment,
+        description: paymentData.description || 'Payment',
 		callbackUrl: this.callbackUrl,
         approveUrl: this.callbackUrl,
         cancelUrl: paymentData.cancelUrl,
