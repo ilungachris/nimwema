@@ -292,6 +292,8 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
     };
   }
 }
+
+///////////////
  /** async initiateHostedCardPayment(paymentData) {
     try {
       const payload = {
@@ -311,13 +313,13 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
 	  
 	  /////////////////////////////////////
 
-      console.log('FlexPay Hosted Page Request:', {
+    /**  console.log('FlexPay Hosted Page Request:', {
         ...payload,
         merchant: this.merchantCode
-      });
+      });  **/
 
       // Use /paymentService endpoint (FlexPay doesn't have /payment)
-      const response = await this.client.post('/paymentService', payload);
+     /** const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Hosted Page Response:', response.data);
 
@@ -338,7 +340,9 @@ this.callbackUrl = process.env.BASE_URL + '/test-flexpay-hosted.html';
       };
     }
   }
+**/
 
+/////////////////////////////////////
   async checkTransaction(orderNumber) {
     try {
       const response = await this.client.post('/check', {
