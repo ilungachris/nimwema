@@ -28,9 +28,26 @@ const authMiddleware = require('./middleware/auth');
 const FlexPayService = require('./services/flexpay');
 const flexpayService = new FlexPayService();
 
+// DATABASE: PostgreSQL connection and queries
+const db = require('./database/connection');
+const dbQueries = require('./database/queries');
+
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// DATABASE: Connect to PostgreSQL on startup
+let dbConnected = false;
+db.connect()
+  .then(() => {
+    console.log('✅ PostgreSQL database connected');
+    dbConnected = true;
+  })
+  .catch(err => {
+    console.error('❌ Database connection failed:', err.message);
+    console.log('⚠️ Running in fallback mode with in-memory storage');
+    dbConnected = false;
+  });
 
 // Middleware (kept from current - modern, with CORS)
 app.use(cors());
@@ -171,7 +188,6 @@ async function sendSMSNotification(phone, data) {
     if (data.type === 'voucher_request') {
       // Send request notification
       result = await sms.sendRequestNotification(
-        phone,
         data.requesterName,
         data.requesterPhone,
         data.message
@@ -378,24 +394,59 @@ app.post('/api/vouchers/send', (req, res) => {
 // MERGE: Added from backup - Request voucher
 app.post('/api/vouchers/request', async (req, res) => {
   try {
+    console.log('📥 Received request body:', req.body);
     const { firstName, lastName, phone, message, requestType, senderName, senderPhone } = req.body;
     
-    const request = {
-      id: data.requests.length + 1,
-      firstName,
-      lastName,
-      fullName: `${firstName} ${lastName}`,
-      phone,
-      message,
-      requestType, // 'waiting_list' or 'known_sender'
-      senderName: senderName || null,
-      senderPhone: senderPhone || null,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48 hours
-    };
+    console.log('📋 Extracted fields:', { firstName, lastName, phone, message, requestType, senderName, senderPhone });
     
-    data.requests.push(request);
+    let request;
+    
+    // DATABASE: Try PostgreSQL first
+    if (dbConnected) {
+      try {
+        // Get current user if logged in (from session or localStorage)
+        const user = req.session?.user;
+        
+        const requestData = {
+          requesterId: user?.id || null,
+          requesterPhone: phone,
+          requesterFirstName: firstName,
+          requesterLastName: lastName,
+          type: requestType,
+          senderName: senderName || null,
+          senderPhone: senderPhone || null,
+          message: message || ''
+        };
+        
+        console.log('💾 Saving to database:', requestData);
+        
+        request = await dbQueries.createRequest(requestData);
+        
+        console.log('✅ Request saved to database:', request.id);
+      } catch (dbError) {
+        console.error('❌ Database save failed:', dbError.message);
+        throw dbError;
+      }
+    } else {
+      // FALLBACK: In-memory storage
+      request = {
+        id: data.requests.length + 1,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
+        phone,
+        message,
+        requestType,
+        senderName: senderName || null,
+        senderPhone: senderPhone || null,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      };
+      
+      data.requests.push(request);
+      console.log('⚠️ Request saved to memory (fallback)');
+    }
     
     // Send SMS notification
     if (requestType === 'known_sender' && senderPhone) {
@@ -403,7 +454,7 @@ app.post('/api/vouchers/request', async (req, res) => {
         senderPhone,
         {
           type: 'voucher_request',
-          requesterName: request.fullName,
+          requesterName: `${firstName} ${lastName}`,
           requesterPhone: phone,
           message
         }
@@ -416,6 +467,7 @@ app.post('/api/vouchers/request', async (req, res) => {
       request
     });
   } catch (error) {
+    console.error('❌ Error submitting request:', error);
     res.status(500).json({
       success: false,
       message: 'Error submitting request',
@@ -442,27 +494,66 @@ app.get('/api/vouchers', (req, res) => {
 });
 
 // MERGE: Added from backup - Get requests (resolved duplicate with filters)
-app.get('/api/requests', (req, res) => {
-  const { phone, status, requestType } = req.query;
-  
-  let requests = data.requests;
-  
-  // Filter by phone
-  if (phone) {
-    requests = requests.filter(r => r.phone === phone);
+app.get('/api/requests', async (req, res) => {
+  try {
+    const { phone, status, requestType, userId } = req.query;
+    
+    let requests;
+    
+    // DATABASE: Try to use PostgreSQL first
+    if (dbConnected) {
+      const filters = {};
+      
+      if (userId) filters.userId = userId;
+      if (phone) filters.phone = phone;
+      if (status) filters.status = status;
+      if (requestType) filters.type = requestType;
+      
+      requests = await dbQueries.getRequests(filters);
+      
+      // Transform database format to match frontend expectations
+      requests = requests.map(req => ({
+        id: req.id,
+        firstName: req.requester_first_name,
+        lastName: req.requester_last_name,
+        fullName: `${req.requester_first_name} ${req.requester_last_name}`,
+        phone: req.requester_phone,
+        message: req.message,
+        requestType: req.type,
+        senderName: req.sender_name,
+        senderPhone: req.sender_phone,
+        status: req.status,
+        created_at: req.created_at,
+        updated_at: req.updated_at,
+        expires_at: req.expires_at,
+        fulfilled_at: req.fulfilled_at
+      }));
+      
+      console.log(`✅ Retrieved ${requests.length} requests from database`);
+    } else {
+      // FALLBACK: Use in-memory storage
+      requests = data.requests;
+      
+      if (phone) {
+        requests = requests.filter(r => r.phone === phone);
+      }
+      
+      if (status) {
+        requests = requests.filter(r => r.status === status);
+      }
+      
+      if (requestType) {
+        requests = requests.filter(r => r.requestType === requestType);
+      }
+      
+      console.log('⚠️ Retrieved requests from memory (fallback)');
+    }
+    
+    res.json(requests);
+  } catch (error) {
+    console.error('Error getting requests:', error);
+    res.status(500).json({ error: 'Error retrieving requests' });
   }
-  
-  // Filter by status
-  if (status) {
-    requests = requests.filter(r => r.status === status);
-  }
-  
-  // Filter by request type
-  if (requestType) {
-    requests = requests.filter(r => r.requestType === requestType);
-  }
-  
-  res.json(requests);
 });
 
 // MERGE: Added from backup - Delete request
@@ -954,7 +1045,8 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
 
     const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
     
-    const result = await flexpayService.initiateCardPayment({
+	// I am changing this: 
+   /** const result = await flexpayService.initiateCardPayment({
       amount: amount,
       currency: currency,
       reference: orderId,
@@ -969,8 +1061,21 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
       expiryYear: card.expiryYear,
       cvv: card.cvc,
       cardHolderName: card.holderName
-    });
-
+    }); **/
+	
+	const result = await flexpayService.initiateCardPayment({
+authorization: `${FLEXPAY_TOKEN}`,
+merchant:`${FLEXPAY_MERCHANT}`,
+reference: orderId,
+amount: amount,
+currency: currency,
+description: `Nimwema Order ${orderId}`,
+callback_url: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+approve_url: `${APP_BASE_URL}/payment-success.html?order=${encodeURIComponent(orderId)}`,
+cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+    });  
+	
     console.log('✅ FlexPay card payment response:', result);
 
     if (result.success && result.redirectUrl) {
@@ -1005,6 +1110,41 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
 
 
 
+
+
+// Generate FlexPay Payment Link (Simple URL approach)
+app.post('/api/payment/flexpay/generate-link', async (req, res) => {
+  try {
+    const { orderId, amount, currency } = req.body || {};
+
+    // Validation
+    if (!orderId) return res.status(400).json({ success: false, message: 'orderId manquant' });
+    if (!amount || !currency) return res.status(400).json({ success: false, message: 'Montant ou devise manquant' });
+
+    console.log('🔗 Generating FlexPay payment link:', { orderId, amount, currency });
+
+    // Generate payment link
+    const paymentLink = flexpayService.generatePaymentLink({
+      amount: amount,
+      currency: currency,
+        reference: orderId,
+        callbackUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/payment-callback.html?reference=${orderId}`
+    });
+
+    console.log('✅ Payment link generated:', paymentLink);
+
+    return res.json({
+      success: true,
+      orderId,
+      paymentLink: paymentLink,
+      message: 'Lien de paiement généré avec succès'
+    });
+
+  } catch (err) {
+    console.error('generate-link error:', err);
+    return res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
 
 
 // INITIATE (POST JSON + Bearer; safer errors)
@@ -1841,14 +1981,16 @@ app.post('/api/test-flexpay-hosted', async (req, res) => {
     
     // Call FlexPay WITHOUT card data (hosted page)
     const result = await flexpayService.initiateHostedCardPayment({
-      amount: amount,
-      currency: currency,
-      reference: orderId,
-      callbackUrl: `${APP_BASE_URL}/api/payment/flexpay/callback`,
-      approveUrl: `${APP_BASE_URL}/payment-success.html?order=${orderId}`,
-      cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
-      declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${orderId}`,
-      description: `Test Order ${orderId}`
+authorization: `${FLEXPAY_TOKEN}`,
+merchant:`${FLEXPAY_MERCHANT}`,
+reference: orderId,
+amount: amount,
+currency: currency,
+description: `Nimwema Order ${orderId}`,
+callback_url: `${APP_BASE_URL}/api/payment/flexpay/callback`,
+approve_url: `${APP_BASE_URL}/payment-success.html?order=${encodeURIComponent(orderId)}`,
+cancelUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
+declineUrl: `${APP_BASE_URL}/payment-cancel.html?order=${encodeURIComponent(orderId)}`,
     });
     
     console.log('🌐 TEST Result:', result);

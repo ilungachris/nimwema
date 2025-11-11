@@ -9,13 +9,26 @@ const axios = require('axios');
 class FlexPayService {
   constructor() {
     this.baseUrl = process.env.FLEXPAY_BASE_URL || 'https://backend.flexpay.cd/api/rest/v1';
-    this.authToken = process.env.FLEXPAY_TOKEN;
+    this.cardBaseUrl = 'https://cardpayment.flexpay.cd/v1.1/pay'; // Use the same backend as mobile money
+    this.MoMoBaseUrl = 'https://backend.flexpay.cd/api/rest/v1'; // Use the same backend as mobile money
+
+	this.authToken = process.env.FLEXPAY_TOKEN;
     this.merchantCode = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
-    this.environment = process.env.FLEXPAY_ENVIRONMENT || 'sandbox';
+    this.environment = process.env.FLEXPAY_ENVIRONMENT || 'prod'; // Use production environment
     
     // Create axios instance with default config
     this.client = axios.create({
       baseURL: this.baseUrl,
+      headers: {
+        'Authorization': `Bearer ${this.authToken}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000 // 30 seconds
+    });
+
+    // Create axios instance for card payments
+    this.cardClient = axios.create({
+      baseURL: this.cardBaseUrl,
       headers: {
         'Authorization': `Bearer ${this.authToken}`,
         'Content-Type': 'application/json'
@@ -52,7 +65,7 @@ class FlexPayService {
         ...payload,
         merchant: this.merchantCode
       });
-
+// we may need to change this next line to use https://backend.flexpay.cd/api/rest/v1/ in this.client
       const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Payment Response:', response.data);
@@ -119,7 +132,8 @@ class FlexPayService {
         merchant: this.merchantCode
       });
 
-      const response = await this.client.post('/paymentService', payload);
+      // Remove token from payload as it should be in headers
+         const response = await this.client.post('/paymentService', payload);
 
       console.log('FlexPay Card Payment Response:', response.data);
 
@@ -132,11 +146,13 @@ class FlexPayService {
       };
     } catch (error) {
       console.error('FlexPay Card Payment Error:', error.message);
+      console.error('Full error details:', error.response?.data || error);
       
       return {
         success: false,
         message: error.response?.data?.message || error.message,
-        error: error.response?.data || error.message
+        error: error.response?.data || error.message,
+        orderNumber: error.response?.data?.orderNumber || null
       };
     }
   }
@@ -146,6 +162,37 @@ class FlexPayService {
    * @param {string} orderNumber - FlexPay order number
    * @returns {Promise<Object>} Transaction status
    */
+
+  /**
+   * Generate a FlexPay payment link (Simple URL approach)
+   * @param {Object} paymentData - Payment details
+   * @param {number} paymentData.amount - Payment amount
+   * @param {string} paymentData.currency - Currency (USD or CDF)
+   * @param {string} paymentData.reference - Your internal transaction reference
+   * @param {string} paymentData.callbackUrl - Optional callback URL for payment result
+   * @returns {string} Payment link URL
+   */
+  generatePaymentLink(paymentData) {
+    const baseUrl = 'https://www.flexpay.cd/pay';
+    
+    // Build query parameters
+    const params = new URLSearchParams({
+      amount: paymentData.amount.toString(),
+      currency: paymentData.currency || 'USD',
+      reference: paymentData.reference
+    });
+    
+    // Add callback URL if provided
+    if (paymentData.callbackUrl) {
+      params.append('callback', paymentData.callbackUrl);
+    }
+    
+    const paymentLink = `${baseUrl}/${this.merchantCode}?${params.toString()}`;
+    
+    console.log('FlexPay Payment Link Generated:', paymentLink);
+    
+    return paymentLink;
+  }
 
   /**
    * Initiate a hosted card payment (redirect to FlexPay page)
@@ -164,6 +211,7 @@ class FlexPayService {
     try {
       const payload = {
         merchant: this.merchantCode,
+		authorization: this.authToken
         type: '2', // 2 = bank card
         reference: paymentData.reference,
         amount: paymentData.amount.toString(),
