@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement par carte — Nimwema</title>
+  <meta name="description" content="Saisissez vos informations de carte en toute sécurité pour finaliser le paiement.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Styles (same stack as success/request pages) -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/forms.css">
+  <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+  <!-- Header (same structure/classes as success page) -->
+  <header class="header">
+    <div class="header-top">
+      <div class="language-selector">
+        <button class="lang-btn active" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="ln">LN</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <button class="login-btn" onclick="window.location.href='/login.html'">
+        <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+      </button>
+    </div>
+
+    <div class="header-main">
+      <a href="/" class="logo">NIM<span class="w">W</span>EMA</a>
+      <button class="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="container container-narrow">
+      <div class="page-header" style="text-align:center;">
+        <h1 data-i18n="card_title">Paiement par carte — Sécurisé</h1>
+        <p class="text-small" data-i18n="card_subtitle">
+          Connexion chiffrée (SSL 256-bit). Opéré par FlexPay. Nous <strong>ne stockons pas</strong> vos données carte.
+        </p>
+      </div>
+
+      <!-- Trust strip -->
+      <div class="card" style="text-align:center; margin-bottom: var(--space-lg);">
+        <div style="display:inline-flex; gap:.75rem; align-items:center; justify-content:center;">
+          <span aria-hidden="true" style="font-size:18px;">🔒</span>
+          <span class="text-small">
+            <strong>SSL 256-bit</strong> • <strong>FlexPay</strong> • <strong>Conforme aux bonnes pratiques</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- Order summary -->
+      <div class="card" style="margin-bottom: var(--space-lg);">
+        <h3 style="margin-bottom:.5rem;" data-i18n="order_summary">Résumé de la commande</h3>
+        <div class="order-row"><span data-i18n="order_id">Commande</span><strong id="sumOrder">—</strong></div>
+        <div class="order-row"><span data-i18n="amount">Montant</span><strong id="sumAmount">—</strong></div>
+        <div class="order-row"><span data-i18n="currency">Devise</span><strong id="sumCurrency">—</strong></div>
+        <p class="text-small" style="margin-top:.5rem;" data-i18n="card_help_copy">
+          Le débit sera tenté après validation. Vous serez redirigé(e) automatiquement une fois l’autorisation terminée.
+        </p>
+      </div>
+
+      <!-- Card form -->
+      <form id="cardCheckoutForm" class="form-card" novalidate>
+        <input type="hidden" id="orderId">
+        <input type="hidden" id="amount">
+        <input type="hidden" id="currency">
+
+        <div class="form-section">
+          <h3 class="form-section-title" data-i18n="card_details">Détails de la carte</h3>
+
+          <div class="form-group">
+            <label for="holder" class="form-label" data-i18n="card_holder">Titulaire de la carte</label>
+            <input id="holder" name="holder" class="form-input" type="text" autocomplete="cc-name" placeholder="Nom tel qu’indiqué sur la carte" required>
+            <div class="form-error" id="holderError"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="number" class="form-label" data-i18n="card_number">Numéro de carte</label>
+            <input id="number" name="number" class="form-input" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="19" required>
+            <div class="form-error" id="numberError"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="exp" class="form-label" data-i18n="expiry">Expiration (MM/AA)</label>
+              <input id="exp" name="exp" class="form-input" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" required>
+              <div class="form-error" id="expError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="cvc" class="form-label" data-i18n="cvc">CVC/CVV</label>
+              <input id="cvc" name="cvc" class="form-input" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="CVC" maxlength="4" required>
+              <div class="form-error" id="cvcError"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email" class="form-label" data-i18n="receipt_email">Email de reçu (optionnel)</label>
+            <input id="email" name="email" class="form-input" type="email" autocomplete="email" placeholder="email@exemple.com">
+            <div class="form-error" id="emailError"></div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="history.back()" data-i18n="go_back">Revenir</button>
+          <button type="submit" class="btn btn-primary" id="payBtn" data-i18n="pay_now">Payer maintenant</button>
+        </div>
+
+        <p class="text-small" style="margin-top:.75rem;">
+          <span data-i18n="privacy_hint">Vos informations restent confidentielles et ne sont jamais stockées sur Nimwema.</span>
+        </p>
+      </form>
+    </div>
+  </main>
+
+  <!-- Footer (reuse your standard footer) -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Nimwema</h4>
+          <p class="text-small">La solidarité africaine, rendue simple.</p>
+        </div>
+        <div class="footer-section">
+          <h4 data-i18n="quick_links">Liens Rapides</h4>
+          <ul class="footer-links">
+            <li><a href="/send.html" data-i18n="send_voucher">Envoyer un bon</a></li>
+            <li><a href="/request.html" data-i18n="request_voucher">Demander un bon</a></li>
+            <li><a href="/how-it-works.html" data-i18n="how_it_works">Comment ça marche</a></li>
+            <li><a href="/about.html" data-i18n="about">À propos</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4 data-i18n="support">Support</h4>
+          <ul class="footer-links">
+            <li><a href="/contact.html" data-i18n="contact">Contact</a></li>
+            <li><a href="/terms.html" data-i18n="terms">Termes et Conditions</a></li>
+            <li><a href="/privacy.html" data-i18n="privacy">Politique de Confidentialité</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4 data-i18n="contact">Contact</h4>
+          <p class="text-small">Email: info@nimwema.cd<br>Kinshasa, RDC</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/i18n.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/card-checkout.js"></script>
+</body>
+</html>

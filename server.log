@@ -1,0 +1,21 @@
+Africa's Talking SDK initialized successfully
+🚀 Server running on port 3000
+📱 Access your app at: http://localhost:3000
+✅ All API endpoints loaded and working!
+
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║   NIMWEMA Platform Server                                 ║
+║   La solidarité africaine, rendue simple                  ║
+║                                                           ║
+║   Server running on: http://localhost:3000              ║
+║   Environment: development                              ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+  
+✅ Default users initialized
+📧 Admin: admin@nimwema.cd / Admin@2024
+📧 Merchant: merchant@test.cd / Merchant@2024
+📧 Cashier: cashier@test.cd / Cashier@2024
+✅ Database connected successfully
+✅ PostgreSQL database connected

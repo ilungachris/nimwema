@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Admin Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div style="display: flex; min-height: 100vh; background: #f5f5f5;">
+        <!-- Sidebar -->
+        <aside style="width: 260px; background: #111111; color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto;">
+            <div style="padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <a href="index.html" style="font-size: 24px; font-weight: 700; color: #8BC34A; text-decoration: none;">NIMWEMA</a>
+            </div>
+            <nav style="padding: 20px 0;">
+                <a href="admin-dashboard.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>📊</span><span>Vue d'ensemble</span>
+                </a>
+                <a href="admin-merchants.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>🏪</span><span>Commerçants</span>
+                </a>
+                <a href="admin-users.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>👥</span><span>Utilisateurs</span>
+                </a>
+                <a href="admin-transactions.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>💰</span><span>Transactions</span>
+                </a>
+                <a href="admin-analytics.html" style="padding: 12px 20px; background: rgba(139,195,74,0.1); color: #8BC34A; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>📈</span><span>Analytics</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main style="flex: 1; margin-left: 260px; padding: 30px;">
+            <div style="background: white; padding: 20px 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h1 style="margin: 0; color: #111111;">Analytics & Rapports</h1>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3>Volume mensuel</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #8BC34A;" id="monthlyVolume">0 USD</div>
+                </div>
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3>Croissance</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #8BC34A;" id="growth">+0%</div>
+                </div>
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3>Taux de conversion</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #8BC34A;" id="conversionRate">0%</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/admin/analytics', { credentials: 'include' });
+                const data = await response.json();
+                document.getElementById('monthlyVolume').textContent = (data.monthlyVolume || 0) + ' USD';
+                document.getElementById('growth').textContent = '+' + (data.growth || 0) + '%';
+                document.getElementById('conversionRate').textContent = (data.conversionRate || 0) + '%';
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+        loadAnalytics();
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demande envoyée - Nimwema</title>
+    <meta name="description" content="Votre demande de bon d'achat a été envoyée avec succès">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <!-- Top Bar: Language Selector + Login -->
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="section">
+        <div class="container">
+            <div class="confirmation-card">
+                <!-- Success Icon -->
+                <div class="confirmation-icon">
+                    ✓
+                </div>
+                
+                <!-- Title -->
+                <h1 class="confirmation-title" data-i18n="request_sent_title">
+                    Demande envoyée avec succès !
+                </h1>
+                
+                <!-- Message -->
+                <p class="confirmation-message" data-i18n="request_sent_message">
+                    Merci d'avoir utilisé Nimwema. Votre demande a été enregistrée et sera traitée dans les plus brefs délais.
+                </p>
+                
+                <!-- Request Details -->
+                <div class="confirmation-details" id="requestDetails">
+                    <!-- Details will be populated by JavaScript -->
+                </div>
+                
+                <!-- SMS Notification Info -->
+                <div class="card" style="text-align: left; margin-bottom: var(--space-xl);">
+                    <h3 style="margin-bottom: var(--space-md);" data-i18n="what_happens_next">
+                        Que se passe-t-il maintenant ?
+                    </h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: var(--primary-green); font-weight: 700;">1.</span>
+                            <span id="nextStep1" data-i18n="next_step_1">
+                                Un SMS a été envoyé à l'expéditeur pour l'informer de votre demande
+                            </span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: var(--primary-green); font-weight: 700;">2.</span>
+                            <span data-i18n="next_step_2">
+                                L'expéditeur recevra un lien direct pour envoyer le bon d'achat
+                            </span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: var(--primary-green); font-weight: 700;">3.</span>
+                            <span data-i18n="next_step_3">
+                                Vous recevrez un SMS avec le code du bon d'achat une fois envoyé
+                            </span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: var(--primary-green); font-weight: 700;">4.</span>
+                            <span data-i18n="next_step_4">
+                                Vous pourrez utiliser ce code dans l'un de nos marchands partenaires
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Actions -->
+                <div class="confirmation-actions">
+                    <button class="btn btn-primary btn-large" onclick="window.location.href='/login.html'" data-i18n="sign_in_sign_up">
+                        Se connecter / S'inscrire
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="window.location.href='/'" data-i18n="back_home">
+                        Retour à l'accueil
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.location.href='/request.html'" data-i18n="make_another_request">
+                        Faire une autre demande
+                    </button>
+                </div>
+                
+                <!-- Guest Note -->
+                <div style="margin-top: var(--space-xl); padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input);">
+                    <p style="font-size: 14px; color: var(--grey-700); margin: 0;" data-i18n="guest_note">
+                        💡 <strong>Astuce :</strong> Créez un compte pour suivre vos demandes, gérer vos expéditeurs favoris et accéder à votre historique.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="quick_links">Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html" data-i18n="send_voucher">Envoyer un bon</a></li>
+                        <li><a href="/request.html" data-i18n="request_voucher">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html" data-i18n="how_it_works">Comment ça marche</a></li>
+                        <li><a href="/about.html" data-i18n="about">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="support">Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html" data-i18n="contact">Contact</a></li>
+                        <li><a href="/terms.html" data-i18n="terms">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html" data-i18n="privacy">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="contact">Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.cd<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/request-confirmation.js"></script>
+</body>
+</html>

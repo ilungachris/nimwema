@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement FlexPay - Nimwema</title>
+    <meta name="description" content="Paiement sécurisé via FlexPay">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="section">
+        <div class="container container-narrow">
+            <div class="confirmation-card">
+                <!-- Icon -->
+                <div class="confirmation-icon" style="background: var(--primary-green);">
+                    💳
+                </div>
+                
+                <!-- Title -->
+                <h1 class="confirmation-title">
+                    Paiement FlexPay
+                </h1>
+                
+                <!-- Message -->
+                <p class="confirmation-message">
+                    Vous allez être redirigé vers la page de paiement sécurisée FlexPay.
+                </p>
+                
+                <!-- Payment Details -->
+                <div class="confirmation-details" id="paymentDetails">
+                    <!-- Details will be populated by JavaScript -->
+                </div>
+                
+                <!-- Loading -->
+                <div class="loading-state" id="loadingState">
+                    <p>Préparation du paiement...</p>
+                </div>
+                
+                <!-- Payment Form (will be submitted automatically) -->
+                <form id="flexPayForm" method="POST" action="https://backend.flexpay.cd/api/rest/v1/paymentService" style="display: none;">
+                    <!-- Form fields will be populated by JavaScript -->
+                </form>
+                
+                <!-- Manual Continue Button (if auto-redirect fails) -->
+                <div id="manualContinue" style="display: none;">
+                    <button class="btn btn-primary btn-large" onclick="submitPayment()">
+                        Continuer vers le paiement
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+      // FlexPay Payment Handler
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeFlexPayPayment();
+      });
+      
+         async function initializeFlexPayPayment() {
+           try {
+             // Get order data from sessionStorage or URL
+             const urlParams = new URLSearchParams(window.location.search);
+             const orderId = urlParams.get('orderId');
+             
+             let orderData = null;
+             
+             // Try to get from sessionStorage first
+             const storedOrder = sessionStorage.getItem('pendingOrder');
+             if (storedOrder) {
+               orderData = JSON.parse(storedOrder);
+             }
+             
+             // If not in sessionStorage, try to fetch from server
+             if (!orderData && orderId) {
+               const response = await fetch(`/api/orders/${orderId}`);
+               const result = await response.json();
+               if (result.success) {
+                 orderData = result.order;
+               }
+             }
+             
+             if (!orderData) {
+               throw new Error('Order data not found');
+             }
+             
+             // Display payment details
+             displayPaymentDetails(orderData);
+             
+          // Calculate total
+          const subtotal = orderData.amount * orderData.quantity;
+          const feeAmount = subtotal * 0.035;
+          const total = orderData.coverFees ? subtotal + feeAmount : subtotal;
+          
+          // Convert to CDF if needed
+          const amountCDF = orderData.currency === 'USD' ? total * 2800 : total;
+          
+          // Initiate payment with FlexPay
+          const response = await fetch('/api/payment/flexpay/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: 'ORD-' + Date.now(),
+              amount: Math.round(amountCDF),
+              currency: 'CDF',
+              phone: orderData.recipients[0]?.phone || ''
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // For demo, show manual continue button
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('manualContinue').style.display = 'block';
+            
+            // In production, auto-submit form to FlexPay
+            // setTimeout(() => submitPayment(), 2000);
+          } else {
+            throw new Error(result.message);
+          }
+        } catch (error) {
+          console.error('Payment initialization error:', error);
+          document.getElementById('loadingState').innerHTML = `
+            <p style="color: var(--error);">Erreur lors de l'initialisation du paiement.</p>
+            <button class="btn btn-secondary" onclick="window.history.back()">Retour</button>
+          `;
+        }
+      }
+      
+      function displayPaymentDetails(orderData) {
+        const subtotal = orderData.amount * orderData.quantity;
+        const feeAmount = subtotal * 0.035;
+        const total = orderData.coverFees ? subtotal + feeAmount : subtotal;
+        
+        const currencySymbol = orderData.currency === 'USD' ? '$' : 'FC';
+        
+        const details = `
+          <div class="confirmation-detail">
+            <span class="confirmation-detail-label">Montant</span>
+            <span class="confirmation-detail-value">${total} ${currencySymbol}</span>
+          </div>
+          <div class="confirmation-detail">
+            <span class="confirmation-detail-label">Quantité</span>
+            <span class="confirmation-detail-value">${orderData.quantity} bon(s)</span>
+          </div>
+          <div class="confirmation-detail">
+            <span class="confirmation-detail-label">Destinataires</span>
+            <span class="confirmation-detail-value">${orderData.recipients.length}</span>
+          </div>
+        `;
+        
+        document.getElementById('paymentDetails').innerHTML = details;
+      }
+      
+      function submitPayment() {
+        // In production, this would submit to FlexPay
+        // For demo, simulate success
+        alert('Paiement FlexPay - En cours de développement\n\nDans la version de production, vous serez redirigé vers FlexPay pour compléter le paiement.');
+        
+        // Simulate success and redirect
+        setTimeout(() => {
+          window.location.href = '/payment-success.html';
+        }, 1000);
+      }
+    </script>
+</body>
+</html>

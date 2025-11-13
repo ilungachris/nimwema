@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement par Carte - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .payment-header h1 {
+            color: #8BC34A;
+            margin-bottom: 10px;
+        }
+
+        .order-summary {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .order-summary h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #8BC34A;
+        }
+
+        .payment-info {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #8BC34A;
+        }
+
+        .payment-info h3 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+
+        .payment-info p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .payment-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .payment-info li {
+            margin: 5px 0;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: #8BC34A;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8BC34A;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-header">
+            <h1>💳 Paiement par Carte Bancaire</h1>
+            <p>Paiement sécurisé via FlexPay</p>
+        </div>
+
+        <div id="loadingSection" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Génération du lien de paiement...</p>
+        </div>
+
+        <div id="errorSection" style="display: none;">
+            <div class="error-message" id="errorMessage"></div>
+            <button class="btn-primary" onclick="window.location.href='send.html'">
+                Retour
+            </button>
+        </div>
+
+        <div id="paymentSection">
+            <div class="order-summary">
+                <h3>📋 Résumé de la commande</h3>
+                <div class="summary-row">
+                    <span>Numéro de commande:</span>
+                    <span id="orderNumber">-</span>
+                </div>
+                <div class="summary-row">
+                    <span>Montant:</span>
+                    <span id="orderAmount">-</span>
+                </div>
+                <div class="summary-row">
+                    <span>Devise:</span>
+                    <span id="orderCurrency">-</span>
+                </div>
+                <div class="summary-row">
+                    <span>Total à payer:</span>
+                    <span id="orderTotal">-</span>
+                </div>
+            </div>
+
+            <div class="payment-info">
+                <h3>ℹ️ Comment ça marche ?</h3>
+                <p>Vous allez être redirigé vers la page de paiement sécurisée de FlexPay où vous pourrez:</p>
+                <ul>
+                    <li>✅ Payer avec votre carte bancaire Visa ou Mastercard</li>
+                    <li>✅ Paiement 100% sécurisé avec authentification 3D Secure</li>
+                    <li>✅ Vos données bancaires ne sont jamais stockées sur nos serveurs</li>
+                    <li>✅ Vous serez redirigé automatiquement après le paiement</li>
+                </ul>
+            </div>
+
+            <button id="payButton" class="btn-primary" onclick="proceedToPayment()">
+                Procéder au paiement →
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let orderData = null;
+
+        // Load order data from URL or sessionStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order');
+
+            if (orderId) {
+                // Try to get order from sessionStorage
+                const storedOrder = sessionStorage.getItem(`order_${orderId}`);
+                if (storedOrder) {
+                    orderData = JSON.parse(storedOrder);
+                    displayOrderSummary();
+                } else {
+                    // Fetch order from server
+                    fetchOrderData(orderId);
+                }
+            } else {
+                showError('Aucune commande spécifiée');
+            }
+        });
+
+        async function fetchOrderData(orderId) {
+            try {
+                const response = await fetch(`/api/orders/${orderId}`);
+                if (!response.ok) throw new Error('Commande introuvable');
+                
+                orderData = await response.json();
+                displayOrderSummary();
+            } catch (error) {
+                console.error('Error fetching order:', error);
+                showError('Impossible de charger les détails de la commande');
+            }
+        }
+
+        function displayOrderSummary() {
+            if (!orderData) return;
+
+            document.getElementById('orderNumber').textContent = orderData.id || orderData.orderId;
+            document.getElementById('orderAmount').textContent = formatAmount(orderData.amount);
+            document.getElementById('orderCurrency').textContent = orderData.currency;
+            document.getElementById('orderTotal').textContent = `${formatAmount(orderData.totalAmount)} ${orderData.currency}`;
+        }
+
+        function formatAmount(amount) {
+            return new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        async function proceedToPayment() {
+            if (!orderData) {
+                showError('Données de commande manquantes');
+                return;
+            }
+
+            const payButton = document.getElementById('payButton');
+            payButton.disabled = true;
+            payButton.textContent = 'Génération du lien...';
+
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('paymentSection').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/payment/flexpay/generate-link', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId: orderData.id || orderData.orderId,
+                        amount: orderData.totalAmount || orderData.amount,
+                        currency: orderData.currency
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.paymentLink) {
+                    console.log('✅ Payment link generated:', result.paymentLink);
+                    
+                    // Store order ID for callback
+                    sessionStorage.setItem('pendingPayment', orderData.id || orderData.orderId);
+                    
+                    // Redirect to FlexPay payment page
+                    window.location.href = result.paymentLink;
+                } else {
+                    throw new Error(result.message || 'Échec de la génération du lien de paiement');
+                }
+            } catch (error) {
+                console.error('Payment link generation error:', error);
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('paymentSection').style.display = 'block';
+                payButton.disabled = false;
+                payButton.textContent = 'Procéder au paiement →';
+                showError(error.message || 'Erreur lors de la génération du lien de paiement');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorSection').style.display = 'block';
+            document.getElementById('paymentSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

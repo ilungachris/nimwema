@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Card Payment Flow - Nimwema</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #8BC34A;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status.success {
+            background: #e8f5e9;
+            border-left: 4px solid #8BC34A;
+        }
+        .status.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+        .test-step {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #8BC34A;
+        }
+        .test-step h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .test-step p {
+            margin: 5px 0;
+            color: #666;
+        }
+        button {
+            padding: 15px 30px;
+            background: #8BC34A;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #7cb342;
+        }
+        .code {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="test-card">
+        <h1>🧪 Test Card Payment Flow</h1>
+        <p style="color: #666;">Complete end-to-end test of FlexPay card payment integration</p>
+    </div>
+
+    <div class="test-card">
+        <h2>📋 Implementation Status</h2>
+        <ul class="checklist">
+            <li>Card payment page created (payment-card.html)</li>
+            <li>FlexPay service updated with cardHolderName field</li>
+            <li>API endpoint added (/api/payment/flexpay/card)</li>
+            <li>Send flow updated to redirect to card page</li>
+            <li>Translations added for all card fields</li>
+            <li>Server restarted and running</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="test-step">
+            <h3>Step 1: Go to Send Voucher Page</h3>
+            <p>Navigate to the send voucher page and fill in the details</p>
+            <button onclick="window.location.href='/send.html'">
+                📝 Go to Send Voucher Page
+            </button>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 2: Fill Voucher Details</h3>
+            <p><strong>Suggested Test Data:</strong></p>
+            <div class="code">
+Amount: $10 USD<br>
+Quantity: 1<br>
+Recipient: +243 999 999 999<br>
+Payment Method: FlexPay
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 3: Enter Card Details</h3>
+            <p>You'll be redirected to the card payment page. Use these test details:</p>
+            <div class="code">
+Card Holder Name: JOHN DOE<br>
+Card Number: 4204 7300 2699 0372<br>
+Expiry: 04/26<br>
+CVV: 467
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 4: Verify FlexPay Request</h3>
+            <p>Check the browser console for the FlexPay request. It should include:</p>
+            <div class="code">
+✅ cardHolderName: "JOHN DOE"<br>
+✅ cardNumber: "4204730026990372"<br>
+✅ expiryMonth: 4<br>
+✅ expiryYear: 26<br>
+✅ cvv: "***" (hidden in logs)
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 5: Check FlexPay Response</h3>
+            <p><strong>Expected Success Response:</strong></p>
+            <div class="code">
+{<br>
+  "success": true,<br>
+  "orderNumber": "FP123456",<br>
+  "redirectUrl": "https://flexpay.cd/3dsecure/..."<br>
+}
+            </div>
+            <p><strong>If you see this error:</strong></p>
+            <div class="code" style="background: #ffebee;">
+"Le nom sur la carte n'est pas correcte"
+            </div>
+            <p>Then the cardHolderName field is still missing or incorrect.</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debugging</h2>
+        <div class="status info">
+            <strong>💡 How to Debug:</strong><br><br>
+            1. Open browser console (F12)<br>
+            2. Go to Console tab<br>
+            3. Look for "FlexPay Card Payment Request"<br>
+            4. Verify cardHolderName is present<br>
+            5. Look for "FlexPay Card Payment Response"<br>
+            6. Check if redirectUrl is returned
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Success Criteria</h2>
+        <div class="status success">
+            <strong>Payment is successful when:</strong><br><br>
+            ✅ Card payment page loads correctly<br>
+            ✅ Card visual updates as you type<br>
+            ✅ All fields are validated<br>
+            ✅ FlexPay request includes cardHolderName<br>
+            ✅ FlexPay returns redirectUrl<br>
+            ✅ User is redirected to 3D Secure page<br>
+            ✅ After authentication, payment completes<br>
+            ✅ Vouchers are generated<br>
+            ✅ SMS notifications are sent
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Quick Actions</h2>
+        <button onclick="window.location.href='/send.html'">
+            📝 Start Test: Go to Send Voucher
+        </button>
+        <button onclick="window.location.href='/payment-card.html'" style="background: #2196F3;">
+            💳 View Card Payment Page Directly
+        </button>
+        <button onclick="window.open('/CARD_PAYMENT_IMPLEMENTATION.md', '_blank')" style="background: #FF9800;">
+            📄 View Implementation Documentation
+        </button>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Need Help?</h2>
+        <p>If you encounter issues:</p>
+        <ol>
+            <li>Check browser console for errors</li>
+            <li>Verify server is running (check terminal)</li>
+            <li>Ensure FlexPay credentials are correct in .env</li>
+            <li>Review CARD_PAYMENT_IMPLEMENTATION.md</li>
+            <li>Check server logs for FlexPay API responses</li>
+        </ol>
+    </div>
+</body>
+</html>

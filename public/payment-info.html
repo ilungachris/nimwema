@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informations de Paiement - Nimwema</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+        </div>
+    </header>
+
+    <main class="section">
+        <div class="container">
+            <div class="confirmation-card">
+                <div class="confirmation-icon" style="background: #FFA726;">
+                    ⏳
+                </div>
+                
+                <h1 class="confirmation-title">Commande en attente de paiement</h1>
+                
+                <p class="confirmation-message">
+                    Votre commande a été enregistrée. Veuillez effectuer le paiement selon les instructions ci-dessous.
+                </p>
+
+                <div id="order-reference" class="card" style="text-align: center; margin-bottom: var(--space-xl); background: #FFF3E0; border: 2px solid #FFA726;">
+                    <h3 style="color: #F57C00; margin-bottom: var(--space-sm);">📋 Référence de commande</h3>
+                    <p style="font-size: 24px; font-weight: 700; color: #E65100; letter-spacing: 2px;" id="order-id">Chargement...</p>
+                </div>
+
+                <div class="card" style="text-align: left; margin-bottom: var(--space-xl);">
+                    <h2 style="color: var(--primary-green); margin-bottom: var(--space-lg); text-align: center;">
+                        💵 Western Union et Espèces
+                    </h2>
+                    <div style="background: #E8F5E9; padding: var(--space-lg); border-radius: var(--radius-input); border-left: 4px solid var(--primary-green);">
+                        <p style="font-size: 18px; font-weight: 600; margin-bottom: var(--space-sm);">
+                            👤 Mr Paulin Ikoko
+                        </p>
+                        <p style="font-size: 16px; margin-bottom: var(--space-sm);">
+                            📱 +243 821 075 415
+                        </p>
+                        <p style="font-size: 16px;">
+                            📍 7 Chemin de bon accueil, Q/Socimat<br>
+                            Kinshasa Gombe
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card" style="text-align: left; margin-bottom: var(--space-xl);">
+                    <h2 style="color: #1976D2; margin-bottom: var(--space-lg); text-align: center;">
+                        🏦 Virement Bancaire
+                    </h2>
+                    <div style="background: #E3F2FD; padding: var(--space-lg); border-radius: var(--radius-input); border-left: 4px solid #1976D2;">
+                        <p style="font-size: 18px; font-weight: 600; margin-bottom: var(--space-md); color: #1565C0;">
+                            EquityBCDC
+                        </p>
+                        <p style="font-size: 16px; margin-bottom: var(--space-sm);">
+                            <strong>Intitulé du compte:</strong> CPOSSIBLE
+                        </p>
+                        <p style="font-size: 16px;">
+                            <strong>Numéro de compte:</strong> 024 200 000 007 245
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card" style="background: #FFF9C4; border: 2px solid #FBC02D; margin-bottom: var(--space-xl);">
+                    <h3 style="color: #F57F17; margin-bottom: var(--space-md);">ℹ️ Que se passe-t-il ensuite ?</h3>
+                    <ul style="list-style: none; padding: 0; text-align: left;">
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: #F57F17; font-weight: 700;">1.</span>
+                            <span>Effectuez le paiement selon la méthode choisie</span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: #F57F17; font-weight: 700;">2.</span>
+                            <span>Notre équipe vérifie la réception du paiement</span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: #F57F17; font-weight: 700;">3.</span>
+                            <span>Les bons d'achat sont générés automatiquement</span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: #F57F17; font-weight: 700;">4.</span>
+                            <span>Les destinataires reçoivent leurs codes par SMS</span>
+                        </li>
+                        <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
+                            <span style="color: #F57F17; font-weight: 700;">5.</span>
+                            <span>Vous recevez une confirmation par SMS</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="confirmation-actions">
+                    <div id="auth-actions" style="display: none;">
+                        <button class="btn btn-primary btn-large" onclick="window.location.href='/dashboard.html'">
+                            <span>Voir mon tableau de bord</span>
+                        </button>
+                    </div>
+                    <div id="guest-actions" style="display: none;">
+                        <button class="btn btn-primary btn-large" onclick="window.location.href='/login.html'">
+                            <span>Se connecter</span>
+                        </button>
+                        <button class="btn btn-secondary btn-large" onclick="window.location.href='/signup.html'">
+                            <span>S'inscrire</span>
+                        </button>
+                    </div>
+                    <button class="btn btn-secondary btn-large" onclick="window.location.href='/send.html'">
+                        <span>Envoyer un autre bon</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.location.href='/'">
+                        <span>Retour à l'accueil</span>
+                    </button>
+                </div>
+
+                <div style="margin-top: var(--space-xl); padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input);">
+                    <p style="font-size: 16px; color: var(--grey-700); margin: 0; text-align: center;">
+                        <strong>💚 Merci d'avoir choisi Nimwema !</strong><br>
+                        <span>Le bien circule, les bénédictions suivent.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    
+    <script>
+        // Get order ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        
+        if (orderId) {
+            document.getElementById('order-id').textContent = orderId;
+        } else {
+            document.getElementById('order-id').textContent = 'Non disponible';
+        }
+        
+        // Check authentication status
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const result = await response.json();
+                
+                const authActions = document.getElementById('auth-actions');
+                const guestActions = document.getElementById('guest-actions');
+                
+                if (result.authenticated && result.user) {
+                    authActions.style.display = 'block';
+                } else {
+                    guestActions.style.display = 'block';
+                }
+            } catch (error) {
+                console.log('Auth check failed, showing guest options');
+                document.getElementById('guest-actions').style.display = 'block';
+            }
+        }
+        
+        checkAuthStatus();
+    </script>
+</body>
+</html>

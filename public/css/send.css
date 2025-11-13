@@ -1,0 +1,441 @@
+/* Nimwema Platform - Send Voucher Styles */
+
+/* ============================================
+   CURRENCY SELECTOR
+   ============================================ */
+.currency-selector-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.currency-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  background: var(--white);
+  border: 2px solid var(--grey-200);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.currency-btn:hover {
+  border-color: var(--primary-green);
+  background: rgba(139, 195, 74, 0.05);
+}
+
+.currency-btn.active {
+  border-color: var(--primary-green);
+  background: var(--primary-green);
+}
+
+.currency-symbol {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.currency-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.exchange-rate-display {
+  text-align: center;
+  padding: var(--space-md);
+  background: var(--paper);
+  border-radius: var(--radius-input);
+}
+
+.exchange-rate-display small {
+  display: block;
+  color: var(--grey-700);
+  margin-bottom: 4px;
+}
+
+.exchange-rate-display strong {
+  font-size: 18px;
+  color: var(--ink-black);
+}
+
+/* ============================================
+   AMOUNT PRESET GRID
+   ============================================ */
+.amount-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.amount-preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-lg);
+  background: var(--white);
+  border: 2px solid var(--grey-200);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.amount-preset-btn:hover {
+  border-color: var(--primary-green);
+  background: rgba(139, 195, 74, 0.05);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.amount-preset-btn.selected {
+  border-color: var(--primary-green);
+  background: var(--primary-green);
+  color: var(--ink-black);
+}
+
+.amount-primary {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.amount-secondary {
+  font-size: 14px;
+  color: var(--grey-700);
+}
+
+.amount-preset-btn.selected .amount-secondary {
+  color: var(--ink-black);
+}
+
+/* ============================================
+   CUSTOM AMOUNT INPUT
+   ============================================ */
+.amount-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  position: relative;
+}
+
+.amount-currency {
+  position: absolute;
+  left: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--grey-700);
+  pointer-events: none;
+}
+
+.amount-input {
+  flex: 1;
+  padding-left: 40px !important;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.amount-equivalent {
+  min-width: 120px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--paper);
+  border-radius: var(--radius-input);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--grey-700);
+  text-align: center;
+}
+
+/* ============================================
+   TOTAL AMOUNT DISPLAY
+   ============================================ */
+.total-amount-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  background: var(--paper);
+  border-radius: var(--radius-input);
+  margin-top: var(--space-lg);
+}
+
+.total-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--grey-700);
+}
+
+.total-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+/* ============================================
+   RECIPIENTS INPUT
+   ============================================ */
+.recipients-info-box {
+  padding: var(--space-md);
+  background: var(--paper);
+  color: var(--grey-700);
+  border-radius: var(--radius-input);
+  border-left: 4px solid var(--primary-green);
+  margin-bottom: var(--space-lg);
+}
+
+.recipients-info-box p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.recipients-info-box strong {
+  font-weight: 700;
+  color: var(--ink-black);
+}
+
+#recipientsInputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.recipient-input-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+
+.recipient-input-row .form-input {
+  flex: 1;
+}
+
+.btn-remove-recipient {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--error);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  font-size: 20px;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-remove-recipient:hover {
+  background: #B71C1C;
+  transform: scale(1.05);
+}
+
+/* ============================================
+   WAITING LIST
+   ============================================ */
+.waiting-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 400px;
+  overflow-y: auto;
+  padding: var(--space-sm);
+}
+
+.waiting-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--white);
+  border: 2px solid var(--grey-200);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.waiting-list-item:hover {
+  border-color: var(--primary-green);
+  background: rgba(139, 195, 74, 0.05);
+}
+
+.waiting-list-item.selected {
+  border-color: var(--primary-green);
+  background: var(--primary-green);
+}
+
+.waiting-list-checkbox {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.waiting-list-info {
+  flex: 1;
+}
+
+.waiting-list-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink-black);
+  margin-bottom: 4px;
+}
+
+.waiting-list-details {
+  font-size: 14px;
+  color: var(--grey-700);
+}
+
+.waiting-list-time {
+  font-size: 12px;
+  color: var(--grey-700);
+  margin-top: 4px;
+}
+
+/* ============================================
+   FEE BREAKDOWN
+   ============================================ */
+.fee-breakdown {
+  background: var(--paper);
+  border-radius: var(--radius-input);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  font-size: 16px;
+}
+
+.fee-row:not(:last-child) {
+  border-bottom: 1px solid var(--grey-200);
+}
+
+.fee-total {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-green);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 2px solid var(--grey-200) !important;
+}
+
+/* ============================================
+   PAYMENT METHODS
+   ============================================ */
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.payment-method-card {
+  position: relative;
+  cursor: pointer;
+}
+
+.payment-method-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.payment-method-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--white);
+  border: 2px solid var(--grey-200);
+  border-radius: var(--radius-input);
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.payment-method-card:hover .payment-method-content {
+  border-color: var(--primary-green);
+  background: rgba(139, 195, 74, 0.05);
+}
+
+.payment-method-card input[type="radio"]:checked + .payment-method-content {
+  border-color: var(--primary-green);
+  background: var(--primary-green);
+}
+
+.payment-method-icon {
+  font-size: 32px;
+}
+
+.payment-method-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-black);
+}
+
+.payment-method-desc {
+  font-size: 12px;
+  color: var(--grey-700);
+}
+
+.payment-method-card input[type="radio"]:checked + .payment-method-content .payment-method-desc {
+  color: var(--ink-black);
+}
+
+/* ============================================
+   CHECKBOX GROUP
+   ============================================ */
+.checkbox-group {
+  margin: var(--space-md) 0;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .amount-preset-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .amount-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .amount-equivalent {
+    min-width: auto;
+  }
+  
+  .payment-methods-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .recipient-input-row {
+    flex-direction: column;
+  }
+  
+  .btn-remove-recipient {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.hidden {
+  display: none !important;
+}
+
+.loading-state {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--grey-700);
+}

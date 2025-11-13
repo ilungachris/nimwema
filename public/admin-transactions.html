@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - Admin Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div style="display: flex; min-height: 100vh; background: #f5f5f5;">
+        <!-- Sidebar -->
+        <aside style="width: 260px; background: #111111; color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto;">
+            <div style="padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <a href="index.html" style="font-size: 24px; font-weight: 700; color: #8BC34A; text-decoration: none;">NIMWEMA</a>
+            </div>
+            <nav style="padding: 20px 0;">
+                <a href="admin-dashboard.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>📊</span><span>Vue d'ensemble</span>
+                </a>
+                <a href="admin-merchants.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>🏪</span><span>Commerçants</span>
+                </a>
+                <a href="admin-users.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>👥</span><span>Utilisateurs</span>
+                </a>
+                <a href="admin-transactions.html" style="padding: 12px 20px; background: rgba(139,195,74,0.1); color: #8BC34A; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>💰</span><span>Transactions</span>
+                </a>
+                <a href="admin-analytics.html" style="padding: 12px 20px; color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span>📈</span><span>Analytics</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main style="flex: 1; margin-left: 260px; padding: 30px;">
+            <div style="background: white; padding: 20px 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h1 style="margin: 0; color: #111111;">Transactions</h1>
+            </div>
+
+            <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #f8f9fa;">
+                        <tr>
+                            <th style="padding: 12px; text-align: left;">ID</th>
+                            <th style="padding: 12px; text-align: left;">Type</th>
+                            <th style="padding: 12px; text-align: left;">Montant</th>
+                            <th style="padding: 12px; text-align: left;">Utilisateur</th>
+                            <th style="padding: 12px; text-align: left;">Date</th>
+                            <th style="padding: 12px; text-align: left;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #999;">Chargement...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script>
+        async function loadTransactions() {
+            try {
+                const response = await fetch('/api/admin/transactions', { credentials: 'include' });
+                const transactions = await response.json();
+                const tbody = document.getElementById('transactionsBody');
+                tbody.innerHTML = transactions.map(t => `
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">${t.id}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">${t.type}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">${t.amount} USD</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">${t.user}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">${new Date(t.date).toLocaleString()}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">${t.status}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+        loadTransactions();
+    </script>
+</body>
+</html>

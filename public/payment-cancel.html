@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paiement annulé / refusé - Nimwema</title>
+  <meta name="description" content="Votre paiement a été annulé ou refusé.">
+  <!-- Fonts (match success page) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- Styles (match success page) -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/forms.css"/>
+  <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+  <!-- Header (same structure as success page) -->
+  <header class="header">
+    <div class="header-top">
+      <div class="language-selector">
+        <button class="lang-btn active" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="ln">LN</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <button class="login-btn" onclick="window.location.href='/login.html'">
+        <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+      </button>
+    </div>
+
+    <div class="header-main">
+      <a href="/" class="logo">NIM<span class="w">W</span>EMA</a>
+      <button class="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="section">
+    <div class="container">
+      <div class="confirmation-card">
+        <!-- Icon -->
+        <div class="confirmation-icon" style="background: var(--danger);">✕</div>
+
+        <!-- Title -->
+        <h1 class="confirmation-title" id="pageTitle">
+          Paiement annulé
+        </h1>
+
+        <!-- Message -->
+        <p class="confirmation-message" id="pageMessage">
+          L’opération a été annulée. Aucun débit n’a été effectué. Vous pouvez réessayer avec la même méthode ou en choisir une autre.
+        </p>
+
+        <!-- Details block (optional info from URL) -->
+        <div class="card" style="text-align:left; margin-bottom: var(--space-xl);">
+          <h3 style="margin-bottom: var(--space-md);" data-i18n="order_summary">Résumé</h3>
+          <ul style="list-style:none; padding:0; margin:0;">
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Commande</span>
+              <strong id="sumOrder">—</strong>
+            </li>
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Montant</span>
+              <strong id="sumAmount">—</strong>
+            </li>
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Devise</span>
+              <strong id="sumCurrency">—</strong>
+            </li>
+            <li style="padding: var(--space-sm) 0; display:flex; gap: var(--space-sm); justify-content:space-between;">
+              <span class="text-muted">Motif</span>
+              <strong id="sumReason">Annulé</strong>
+            </li>
+          </ul>
+
+          <!-- Helpful hints -->
+          <div style="margin-top: var(--space-md); padding: var(--space-md); background: var(--paper); border-radius: var(--radius-input);">
+            <p class="text-small" style="margin:0;">
+              Astuce : si votre banque a refusé la transaction, vérifiez votre plafond de paiement en ligne ou essayez une autre carte / méthode de paiement.
+            </p>
+          </div>
+        </div>
+
+        <!-- Actions (mirror success style) -->
+        <div class="confirmation-actions">
+          <button class="btn btn-primary btn-large" id="retryBtn">
+            Réessayer le paiement
+          </button>
+          <button class="btn btn-secondary btn-large" id="changeMethodBtn">
+            Choisir une autre méthode
+          </button>
+          <button class="btn btn-secondary" onclick="window.location.href='/'">
+            <span data-i18n="back_home">Retour à l'accueil</span>
+          </button>
+        </div>
+
+        <!-- Contact/help -->
+        <div style="margin-top: var(--space-xl); padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input);">
+          <p style="font-size:16px; color:var(--grey-700); margin:0; text-align:center;">
+            Besoin d’aide ? <a href="/contact.html">Contactez le support</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer (match success page) -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/i18n.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      const order = qs.get('order') || '';
+      const reason = (qs.get('reason') || '').toLowerCase(); // e.g., 'cancelled' | 'canceled' | 'declined' | 'timeout'
+      const amount = parseInt(qs.get('amount') || '0', 10) || 0;
+      const currency = (qs.get('currency') || 'CDF').toUpperCase();
+
+      // Fill summary
+      const fmt = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 });
+      document.getElementById('sumOrder').textContent = order || '—';
+      document.getElementById('sumAmount').textContent = amount ? fmt.format(amount) : '—';
+      document.getElementById('sumCurrency').textContent = currency || '—';
+
+      // Map reason → UI text (works for both cancelled & declined)
+      let title = 'Paiement annulé';
+      let msg = "L’opération a été annulée. Aucun débit n’a été effectué. Vous pouvez réessayer avec la même méthode ou en choisir une autre.";
+      let reasonLabel = 'Annulé';
+
+      if (['declined','refused','refusé'].includes(reason)) {
+        title = 'Paiement refusé';
+        msg = "Votre banque a refusé la transaction. Vérifiez vos informations ou essayez une autre méthode de paiement.";
+        reasonLabel = 'Refusé';
+      } else if (['timeout','expired','time_out'].includes(reason)) {
+        title = 'Session expirée';
+        msg = "Le délai de confirmation a expiré. Veuillez relancer le paiement.";
+        reasonLabel = 'Expiré';
+      } else if (['canceled','cancelled','annule','annulé'].includes(reason)) {
+        // keep defaults
+      }
+
+      document.getElementById('pageTitle').textContent = title;
+      document.getElementById('pageMessage').textContent = msg;
+      document.getElementById('sumReason').textContent = reasonLabel;
+
+      // Buttons
+      document.getElementById('retryBtn').addEventListener('click', () => {
+        // Retry with same order if you use it server-side, else go to send
+        if (order) {
+          // If you have a dedicated retry endpoint or page, wire it here.
+          window.location.href = `/send.html?retry=1&order=${encodeURIComponent(order)}`;
+        } else {
+          window.location.href = '/send.html?retry=1';
+        }
+      });
+
+      document.getElementById('changeMethodBtn').addEventListener('click', () => {
+        const url = new URL('/send.html', location.origin);
+        url.searchParams.set('changeMethod', '1');
+        if (order) url.searchParams.set('order', order);
+        window.location.href = url.toString();
+      });
+
+      // Apply translations if available
+      if (typeof applyTranslations === 'function') applyTranslations();
+    })();
+  </script>
+</body>
+</html>

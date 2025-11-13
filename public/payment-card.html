@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement par Carte - Nimwema</title>
+    <meta name="description" content="Paiement sécurisé par carte bancaire">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+    
+    <style>
+        .card-form-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .card-visual {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card-chip {
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .card-number-display {
+            font-size: 24px;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .card-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .card-holder-name {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .card-expiry {
+            font-size: 14px;
+        }
+        
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-green);
+        }
+        
+        .security-badge-icon {
+            font-size: 24px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .cvv-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        input[type="text"],
+        input[type="number"] {
+            text-transform: uppercase;
+        }
+        
+        .payment-summary {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .summary-total {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-green);
+            padding-top: 10px;
+            border-top: 2px solid #ddd;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="section">
+        <div class="container">
+            <div class="card-form-container">
+                <h1 class="section-title" style="text-align: center; margin-bottom: 30px;">
+                    💳 <span data-i18n="cardPayment">Paiement par Carte</span>
+                </h1>
+                
+                <!-- Security Badge -->
+                <div class="security-badge">
+                    <span class="security-badge-icon">🔒</span>
+                    <div>
+                        <strong data-i18n="securePayment">Paiement 100% sécurisé</strong><br>
+                        <small data-i18n="securePaymentDesc">Vos données sont cryptées et protégées</small>
+                    </div>
+                </div>
+                
+                <!-- Payment Summary -->
+                <div class="payment-summary" id="paymentSummary">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Card Visual -->
+                <div class="card-visual">
+                    <div class="card-chip"></div>
+                    <div class="card-number-display" id="cardNumberDisplay">
+                        •••• •••• •••• ••••
+                    </div>
+                    <div class="card-info-row">
+                        <div>
+                            <div style="font-size: 10px; opacity: 0.7; margin-bottom: 5px;">
+                                <span data-i18n="cardHolder">TITULAIRE</span>
+                            </div>
+                            <div class="card-holder-name" id="cardHolderDisplay">
+                                VOTRE NOM
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; opacity: 0.7; margin-bottom: 5px;">
+                                <span data-i18n="expires">EXPIRE</span>
+                            </div>
+                            <div class="card-expiry" id="cardExpiryDisplay">
+                                MM/YY
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Form -->
+                <form id="cardPaymentForm" class="form">
+                    <div class="form-group">
+                        <label for="cardHolderName">
+                            <span data-i18n="cardHolderName">Nom du Titulaire</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="cardHolderName" 
+                            name="cardHolderName"
+                            placeholder="JOHN DOE"
+                            required
+                            pattern="[A-Za-z\s]+"
+                            title="Lettres et espaces uniquement"
+                            style="text-transform: uppercase;"
+                        >
+                        <small class="form-help" data-i18n="cardHolderHelp">
+                            Nom tel qu'il apparaît sur la carte
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cardNumber">
+                            <span data-i18n="cardNumber">Numéro de Carte</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="cardNumber" 
+                            name="cardNumber"
+                            placeholder="1234 5678 9012 3456"
+                            maxlength="19"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expiryMonth">
+                                <span data-i18n="expiryDate">Date d'Expiration</span>
+                                <span class="required">*</span>
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <input 
+                                    type="number" 
+                                    id="expiryMonth" 
+                                    name="expiryMonth"
+                                    placeholder="MM"
+                                    min="1"
+                                    max="12"
+                                    required
+                                >
+                                <input 
+                                    type="number" 
+                                    id="expiryYear" 
+                                    name="expiryYear"
+                                    placeholder="YY"
+                                    min="24"
+                                    max="99"
+                                    required
+                                >
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cvv">
+                                <span data-i18n="cvv">CVV</span>
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="cvv" 
+                                name="cvv"
+                                placeholder="123"
+                                maxlength="4"
+                                required
+                            >
+                            <small class="cvv-info" data-i18n="cvvHelp">
+                                3 chiffres au dos de la carte
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large">
+                        🔒 <span data-i18n="paySecurely">Payer en Toute Sécurité</span>
+                    </button>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <span data-i18n="cancel">Annuler</span>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="allRightsReserved">Tous droits réservés</span>.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Get order data from sessionStorage
+        let orderData = null;
+        try {
+            const storedOrder = sessionStorage.getItem('pendingOrder');
+            if (storedOrder) {
+                orderData = JSON.parse(storedOrder);
+                displayPaymentSummary(orderData);
+            }
+        } catch (error) {
+            console.error('Error loading order data:', error);
+        }
+        
+        // Display payment summary
+        function displayPaymentSummary(order) {
+            const subtotal = order.amount * order.quantity;
+            const feeAmount = subtotal * 0.035;
+            const total = order.coverFees ? subtotal + feeAmount : subtotal;
+            const currencySymbol = order.currency === 'USD' ? '$' : 'FC';
+            
+            const summaryHTML = `
+                <div class="summary-row">
+                    <span data-i18n="amount">Montant</span>
+                    <strong>${order.amount} ${currencySymbol}</strong>
+                </div>
+                <div class="summary-row">
+                    <span data-i18n="quantity">Quantité</span>
+                    <strong>${order.quantity} bon(s)</strong>
+                </div>
+                ${order.coverFees ? `
+                <div class="summary-row">
+                    <span data-i18n="serviceFee">Frais de service (3.5%)</span>
+                    <strong>${feeAmount.toFixed(2)} ${currencySymbol}</strong>
+                </div>
+                ` : ''}
+                <div class="summary-row summary-total">
+                    <span data-i18n="total">Total</span>
+                    <span>${total.toFixed(2)} ${currencySymbol}</span>
+                </div>
+            `;
+            
+            document.getElementById('paymentSummary').innerHTML = summaryHTML;
+        }
+        
+        // Format card number with spaces
+        document.getElementById('cardNumber').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+            
+            // Update card visual
+            document.getElementById('cardNumberDisplay').textContent = 
+                formattedValue || '•••• •••• •••• ••••';
+        });
+        
+        // Update card holder name display
+        document.getElementById('cardHolderName').addEventListener('input', function(e) {
+            const name = e.target.value.toUpperCase() || 'VOTRE NOM';
+            document.getElementById('cardHolderDisplay').textContent = name;
+        });
+        
+        // Update expiry display
+        function updateExpiryDisplay() {
+            const month = document.getElementById('expiryMonth').value.padStart(2, '0');
+            const year = document.getElementById('expiryYear').value;
+            if (month && year) {
+                document.getElementById('cardExpiryDisplay').textContent = `${month}/${year}`;
+            }
+        }
+        
+        document.getElementById('expiryMonth').addEventListener('input', updateExpiryDisplay);
+        document.getElementById('expiryYear').addEventListener('input', updateExpiryDisplay);
+        
+        // Handle form submission
+        document.getElementById('cardPaymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!orderData) {
+                alert('Erreur: Données de commande introuvables');
+                return;
+            }
+            
+            const form = e.target;
+            form.classList.add('form-loading');
+            
+            try {
+                // Get card data
+                const cardData = {
+                    cardHolderName: document.getElementById('cardHolderName').value.toUpperCase(),
+                    cardNumber: document.getElementById('cardNumber').value.replace(/\s/g, ''),
+                    expiryMonth: parseInt(document.getElementById('expiryMonth').value),
+                    expiryYear: parseInt(document.getElementById('expiryYear').value),
+                    cvv: document.getElementById('cvv').value
+                };
+                
+                // Calculate total in CDF
+                const subtotal = orderData.amount * orderData.quantity;
+                const feeAmount = subtotal * 0.035;
+                const total = orderData.coverFees ? subtotal + feeAmount : subtotal;
+                const amountCDF = orderData.currency === 'USD' ? total * 2200 : total;
+                
+                // Initiate FlexPay card payment
+                const response = await fetch('/api/payment/flexpay/card', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: orderData.id,
+                        amount: Math.round(amountCDF),
+                        currency: 'CDF',
+                        ...cardData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.redirectUrl) {
+                    // Redirect to FlexPay 3D Secure page
+                    window.location.href = result.redirectUrl;
+                } else {
+                    throw new Error(result.message || 'Échec du paiement');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Erreur lors du paiement: ' + error.message);
+                form.classList.remove('form-loading');
+            }
+        });
+    </script>
+</body>
+</html>

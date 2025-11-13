@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traitement du paiement - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .callback-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .loading {
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8BC34A;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .success-icon {
+            color: #4CAF50;
+        }
+
+        .error-icon {
+            color: #f44336;
+        }
+
+        .status-message {
+            font-size: 1.3em;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .status-details {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .btn-primary {
+            padding: 15px 30px;
+            background: #8BC34A;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .btn-secondary {
+            padding: 15px 30px;
+            background: #666;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="callback-container">
+        <div id="loadingSection" class="loading">
+            <div class="spinner"></div>
+            <h2>Vérification du paiement...</h2>
+            <p>Veuillez patienter pendant que nous confirmons votre paiement.</p>
+        </div>
+
+        <div id="successSection" style="display: none;">
+            <div class="status-icon success-icon">✅</div>
+            <h1 class="status-message">Paiement réussi !</h1>
+            <p>Votre paiement a été traité avec succès.</p>
+            
+            <div class="status-details" id="successDetails"></div>
+
+            <div>
+                <a href="sender-dashboard.html" class="btn-primary">
+                    Voir mes bons →
+                </a>
+                <a href="index.html" class="btn-secondary">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+
+        <div id="errorSection" style="display: none;">
+            <div class="status-icon error-icon">❌</div>
+            <h1 class="status-message">Paiement échoué</h1>
+            <p id="errorMessage">Une erreur s'est produite lors du traitement de votre paiement.</p>
+            
+            <div class="status-details" id="errorDetails"></div>
+
+            <div>
+                <a href="send.html" class="btn-primary">
+                    Réessayer
+                </a>
+                <a href="index.html" class="btn-secondary">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                reference: params.get('reference'),
+                orderNumber: params.get('orderNumber'),
+                code: params.get('code'),
+                message: params.get('message'),
+                status: params.get('status')
+            };
+        }
+
+        // Check payment status
+        async function checkPaymentStatus() {
+            const params = getUrlParams();
+            
+            console.log('Payment callback params:', params);
+
+            // If we have a reference, check the payment status
+            if (params.reference) {
+                try {
+                    // First, try to get order number from reference
+                    const orderResponse = await fetch(`/api/orders/${params.reference}`);
+                    const orderData = await orderResponse.json();
+                    
+                    if (orderData && orderData.orderNumber) {
+                        // Check transaction status with FlexPay
+                        const statusResponse = await fetch(`/api/payment/flexpay/check/${orderData.orderNumber}`);
+                        const statusData = await statusResponse.json();
+                        
+                        if (statusData.success && statusData.transaction) {
+                            if (statusData.transaction.status === 'success') {
+                                showSuccess(statusData.transaction, orderData);
+                            } else {
+                                showError('Le paiement n\'a pas été complété', statusData.transaction);
+                            }
+                        } else {
+                            // Check if payment was successful based on URL params
+                            if (params.code === '0' || params.status === 'success') {
+                                showSuccess(params, orderData);
+                            } else {
+                                showError(params.message || 'Paiement échoué', params);
+                            }
+                        }
+                    } else {
+                        showError('Commande introuvable', params);
+                    }
+                } catch (error) {
+                    console.error('Error checking payment status:', error);
+                    
+                    // Fallback to URL params
+                    if (params.code === '0' || params.status === 'success') {
+                        showSuccess(params, null);
+                    } else {
+                        showError(params.message || 'Erreur lors de la vérification du paiement', params);
+                    }
+                }
+            } else {
+                showError('Aucune référence de paiement fournie', params);
+            }
+        }
+
+        function showSuccess(transaction, order) {
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('successSection').style.display = 'block';
+
+            const detailsHtml = `
+                <div class="detail-row">
+                    <span><strong>Référence:</strong></span>
+                    <span>${transaction.reference || order?.id || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span><strong>Numéro de commande:</strong></span>
+                    <span>${transaction.orderNumber || order?.orderNumber || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span><strong>Montant:</strong></span>
+                    <span>${formatAmount(transaction.amount || order?.totalAmount)} ${transaction.currency || order?.currency || 'USD'}</span>
+                </div>
+                <div class="detail-row">
+                    <span><strong>Date:</strong></span>
+                    <span>${new Date().toLocaleString('fr-FR')}</span>
+                </div>
+            `;
+
+            document.getElementById('successDetails').innerHTML = detailsHtml;
+
+            // Clear pending payment from sessionStorage
+            sessionStorage.removeItem('pendingPayment');
+            sessionStorage.removeItem('pendingOrder');
+        }
+
+        function showError(message, details) {
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+
+            if (details) {
+                const detailsHtml = `
+                    <div class="detail-row">
+                        <span><strong>Code d'erreur:</strong></span>
+                        <span>${details.code || '-'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span><strong>Message:</strong></span>
+                        <span>${details.message || '-'}</span>
+                    </div>
+                    ${details.reference ? `
+                    <div class="detail-row">
+                        <span><strong>Référence:</strong></span>
+                        <span>${details.reference}</span>
+                    </div>
+                    ` : ''}
+                `;
+
+                document.getElementById('errorDetails').innerHTML = detailsHtml;
+            }
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '0.00';
+            return new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Start checking payment status when page loads
+        window.addEventListener('DOMContentLoaded', checkPaymentStatus);
+    </script>
+</body>
+</html>
