@@ -422,8 +422,9 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+              
                 
-                // Check if response is JSON
+                // Check if  response is JSON
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     console.error('Expected JSON but got:', contentType);

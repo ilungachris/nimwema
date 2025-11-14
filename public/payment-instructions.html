@@ -413,6 +413,16 @@
                 })
             });
             
+            // Check if response is JSON before parsing
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Le serveur a renvoyé une réponse non-JSON. Vérifiez que l\'API /api/auth/create-guest-account existe et fonctionne.');
+            }
+            
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            
             const result = await response.json();
             
             if (result.success) {
@@ -437,8 +447,18 @@
             }
         } catch (error) {
             console.error('Account creation error:', error);
-            errorDiv.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+            
+            // Show detailed error message
+            let errorMessage = error.message || 'Une erreur est survenue.';
+            
+            // Add helpful context for 404 errors
+            if (errorMessage.includes('non-JSON') || errorMessage.includes('404')) {
+                errorMessage = `Impossible de créer le compte: L'API backend n'est pas disponible.\n\nVérifiez que:\n• Le serveur backend est démarré\n• L'endpoint /api/auth/create-guest-account existe\n• Le serveur accepte les requêtes de ce domaine (CORS)`;
+            }
+            
+            errorDiv.textContent = errorMessage;
             errorDiv.style.display = 'block';
+            errorDiv.style.whiteSpace = 'pre-line'; // Allow line breaks
             submitBtn.disabled = false;
             submitBtn.textContent = 'Créer mon compte';
         }
