@@ -15,36 +15,29 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
         .signup-header {
             text-align: center;
             margin-bottom: 30px;
         }
-
         .signup-header h1 {
             color: #111111;
             font-size: 28px;
             margin-bottom: 10px;
         }
-
         .signup-header p {
             color: #666;
             font-size: 14px;
         }
-
         .form-group {
             margin-bottom: 20px;
         }
-
         .form-group label {
             display: block;
             margin-bottom: 8px;
             color: #111111;
             font-weight: 500;
         }
-
-        .form-group input,
-        .form-group select {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -52,29 +45,22 @@
             font-size: 14px;
             transition: border-color 0.3s;
         }
-
-        .form-group input:focus,
-        .form-group select:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #8BC34A;
         }
-
         .form-group .error {
             color: #dc3545;
             font-size: 12px;
             margin-top: 5px;
             display: none;
         }
-
-        .form-group.has-error input,
-        .form-group.has-error select {
+        .form-group.has-error input, .form-group.has-error select {
             border-color: #dc3545;
         }
-
         .form-group.has-error .error {
             display: block;
         }
-
         .password-strength {
             margin-top: 5px;
             height: 4px;
@@ -82,74 +68,60 @@
             border-radius: 2px;
             overflow: hidden;
         }
-
         .password-strength-bar {
             height: 100%;
             width: 0%;
             transition: width 0.3s, background-color 0.3s;
         }
-
         .password-strength-bar.weak {
             width: 33%;
             background: #dc3545;
         }
-
         .password-strength-bar.medium {
             width: 66%;
             background: #ffc107;
         }
-
         .password-strength-bar.strong {
             width: 100%;
             background: #8BC34A;
         }
-
         .password-requirements {
             font-size: 12px;
             color: #666;
             margin-top: 5px;
         }
-
         .password-requirements ul {
             margin: 5px 0;
             padding-left: 20px;
         }
-
         .password-requirements li {
             margin: 3px 0;
         }
-
         .password-requirements li.met {
             color: #8BC34A;
         }
-
         .terms-checkbox {
             display: flex;
             align-items: flex-start;
             margin-bottom: 20px;
         }
-
         .terms-checkbox input[type="checkbox"] {
             width: auto;
             margin-right: 10px;
             margin-top: 3px;
         }
-
         .terms-checkbox label {
             font-size: 13px;
             color: #666;
             line-height: 1.5;
         }
-
         .terms-checkbox a {
             color: #8BC34A;
             text-decoration: none;
         }
-
         .terms-checkbox a:hover {
             text-decoration: underline;
         }
-
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -162,39 +134,32 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             background: #7CB342;
         }
-
         .submit-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
-
         .login-link {
             text-align: center;
             margin-top: 20px;
             font-size: 14px;
             color: #666;
         }
-
         .login-link a {
             color: #8BC34A;
             text-decoration: none;
             font-weight: 600;
         }
-
         .login-link a:hover {
             text-decoration: underline;
         }
-
         .user-type-selector {
             display: flex;
             gap: 15px;
             margin-bottom: 25px;
         }
-
         .user-type-option {
             flex: 1;
             padding: 15px;
@@ -204,65 +169,53 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-
         .user-type-option:hover {
             border-color: #8BC34A;
         }
-
         .user-type-option.active {
             border-color: #8BC34A;
             background: #f0f8e8;
         }
-
         .user-type-option input[type="radio"] {
             display: none;
         }
-
         .user-type-option .icon {
             font-size: 32px;
             margin-bottom: 8px;
         }
-
         .user-type-option .label {
             font-weight: 600;
             color: #111111;
         }
-
         .user-type-option .description {
             font-size: 12px;
             color: #666;
             margin-top: 5px;
         }
-
         .alert {
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
         }
-
         .alert.success {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-
         .alert.error {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-
         .loading {
             display: none;
             text-align: center;
             padding: 20px;
         }
-
         .loading.active {
             display: block;
         }
-
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #8BC34A;
@@ -272,13 +225,11 @@
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -306,15 +257,14 @@
             <p data-i18n="signup.subtitle">Rejoignez Nimwema et commencez à partager la solidarité</p>
         </div>
 
-        <div id="alertBox" class="alert"></div>
+        <div id="alertBox" class="alert" role="alert"></div>
 
         <div class="loading" id="loadingSpinner">
             <div class="spinner"></div>
             <p data-i18n="signup.processing">Création de votre compte...</p>
         </div>
 
-        <form id="signupForm">
-            <!-- User Type Selection -->
+        <form id="signupForm" novalidate>
             <div class="user-type-selector">
                 <label class="user-type-option active">
                     <input type="radio" name="userType" value="user" checked>
@@ -330,29 +280,29 @@
                 </label>
             </div>
 
-            <!-- Personal Information -->
             <div class="form-group">
-                <label for="fullName" data-i18n="signup.fullName">Nom complet *</label>
-                <input type="text" id="fullName" name="fullName" required>
+                <label for="fullName" data-i18n="signup.fullName">Nom complet <span style="color: #dc3545;">*</span></label>
+                <input type="text" id="fullName" name="fullName" required aria-required="true">
                 <span class="error" data-i18n="signup.errors.fullNameRequired">Le nom complet est requis</span>
             </div>
 
             <div class="form-group">
-                <label for="email" data-i18n="signup.email">Email *</label>
-                <input type="email" id="email" name="email" required>
+                <label for="email" data-i18n="signup.email">Email <span style="color: #dc3545;">*</span></label>
+                <input type="email" id="email" name="email" required aria-required="true" autocomplete="email">
                 <span class="error" data-i18n="signup.errors.emailInvalid">Email invalide</span>
             </div>
 
             <div class="form-group">
-                <label for="phone" data-i18n="signup.phone">Téléphone *</label>
-                <input type="tel" id="phone" name="phone" placeholder="+243XXXXXXXXX" required>
-                <span class="error" data-i18n="signup.errors.phoneInvalid">Numéro de téléphone invalide</span>
+                <label for="phone" data-i18n="signup.phone">Téléphone <span style="color: #dc3545;">*</span></label>
+                <input type="tel" id="phone" name="phone" placeholder="+243XXXXXXXXX" 
+                    pattern="^\+243[0-9]{9}$" required aria-required="true" autocomplete="tel">
+                <span class="error" data-i18n="signup.errors.phoneInvalid">Numéro de téléphone invalide (format: +243XXXXXXXXX)</span>
             </div>
 
-            <!-- Password -->
             <div class="form-group">
-                <label for="password" data-i18n="signup.password">Mot de passe *</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password" data-i18n="signup.password">Mot de passe <span style="color: #dc3545;">*</span></label>
+                <input type="password" id="password" name="password" required aria-required="true"
+                    minlength="8" autocomplete="new-password">
                 <div class="password-strength">
                     <div class="password-strength-bar" id="passwordStrengthBar"></div>
                 </div>
@@ -368,23 +318,22 @@
             </div>
 
             <div class="form-group">
-                <label for="confirmPassword" data-i18n="signup.confirmPassword">Confirmer le mot de passe *</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <label for="confirmPassword" data-i18n="signup.confirmPassword">Confirmer le mot de passe <span style="color: #dc3545;">*</span></label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required 
+                    aria-required="true" autocomplete="new-password">
                 <span class="error" data-i18n="signup.errors.passwordMismatch">Les mots de passe ne correspondent pas</span>
             </div>
 
-            <!-- Terms and Conditions -->
             <div class="terms-checkbox">
-                <input type="checkbox" id="terms" name="terms" required>
+                <input type="checkbox" id="terms" name="terms" required aria-required="true">
                 <label for="terms">
                     <span data-i18n="signup.terms.agree">J'accepte les</span>
-                    <a href="#" data-i18n="signup.terms.terms">conditions d'utilisation</a>
+                    <a href="/terms.html" target="_blank" data-i18n="signup.terms.terms">conditions d'utilisation</a>
                     <span data-i18n="signup.terms.and">et la</span>
-                    <a href="#" data-i18n="signup.terms.privacy">politique de confidentialité</a>
+                    <a href="/privacy.html" target="_blank" data-i18n="signup.terms.privacy">politique de confidentialité</a>
                 </label>
             </div>
 
-            <!-- Submit Button -->
             <button type="submit" class="submit-btn" data-i18n="signup.submit">Créer mon compte</button>
         </form>
 
@@ -396,22 +345,28 @@
 
     <script src="js/i18n.js"></script>
     <script>
-        // User type selection
+        const CONFIG = {
+            API_BASE: '/api',
+            STORAGE_KEYS: {
+                USER: 'nimwema_user',
+                TOKEN: 'nimwema_token',
+                PENDING_ORDER: 'nimwema_pending_order'
+            }
+        };
+        
         document.querySelectorAll('.user-type-option').forEach(option => {
             option.addEventListener('click', function() {
                 document.querySelectorAll('.user-type-option').forEach(opt => opt.classList.remove('active'));
                 this.classList.add('active');
-                this.querySelector('input[type="radio"]').checked = true;
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
                 
-                // Redirect to merchant signup if merchant is selected
-                const userType = this.querySelector('input[type="radio"]').value;
-                if (userType === 'merchant') {
+                if (radio.value === 'merchant') {
                     window.location.href = 'merchant-signup.html';
                 }
             });
         });
 
-        // Password strength checker
         const passwordInput = document.getElementById('password');
         const strengthBar = document.getElementById('passwordStrengthBar');
         const requirements = {
@@ -425,7 +380,6 @@
             const password = this.value;
             let strength = 0;
 
-            // Check length
             if (password.length >= 8) {
                 requirements.length.classList.add('met');
                 strength++;
@@ -433,7 +387,6 @@
                 requirements.length.classList.remove('met');
             }
 
-            // Check uppercase
             if (/[A-Z]/.test(password)) {
                 requirements.uppercase.classList.add('met');
                 strength++;
@@ -441,7 +394,6 @@
                 requirements.uppercase.classList.remove('met');
             }
 
-            // Check lowercase
             if (/[a-z]/.test(password)) {
                 requirements.lowercase.classList.add('met');
                 strength++;
@@ -449,7 +401,6 @@
                 requirements.lowercase.classList.remove('met');
             }
 
-            // Check number
             if (/[0-9]/.test(password)) {
                 requirements.number.classList.add('met');
                 strength++;
@@ -457,7 +408,6 @@
                 requirements.number.classList.remove('met');
             }
 
-            // Update strength bar
             strengthBar.className = 'password-strength-bar';
             if (strength === 4) {
                 strengthBar.classList.add('strong');
@@ -468,7 +418,6 @@
             }
         });
 
-        // Form validation and submission
         const signupForm = document.getElementById('signupForm');
         const alertBox = document.getElementById('alertBox');
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -477,9 +426,12 @@
             alertBox.textContent = message;
             alertBox.className = `alert ${type}`;
             alertBox.style.display = 'block';
-            setTimeout(() => {
-                alertBox.style.display = 'none';
-            }, 5000);
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertBox.style.display = 'none';
+                }, 5000);
+            }
         }
 
         function validateEmail(email) {
@@ -500,12 +452,11 @@
         signupForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Clear previous errors
             document.querySelectorAll('.form-group').forEach(group => {
                 group.classList.remove('has-error');
             });
+            alertBox.style.display = 'none';
 
-            // Get form data
             const formData = {
                 fullName: document.getElementById('fullName').value.trim(),
                 email: document.getElementById('email').value.trim(),
@@ -516,31 +467,41 @@
                 terms: document.getElementById('terms').checked
             };
 
-            // Validate
             let isValid = true;
+            let firstError = null;
 
-            if (!formData.fullName) {
-                document.getElementById('fullName').closest('.form-group').classList.add('has-error');
+            if (!formData.fullName || formData.fullName.length < 2) {
+                const group = document.getElementById('fullName').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!validateEmail(formData.email)) {
-                document.getElementById('email').closest('.form-group').classList.add('has-error');
+                const group = document.getElementById('email').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!validatePhone(formData.phone)) {
-                document.getElementById('phone').closest('.form-group').classList.add('has-error');
+                const group = document.getElementById('phone').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!validatePassword(formData.password)) {
-                document.getElementById('password').closest('.form-group').classList.add('has-error');
+                const group = document.getElementById('password').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (formData.password !== formData.confirmPassword) {
-                document.getElementById('confirmPassword').closest('.form-group').classList.add('has-error');
+                const group = document.getElementById('confirmPassword').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
@@ -550,18 +511,22 @@
             }
 
             if (!isValid) {
+                if (firstError) {
+                    firstError.querySelector('input').focus();
+                }
                 return;
             }
 
-            // Show loading
             loadingSpinner.classList.add('active');
             signupForm.style.display = 'none';
+            
+            const submitBtn = signupForm.querySelector('.submit-btn');
+            submitBtn.disabled = true;
 
             try {
-                  // Check if there's a pending order to link
-                  const pendingOrder = sessionStorage.getItem('pendingOrder');
-                // Submit to API
-                const response = await fetch('/api/auth/signup', {
+                const pendingOrder = sessionStorage.getItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
+                
+                const response = await fetch(`${CONFIG.API_BASE}/auth/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -571,33 +536,46 @@
                         email: formData.email,
                         phone: formData.phone,
                         password: formData.password,
-                        role: formData.userType
+                        role: formData.userType,
+                        pendingOrder: pendingOrder || null
                     })
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                      // Clear pending order from session
-                      sessionStorage.removeItem('pendingOrder');
+                if (response.ok && data.success) {
+                    sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
+                    
                     showAlert('Compte créé avec succès ! Redirection...', 'success');
+                    
+                    if (data.user && data.token) {
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify(data.user));
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.TOKEN, data.token);
+                    }
+                    
                     setTimeout(() => {
-                        window.location.href = 'login.html';
+                        if (pendingOrder) {
+                            window.location.href = '/dashboard.html';
+                        } else {
+                            window.location.href = '/login.html';
+                        }
                     }, 2000);
                 } else {
-                    throw new Error(data.error || 'Erreur lors de la création du compte');
+                    throw new Error(data.message || data.error || 'Erreur lors de la création du compte');
                 }
             } catch (error) {
                 console.error('Signup error:', error);
-                showAlert(error.message, 'error');
+                showAlert(error.message || 'Une erreur est survenue. Veuillez réessayer.', 'error');
                 loadingSpinner.classList.remove('active');
                 signupForm.style.display = 'block';
+                submitBtn.disabled = false;
             }
         });
 
-        // Initialize i18n
         document.addEventListener('DOMContentLoaded', function() {
-            initI18n();
+            if (typeof initI18n === 'function') {
+                initI18n();
+            }
         });
     </script>
 </body>

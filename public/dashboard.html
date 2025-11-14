@@ -6,21 +6,16 @@
     <title>Mon Tableau de Bord - Nimwema</title>
     <meta name="description" content="Gérez vos demandes de bons d'achat et vos expéditeurs">
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
     <link rel="stylesheet" href="/css/dashboard.css">
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
-        <!-- Top Bar: Language Selector + User Menu -->
         <div class="header-top">
             <div class="language-selector">
                 <button class="lang-btn active" data-lang="fr">FR</button>
@@ -33,7 +28,6 @@
             </div>
         </div>
         
-        <!-- Main Header: Logo + Menu -->
         <div class="header-main">
             <a href="/" class="logo">
                 NIM<span class="w">W</span>EMA
@@ -46,12 +40,14 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="dashboard-container">
-        <!-- Sidebar Navigation -->
         <aside class="dashboard-sidebar">
             <nav class="dashboard-nav">
-                <a href="#requests" class="nav-item active" onclick="showSection('requests')" data-i18n="my_requests">
+                <a href="#pending-orders" class="nav-item active" onclick="showSection('pending-orders')" data-i18n="pending_orders">
+                    <span class="nav-icon">⏳</span>
+                    <span class="nav-text">Commandes en attente</span>
+                </a>
+                <a href="#requests" class="nav-item" onclick="showSection('requests')" data-i18n="my_requests">
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">Mes Demandes</span>
                 </a>
@@ -66,11 +62,24 @@
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
         <div class="dashboard-content">
-            <!-- Requests Section -->
-            <section id="requestsSection" class="dashboard-section active">
-                <!-- Section Header -->
+            <section id="pendingOrdersSection" class="dashboard-section active">
+                <div class="section-header">
+                    <div>
+                        <h1>Mes Commandes en Attente</h1>
+                        <p class="text-small">Commandes en attente de validation de paiement</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Actualiser</button>
+                </div>
+                
+                <div id="pendingOrdersList">
+                    <div class="loading-state">
+                        <p>Chargement...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="requestsSection" class="dashboard-section">
                 <div class="section-header">
                     <div>
                         <h1 data-i18n="my_requests">Mes Demandes</h1>
@@ -83,7 +92,6 @@
                     </button>
                 </div>
 
-                <!-- Filters and Sort -->
                 <div class="filters-bar">
                     <div class="filter-group">
                         <label data-i18n="filter_by_status">Filtrer par statut:</label>
@@ -114,35 +122,14 @@
                     </div>
                 </div>
 
-                <!-- Requests List -->
                 <div id="requestsList" class="requests-list">
-                    <!-- Requests will be loaded here -->
                     <div class="loading-state">
                         <p data-i18n="loading">Chargement...</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Pending Orders Section -->
-            <section id="pendingOrdersSection" class="dashboard-section">
-                <div class="section-header">
-                    <div>
-                        <h1>Mes Commandes en Attente</h1>
-                        <p class="text-small">Commandes en attente de validation de paiement</p>
-                    </div>
-                    <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Actualiser</button>
-                </div>
-                
-                <div id="pendingOrdersList">
-                    <div class="loading-state">
-                        <p>Chargement...</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Senders Section -->
             <section id="sendersSection" class="dashboard-section">
-                <!-- Section Header -->
                 <div class="section-header">
                     <div>
                         <h1 data-i18n="my_senders">Mes Expéditeurs</h1>
@@ -155,9 +142,7 @@
                     </button>
                 </div>
 
-                <!-- Senders List -->
                 <div id="sendersList" class="senders-grid">
-                    <!-- Senders will be loaded here -->
                     <div class="loading-state">
                         <p data-i18n="loading">Chargement...</p>
                     </div>
@@ -166,25 +151,19 @@
         </div>
     </main>
 
-    <!-- Request Details Modal -->
     <div id="requestModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 data-i18n="request_details">Détails de la demande</h2>
                 <button class="modal-close" onclick="closeModal('requestModal')">&times;</button>
             </div>
-            <div class="modal-body" id="requestModalBody">
-                <!-- Request details will be loaded here -->
-            </div>
+            <div class="modal-body" id="requestModalBody"></div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('requestModal')" data-i18n="close">
-                    Fermer
-                </button>
+                <button class="btn btn-secondary" onclick="closeModal('requestModal')" data-i18n="close">Fermer</button>
             </div>
         </div>
     </div>
 
-    <!-- Add/Edit Sender Modal -->
     <div id="senderModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -200,14 +179,8 @@
                             <span data-i18n="sender_name">Nom</span>
                             <span class="required">*</span>
                         </label>
-                        <input 
-                            type="text" 
-                            id="senderFormName" 
-                            name="name" 
-                            class="form-input" 
-                            required
-                            data-i18n-placeholder="sender_name_placeholder"
-                            placeholder="Nom de l'expéditeur">
+                        <input type="text" id="senderFormName" name="name" class="form-input" required
+                            data-i18n-placeholder="sender_name_placeholder" placeholder="Nom de l'expéditeur">
                     </div>
                     
                     <div class="form-group">
@@ -215,43 +188,27 @@
                             <span data-i18n="sender_phone">Numéro de téléphone</span>
                             <span class="required">*</span>
                         </label>
-                        <input 
-                            type="tel" 
-                            id="senderFormPhone" 
-                            name="phone" 
-                            class="form-input" 
-                            required
-                            data-i18n-placeholder="phone_placeholder"
-                            placeholder="+243 XXX XXX XXX">
+                        <input type="tel" id="senderFormPhone" name="phone" class="form-input" required
+                            data-i18n-placeholder="phone_placeholder" placeholder="+243 XXX XXX XXX">
                     </div>
                     
                     <div class="form-group">
                         <label for="senderFormRelation" class="form-label">
                             <span data-i18n="relation">Relation</span>
                         </label>
-                        <input 
-                            type="text" 
-                            id="senderFormRelation" 
-                            name="relation" 
-                            class="form-input"
-                            data-i18n-placeholder="relation_placeholder"
-                            placeholder="Ex: Famille, Ami, Collègue">
+                        <input type="text" id="senderFormRelation" name="relation" class="form-input"
+                            data-i18n-placeholder="relation_placeholder" placeholder="Ex: Famille, Ami, Collègue">
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('senderModal')" data-i18n="cancel">
-                            Annuler
-                        </button>
-                        <button type="submit" class="btn btn-primary" data-i18n="save">
-                            Enregistrer
-                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('senderModal')" data-i18n="cancel">Annuler</button>
+                        <button type="submit" class="btn btn-primary" data-i18n="save">Enregistrer</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content modal-small">
             <div class="modal-header">
@@ -259,22 +216,15 @@
                 <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <p id="deleteMessage" data-i18n="delete_confirmation">
-                    Êtes-vous sûr de vouloir supprimer cet élément ?
-                </p>
+                <p id="deleteMessage" data-i18n="delete_confirmation">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('deleteModal')" data-i18n="cancel">
-                    Annuler
-                </button>
-                <button class="btn btn-primary" style="background: var(--error);" onclick="confirmDelete()" data-i18n="delete">
-                    Supprimer
-                </button>
+                <button class="btn btn-secondary" onclick="closeModal('deleteModal')" data-i18n="cancel">Annuler</button>
+                <button class="btn btn-primary" style="background: var(--error);" onclick="confirmDelete()" data-i18n="delete">Supprimer</button>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
@@ -283,9 +233,282 @@
         </div>
     </footer>
 
-    <!-- Scripts -->
     <script src="/js/i18n.js"></script>
     <script src="/js/main.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script>
+        const CONFIG = {
+            API_BASE: '/api',
+            STORAGE_KEYS: {
+                USER: 'nimwema_user',
+                TOKEN: 'nimwema_token'
+            },
+            REFRESH_INTERVAL: 30000
+        };
+        
+        let refreshInterval = null;
+        
+        function checkAuth() {
+            const user = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
+            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
+            
+            if (!user || !token) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            
+            try {
+                const userData = JSON.parse(user);
+                document.getElementById('userName').textContent = userData.name || 'Utilisateur';
+                return true;
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+                logout();
+                return false;
+            }
+        }
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        async function logout() {
+            try {
+                await fetch(`${CONFIG.API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+                localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
+                window.location.href = '/login.html';
+            }
+        }
+        
+        function showSection(sectionName) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            document.querySelectorAll('.dashboard-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            let targetSection;
+            switch(sectionName) {
+                case 'pending-orders':
+                    targetSection = document.getElementById('pendingOrdersSection');
+                    loadPendingOrders();
+                    break;
+                case 'requests':
+                    targetSection = document.getElementById('requestsSection');
+                    loadRequests();
+                    break;
+                case 'senders':
+                    targetSection = document.getElementById('sendersSection');
+                    loadSenders();
+                    break;
+            }
+            
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+        }
+        
+        async function loadPendingOrders() {
+            const container = document.getElementById('pendingOrdersList');
+            
+            try {
+                const response = await fetch(`${CONFIG.API_BASE}/user/pending-orders`, {
+                    headers: getAuthHeaders(),
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.orders && data.orders.length > 0) {
+                    container.innerHTML = data.orders.map(order => `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div>
+                                    <h3>Commande #${escapeHTML(order.id)}</h3>
+                                    <p class="text-small">${formatDate(order.createdAt)}</p>
+                                </div>
+                                <span class="status-badge status-pending">En attente</span>
+                            </div>
+                            <div class="order-details">
+                                <div class="detail-row">
+                                    <span>Montant:</span>
+                                    <strong>${formatCurrency(order.amount, order.currency)}</strong>
+                                </div>
+                                <div class="detail-row">
+                                    <span>Quantité:</span>
+                                    <strong>${order.quantity} bon(s)</strong>
+                                </div>
+                                <div class="detail-row">
+                                    <span>Méthode:</span>
+                                    <strong>${getPaymentMethodLabel(order.paymentMethod)}</strong>
+                                </div>
+                            </div>
+                            <div class="order-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="viewOrderInstructions('${order.id}')">
+                                    Voir instructions
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('${order.id}')">
+                                    Annuler
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p>Aucune commande en attente</p>
+                            <button class="btn btn-primary" onclick="window.location.href='/send.html'">
+                                Envoyer un bon d'achat
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading pending orders:', error);
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p>Erreur lors du chargement des commandes</p>
+                        <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        function formatCurrency(amount, currency = 'USD') {
+            return new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: currency
+            }).format(amount);
+        }
+        
+        function formatDate(dateString) {
+            return new Intl.DateTimeFormat('fr-FR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date(dateString));
+        }
+        
+        function getPaymentMethodLabel(method) {
+            const labels = {
+                'flexpay': 'Mobile Money',
+                'flexpaycard': 'Carte bancaire',
+                'cash': 'Cash/Western Union',
+                'bank': 'Virement bancaire'
+            };
+            return labels[method] || method;
+        }
+        
+        function viewOrderInstructions(orderId) {
+            window.location.href = `/payment-instructions.html?order=${encodeURIComponent(orderId)}`;
+        }
+        
+        function confirmDeleteOrder(orderId) {
+            if (confirm('Êtes-vous sûr de vouloir annuler cette commande ?')) {
+                deleteOrder(orderId);
+            }
+        }
+        
+        async function deleteOrder(orderId) {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE}/user/orders/${encodeURIComponent(orderId)}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders(),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Commande annulée avec succès');
+                    loadPendingOrders();
+                } else {
+                    throw new Error(data.message || 'Erreur lors de l\'annulation');
+                }
+            } catch (error) {
+                console.error('Error deleting order:', error);
+                alert('Erreur lors de l\'annulation de la commande');
+            }
+        }
+        
+        function loadRequests() {
+            document.getElementById('requestsList').innerHTML = `
+                <div class="empty-state">
+                    <p>Fonction en développement</p>
+                </div>
+            `;
+        }
+        
+        function loadSenders() {
+            document.getElementById('sendersList').innerHTML = `
+                <div class="empty-state">
+                    <p>Fonction en développement</p>
+                </div>
+            `;
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        function showAddSenderModal() {
+            document.getElementById('senderModal').style.display = 'block';
+        }
+        
+        function saveSender(event) {
+            event.preventDefault();
+            alert('Fonction en développement');
+        }
+        
+        function confirmDelete() {
+            alert('Fonction en développement');
+        }
+        
+        function toggleMenu() {
+            document.querySelector('.dashboard-sidebar').classList.toggle('mobile-open');
+        }
+        
+        function filterRequests() {}
+        function sortRequests() {}
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuth()) {
+                loadPendingOrders();
+                refreshInterval = setInterval(loadPendingOrders, CONFIG.REFRESH_INTERVAL);
+            }
+        });
+        
+        window.addEventListener('beforeunload', function() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
 </body>
 </html>
