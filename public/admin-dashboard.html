@@ -420,7 +420,14 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch orders');
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Expected JSON but got:', contentType);
+                    throw new Error('Le serveur a renvoyé une réponse non-JSON. Vérifiez que l\'API est configurée correctement.');
                 }
                 
                 const data = await response.json();
@@ -480,8 +487,15 @@
                     <tr>
                         <td colspan="9" class="empty-state">
                             <div class="empty-state-icon">⚠️</div>
-                            <p>Erreur lors du chargement des commandes</p>
-                            <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
+                            <p style="color: #dc3545; font-weight: 600;">Erreur lors du chargement des commandes</p>
+                            <p style="font-size: 14px; color: #666; margin: 10px 0;">${error.message}</p>
+                            <p style="font-size: 13px; color: #999; margin-bottom: 15px;">
+                                Vérifiez que:<br>
+                                • L'API backend est démarrée<br>
+                                • L'endpoint /api/admin/orders/pending existe<br>
+                                • Vous êtes authentifié en tant qu'administrateur
+                            </p>
+                            <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Réessayer</button>
                         </td>
                     </tr>
                 `;
@@ -499,6 +513,12 @@
                     method: 'POST',
                     credentials: 'include'
                 });
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Le serveur a renvoyé une réponse non-JSON');
+                }
                 
                 const data = await response.json();
                 
@@ -535,6 +555,12 @@
                     body: JSON.stringify({ reason: reason.trim() })
                 });
                 
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Le serveur a renvoyé une réponse non-JSON');
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
@@ -555,6 +581,16 @@
                 const response = await fetch('/api/admin/orders/pending', {
                     credentials: 'include'
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Le serveur a renvoyé une réponse non-JSON');
+                }
                 
                 const data = await response.json();
                 const order = data.orders.find(o => o.id === orderId);

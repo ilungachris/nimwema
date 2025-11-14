@@ -14,6 +14,139 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
+    
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #111;
+        }
+        
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        
+        .modal-close:hover {
+            background: #e0e0e0;
+            color: #111;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .password-input-container {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .password-toggle:hover {
+            opacity: 1;
+        }
+        
+        .form-error {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .form-error[style*="display: block"] {
+            display: block;
+        }
+        
+        .form-success {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .form-actions button {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -218,6 +351,7 @@
         const modal = document.getElementById('accountModal');
         if (modal) {
             modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         }
     }
     
@@ -226,6 +360,7 @@
         const modal = document.getElementById('accountModal');
         if (modal) {
             modal.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scrolling
         }
     }
     
@@ -312,6 +447,13 @@
     // Close modal on outside click
     document.getElementById('accountModal')?.addEventListener('click', function(e) {
         if (e.target === this) {
+            closeAccountModal();
+        }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
             closeAccountModal();
         }
     });
