@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <style>
+        /* Existing styles unchanged... */
         .admin-dashboard {
             display: flex;
             min-height: 100vh;
@@ -418,6 +419,42 @@
             padding: 20px;
         }
 
+        /* New: Auth Banner */
+        .auth-banner {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .auth-banner.show {
+            display: block;
+        }
+
+        .auth-banner button {
+            margin-left: 10px;
+            background: #8BC34A;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .auth-banner button:hover {
+            background: #7CB342;
+        }
+
+        .login-prompt {
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -445,7 +482,7 @@
 </head>
 <body>
     <div class="admin-dashboard">
-        <!-- Sidebar -->
+        <!-- Sidebar (unchanged) -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="index.html" class="sidebar-logo">NIMWEMA</a>
@@ -491,12 +528,19 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- New: Auth Banner -->
+            <div id="authBanner" class="auth-banner">
+                <span id="authMessage">Session invalide ou expirée. Veuillez vous reconnecter pour accéder au tableau de bord.</span>
+                <button onclick="window.location.href='login.html'">Se connecter maintenant</button>
+                <button onclick="document.getElementById('authBanner').classList.remove('show')">Ignorer (pour debug)</button>
+            </div>
+
             <div class="dashboard-header">
                 <h1>Tableau de bord Administrateurs</h1>
                 <p>Vue d'ensemble de la plateforme Nimwema</p>
             </div>
 
-            <!-- Stats Grid -->
+            <!-- Stats Grid (unchanged) -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-card-header">
@@ -553,7 +597,7 @@
                 </div>
             </div>
 
-            <!-- Quick Actions -->
+            <!-- Quick Actions (unchanged) -->
             <div class="quick-actions">
                 <div class="quick-action-card" onclick="window.location.href='admin-merchants.html'">
                     <div class="quick-action-icon">✅</div>
@@ -624,8 +668,8 @@
                         <tbody id="pendingMerchantsBody">
                             <tr>
                                 <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                                    Aucune demande en attente
-                                </td>
+                                Aucune demande en attente
+                            </td>
                             </tr>
                         </tbody>
                     </table>
@@ -678,11 +722,20 @@
             }
         }
 
+        // Global unauth flag and banner
+        let isUnauth = false;
+        function showAuthBanner(message = 'Session invalide ou expirée. Veuillez vous reconnecter.') {
+            isUnauth = true;
+            document.getElementById('authMessage').textContent = message;
+            document.getElementById('authBanner').classList.add('show');
+        }
+
         // Authentication check and token retrieval (NO REDIRECT FOR DEBUG)
         const token = localStorage.getItem('token');
         debugLog('Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'MISSING');
         if (!token) {
             console.warn('No token found in localStorage. Requests will likely fail with 401.');
+            showAuthBanner('Aucun token trouvé. Veuillez vous connecter.');
         }
 
         const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -715,6 +768,7 @@
                         try {
                             const errorText = await response.text();
                             console.warn('[API FETCH] 401 Response body:', errorText);
+                            showAuthBanner('Session invalide ou expirée (401).');
                         } catch (e) {
                             console.warn('[API FETCH] Could not read 401 body:', e);
                         }
@@ -723,12 +777,19 @@
                 }
 
                 const contentType = response.headers.get('content-type');
+                const responseText = await response.text();
                 if (!contentType || !contentType.includes('application/json')) {
-                    debugLog(`[API FETCH] Non-JSON response from ${url}:`, await response.text());
+                    // Detect redirect: If HTML, treat as unauth redirect
+                    if (responseText.includes('<html>') || responseText.includes('<!DOCTYPE html>')) {
+                        debugLog(`[API FETCH] Detected redirect to HTML on ${url} (likely unauth). Body snippet:`, responseText.substring(0, 200) + '...');
+                        showAuthBanner('Redirection vers la page d\'accueil détectée (non authentifié).');
+                        throw new Error('Redirected to login page (unauthorized)');
+                    }
+                    debugLog(`[API FETCH] Non-JSON response from ${url}:`, responseText.substring(0, 500) + '...');
                     throw new Error(`Unexpected content type: ${contentType}`);
                 }
 
-                const data = await response.json();
+                const data = JSON.parse(responseText); // Use pre-fetched text to avoid double-read
                 debugLog(`[API FETCH] Parsed JSON from ${url}:`, data);
                 return { response, data };
             } catch (error) {
@@ -737,9 +798,13 @@
             }
         }
 
-        // Load dashboard data
+        // Load dashboard data (with unauth handling)
         async function loadDashboardData() {
             debugLog('[DASHBOARD] Starting loadDashboardData');
+            if (isUnauth) {
+                debugLog('[DASHBOARD] Skipping due to unauth');
+                return;
+            }
             try {
                 const { data } = await apiFetch('/api/admin/dashboard');
                 
@@ -767,13 +832,21 @@
                 debugLog('[DASHBOARD] loadDashboardData completed successfully');
             } catch (error) {
                 console.error('[DASHBOARD] Error loading dashboard:', error);
-                // Optionally show a global error toast here
+                if (error.message.includes('401') || error.message.includes('unauthorized') || error.message.includes('Redirected')) {
+                    // Already handled by banner
+                } else {
+                    showAuthBanner('Erreur de chargement du tableau de bord: ' + error.message);
+                }
             }
         }
 
         async function loadPendingMerchants() {
             const tbody = document.getElementById('pendingMerchantsBody');
             debugLog('[MERCHANTS] Starting loadPendingMerchants');
+            if (isUnauth) {
+                tbody.innerHTML = '<tr><td colspan="6" class="login-prompt">Veuillez vous connecter pour voir les demandes.</td></tr>';
+                return;
+            }
             try {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
                 const { data: merchants } = await apiFetch('/api/admin/merchants?status=pending&limit=5');
@@ -813,10 +886,11 @@
                 debugLog('[MERCHANTS] loadPendingMerchants completed');
             } catch (error) {
                 console.error('[MERCHANTS] Error loading pending merchants:', error);
+                const msg = error.message.includes('unauthorized') || error.message.includes('Redirected') ? 'Veuillez vous connecter.' : 'Erreur de chargement.';
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="error-message">
-                            Erreur de chargement des demandes. <button class="btn btn-secondary" onclick="loadPendingMerchants()">Réessayer</button>
+                        <td colspan="6" class="login-prompt">
+                            ${msg} <button class="btn btn-secondary" onclick="loadPendingMerchants()">Réessayer</button>
                         </td>
                     </tr>
                 `;
@@ -826,6 +900,10 @@
         async function loadRecentActivity() {
             const tbody = document.getElementById('activityBody');
             debugLog('[ACTIVITY] Starting loadRecentActivity');
+            if (isUnauth) {
+                tbody.innerHTML = '<tr><td colspan="5" class="login-prompt">Veuillez vous connecter pour voir l\'activité.</td></tr>';
+                return;
+            }
             try {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
                 const { data: activities } = await apiFetch('/api/admin/activity?limit=10');
@@ -858,10 +936,11 @@
                 debugLog('[ACTIVITY] loadRecentActivity completed');
             } catch (error) {
                 console.error('[ACTIVITY] Error loading activity:', error);
+                const msg = error.message.includes('unauthorized') || error.message.includes('Redirected') ? 'Veuillez vous connecter.' : 'Erreur de chargement.';
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="error-message">
-                            Erreur de chargement de l'activité. <button class="btn btn-secondary" onclick="loadRecentActivity()">Réessayer</button>
+                        <td colspan="5" class="login-prompt">
+                            ${msg} <button class="btn btn-secondary" onclick="loadRecentActivity()">Réessayer</button>
                         </td>
                     </tr>
                 `;
@@ -870,12 +949,13 @@
 
         async function approveMerchant(id) {
             debugLog(`[MERCHANT APPROVE] Approving merchant ${id}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             if (!confirm('Approuver ce commerçant ?')) return;
             
             try {
                 const { data } = await apiFetch(`/api/admin/merchants/${id}/approve`, { method: 'POST' });
                 
-                if (data.success !== false) { // Assume success if no explicit failure
+                if (data.success !== false) {
                     alert('Commerçant approuvé avec succès');
                     loadPendingMerchants();
                     loadDashboardData();
@@ -890,6 +970,7 @@
 
         async function rejectMerchant(id) {
             debugLog(`[MERCHANT REJECT] Rejecting merchant ${id}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             const reason = prompt('Raison du rejet :');
             if (!reason) return;
             
@@ -917,10 +998,14 @@
             window.location.href = `admin-merchants.html?id=${id}`;
         }
 
-        // Load pending orders
+        // Load pending orders (with unauth handling)
         async function loadPendingOrders() {
             const tbody = document.getElementById('pendingOrdersBody');
             debugLog('[ORDERS] Starting loadPendingOrders');
+            if (isUnauth) {
+                tbody.innerHTML = '<tr><td colspan="7" class="login-prompt">Veuillez vous connecter pour voir les commandes.</td></tr>';
+                return;
+            }
             try {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
                 const { data } = await apiFetch('/api/admin/pending-orders');
@@ -949,10 +1034,11 @@
                 debugLog('[ORDERS] loadPendingOrders completed');
             } catch (error) {
                 console.error('[ORDERS] Error loading pending orders:', error);
+                const msg = error.message.includes('unauthorized') || error.message.includes('Redirected') ? 'Veuillez vous connecter.' : 'Erreur de chargement.';
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="error-message">
-                            Erreur de chargement des commandes. <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
+                        <td colspan="7" class="login-prompt">
+                            ${msg} <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
                         </td>
                     </tr>
                 `;
@@ -962,6 +1048,7 @@
         // Approve order
         async function approveOrder(orderId) {
             debugLog(`[ORDER APPROVE] Approving order ${orderId}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             if (!confirm('Confirmer l\'approbation de cette commande? Les bons seront générés et envoyés par SMS.')) return;
             
             try {
@@ -982,6 +1069,7 @@
         // Reject order
         async function rejectOrder(orderId) {
             debugLog(`[ORDER REJECT] Rejecting order ${orderId}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             const reason = prompt('Raison du rejet:');
             if (!reason) return;
             
@@ -1025,9 +1113,11 @@
         loadDashboardData().catch(e => console.error('[INIT] Dashboard init failed:', e));
         loadPendingOrders().catch(e => console.error('[INIT] Orders init failed:', e));
         setInterval(() => {
-            debugLog('[INTERVAL] Refreshing data...');
-            loadDashboardData().catch(console.error);
-            loadPendingOrders().catch(console.error);
+            if (!isUnauth) {
+                debugLog('[INTERVAL] Refreshing data...');
+                loadDashboardData().catch(console.error);
+                loadPendingOrders().catch(console.error);
+            }
         }, 60000); // Refresh every minute, with error handling
         debugLog('[INIT] Initialization complete');
     </script>

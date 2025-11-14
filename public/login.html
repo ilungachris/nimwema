@@ -6,6 +6,7 @@
     <title>Connexion - Nimwema</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/forms.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <style>
         .auth-container {
             min-height: 100vh;
@@ -65,11 +66,16 @@
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
+            box-sizing: border-box;
         }
 
         .form-input:focus {
             outline: none;
             border-color: #8BC34A;
+        }
+
+        .form-input:invalid {
+            border-color: #f44336;
         }
 
         .password-toggle {
@@ -86,6 +92,11 @@
             cursor: pointer;
             color: #666;
             font-size: 18px;
+            padding: 0;
+        }
+
+        .password-toggle-btn:hover {
+            color: #8BC34A;
         }
 
         .btn-primary {
@@ -101,7 +112,7 @@
             transition: background 0.3s;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #7CB342;
         }
 
@@ -138,6 +149,7 @@
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
+            border: 1px solid #f44336;
         }
 
         .success-message {
@@ -147,12 +159,19 @@
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
+            border: 1px solid #4caf50;
         }
 
         .loading {
             display: none;
             text-align: center;
             margin-top: 10px;
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
         }
 
         .loading-spinner {
@@ -170,25 +189,17 @@
             100% { transform: rotate(360deg); }
         }
 
-        .test-credentials {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 14px;
-        }
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 30px 20px;
+                margin: 10px;
+            }
 
-        .test-credentials h4 {
-            margin: 0 0 10px 0;
-            color: #666;
-        }
-
-        .test-credentials p {
-            margin: 5px 0;
-            color: #888;
+            .auth-logo h1 {
+                font-size: 2em;
+            }
         }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -200,32 +211,38 @@
 
             <h2 class="auth-title">Connexion</h2>
 
-            <div id="errorMessage" class="error-message"></div>
-            <div id="successMessage" class="success-message"></div>
+            <div id="errorMessage" class="error-message" role="alert" aria-live="polite"></div>
+            <div id="successMessage" class="success-message" role="alert" aria-live="polite"></div>
 
-            <form id="loginForm">
+            <form id="loginForm" novalidate>
                 <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
+                    <label for="email" class="form-label">Email <span aria-hidden="true">*</span></label>
                     <input 
                         type="email" 
                         id="email" 
                         class="form-input" 
                         placeholder="votre@email.com"
-                        required>
+                        aria-describedby="email-help"
+                        required
+                        autocomplete="email">
+                    <small id="email-help" class="sr-only">Entrez une adresse email valide</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="password" class="form-label">Mot de passe</label>
+                    <label for="password" class="form-label">Mot de passe <span aria-hidden="true">*</span></label>
                     <div class="password-toggle">
                         <input 
                             type="password" 
                             id="password" 
                             class="form-input" 
                             placeholder="••••••••"
-                            required>
-                        <button type="button" class="password-toggle-btn" onclick="togglePassword()">
+                            aria-describedby="password-help"
+                            required
+                            autocomplete="current-password">
+                        <button type="button" class="password-toggle-btn" aria-label="Afficher le mot de passe">
                             👁️
                         </button>
+                        <small id="password-help" class="sr-only">Minimum 8 caractères</small>
                     </div>
                 </div>
 
@@ -235,6 +252,7 @@
 
                 <div class="loading" id="loading">
                     <div class="loading-spinner"></div>
+                    <div class="loading-text">Connexion en cours...</div>
                 </div>
             </form>
 
@@ -242,73 +260,133 @@
                 <p>Pas encore de compte ? <a href="signup.html">S'inscrire</a></p>
                 <p><a href="index.html">← Retour à l'accueil</a></p>
             </div>
-
-            <div class="test-credentials">
-                <h4>🔑 Comptes de test :</h4>
-                <p><strong>Admin:</strong> admin@nimwema.cd / Admin@2024</p>
-                <p><strong>Merchant:</strong> merchant@test.cd / Merchant@2024</p>
-                <p><strong>Cashier:</strong> cashier@test.cd / Cashier@2024</p>
-            </div>
         </div>
     </div>
 
     <script>
+        // Elements
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const passwordToggleBtn = document.querySelector('.password-toggle-btn');
+
         // Toggle password visibility
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
+        passwordToggleBtn.addEventListener('click', () => {
             const type = passwordInput.type === 'password' ? 'text' : 'password';
             passwordInput.type = type;
+            passwordToggleBtn.setAttribute('aria-label', type === 'password' ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+            passwordToggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // Validation helper
+        function validateForm() {
+            let isValid = true;
+            const emailError = emailInput.parentElement.querySelector('.error-text') || document.createElement('div');
+            emailError.className = 'error-text';
+            emailError.style.color = '#f44336';
+            emailError.style.fontSize = '14px';
+            emailError.style.marginTop = '5px';
+
+            if (!emailInput.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+                emailInput.setCustomValidity('Email invalide');
+                if (!emailInput.parentElement.contains(emailError)) {
+                    emailInput.parentElement.appendChild(emailError);
+                }
+                emailError.textContent = 'Veuillez entrer un email valide.';
+                isValid = false;
+            } else {
+                emailInput.setCustomValidity('');
+                if (emailInput.parentElement.contains(emailError)) {
+                    emailInput.parentElement.removeChild(emailError);
+                }
+            }
+
+            if (!passwordInput.value || passwordInput.value.length < 8) {
+                passwordInput.setCustomValidity('Mot de passe trop court');
+                isValid = false;
+            } else {
+                passwordInput.setCustomValidity('');
+            }
+
+            return isValid;
         }
 
         // Show error message
         function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            errorMessage.setAttribute('aria-live', 'polite');
+            errorMessage.focus();
             setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
+                errorMessage.style.display = 'none';
+            }, 8000);
         }
 
         // Show success message
         function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            successMessage.setAttribute('aria-live', 'polite');
         }
 
+        // Handle form validation on input
+        [emailInput, passwordInput].forEach(input => {
+            input.addEventListener('input', () => {
+                input.setCustomValidity('');
+                validateForm();
+            });
+        });
+
         // Handle login form submission
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const loading = document.getElementById('loading');
+            if (!validateForm()) {
+                showError('Veuillez corriger les erreurs dans le formulaire.');
+                return;
+            }
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
 
             // Disable button and show loading
             loginBtn.disabled = true;
+            loginBtn.textContent = 'Connexion...';
             loading.style.display = 'block';
+            errorMessage.style.display = 'none';
 
             try {
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        // Add CSRF if backend requires: 'X-CSRF-Token': getCsrfToken()
                     },
+                    credentials: 'include', // Include cookies for session
                     body: JSON.stringify({ email, password })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Erreur de serveur' }));
+                    throw new Error(errorData.message || `Erreur HTTP ${response.status}`);
+                }
 
                 const result = await response.json();
 
                 if (result.success) {
-                    // Store session token
-                    document.cookie = `sessionToken=${result.sessionToken}; path=/; max-age=86400`;
-                    
-                    // Store user info
-                    localStorage.setItem('user', JSON.stringify(result.user));
+                    // Assume backend sets session cookie; store user info (no sensitive data)
+                    localStorage.setItem('nimwema_user', JSON.stringify({
+                        id: result.user.id,
+                        email: result.user.email,
+                        role: result.user.role,
+                        name: result.user.name // If available
+                    }));
 
-                    showSuccess('Connexion réussie ! Redirection...');
+                    showSuccess('Connexion réussie ! Redirection en cours...');
 
                     // Redirect based on role
                     setTimeout(() => {
@@ -325,16 +403,17 @@
                             default:
                                 window.location.href = 'dashboard.html';
                         }
-                    }, 1000);
+                    }, 1500);
                 } else {
-                    showError(result.message || 'Erreur de connexion');
-                    loginBtn.disabled = false;
-                    loading.style.display = 'none';
+                    throw new Error(result.message || 'Erreur de connexion');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showError('Erreur de connexion. Veuillez réessayer.');
+                showError(error.message || 'Une erreur est survenue. Veuillez réessayer.');
+            } finally {
+                // Re-enable button
                 loginBtn.disabled = false;
+                loginBtn.textContent = 'Se connecter';
                 loading.style.display = 'none';
             }
         });
@@ -343,20 +422,25 @@
         window.addEventListener('DOMContentLoaded', () => {
             const user = localStorage.getItem('nimwema_user');
             if (user) {
-                const userData = JSON.parse(user);
-                // Redirect to appropriate dashboard
-                switch (userData.role) {
-                    case 'admin':
-                        window.location.href = 'admin-dashboard.html';
-                        break;
-                    case 'merchant':
-                        window.location.href = 'merchant-dashboard.html';
-                        break;
-                    case 'cashier':
-                        window.location.href = 'cashier-dashboard.html';
-                        break;
-                    default:
-                        window.location.href = 'dashboard.html';
+                try {
+                    const userData = JSON.parse(user);
+                    // Redirect to appropriate dashboard
+                    switch (userData.role) {
+                        case 'admin':
+                            window.location.href = 'admin-dashboard.html';
+                            break;
+                        case 'merchant':
+                            window.location.href = 'merchant-dashboard.html';
+                            break;
+                        case 'cashier':
+                            window.location.href = 'cashier-dashboard.html';
+                            break;
+                        default:
+                            window.location.href = 'dashboard.html';
+                    }
+                } catch (e) {
+                    console.error('Invalid user data in localStorage:', e);
+                    localStorage.removeItem('nimwema_user');
                 }
             }
         });
