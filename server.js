@@ -1176,6 +1176,80 @@ app.post('/api/auth/merchant-signup', async (req, res) => {
   }
 });
 
+// ========== NEW: Create guest account from payment instructions page ==========
+app.post('/api/auth/create-guest-account', async (req, res) => {
+  try {
+    const { email, password, name, phone, orderId } = req.body;
+    
+    // Validate required fields
+    if (!email || !password || !orderId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Email, mot de passe et numéro de commande requis' 
+      });
+    }
+    
+    // Check if email already exists
+    const existingUser = data.users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Un compte avec cet email existe déjà' 
+      });
+    }
+    
+    // Verify order exists
+    const order = global.orders[orderId];
+    if (!order) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Commande non trouvée' 
+      });
+    }
+    
+    // Check if order is already linked to a user
+    if (order.user_id) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Cette commande est déjà associée à un compte' 
+      });
+    }
+    
+    // Create new user
+    const newUser = {
+      id: `USR-${Date.now()}`,
+      email: email,
+      password: password, // In production, hash this with bcrypt!
+      name: name || order.sender_name,
+      phone: phone || order.sender_phone,
+      role: 'customer',
+      createdAt: new Date().toISOString()
+    };
+    
+    data.users.push(newUser);
+    
+    // Link order to user
+    order.user_id = newUser.id;
+    order.user_email = newUser.email;
+    
+    // Return success (without password)
+    const { password: _, ...userWithoutPassword } = newUser;
+    
+    res.json({
+      success: true,
+      message: 'Compte créé avec succès',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Create guest account error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur lors de la création du compte' 
+    });
+  }
+});
+// ========== END NEW ENDPOINT ==========
+
 // MERGE: Added from backup - Get order by ID (synced global/data)
 app.get('/api/orders/:id', (req, res) => {
   try {
@@ -2046,6 +2120,150 @@ app.get('/api/admin/dashboard', authMiddleware.requireAuth, authMiddleware.requi
     res.status(500).json({ error: error.message });
   }
 });
+
+// ========== NEW ENDPOINTS FOR ADMIN ORDER MANAGEMENT ==========
+
+// Get pending orders (orders waiting for admin approval)
+app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  try {
+    // Get all orders with status 'pending_approval' or 'pending_payment'
+    const pendingOrders = Object.values(global.orders || {}).filter(order => 
+      order.status === 'pending_approval' || 
+      order.status === 'pending_payment'
+    );
+    
+    res.json({
+      success: true,
+      orders: pendingOrders
+    });
+  } catch (error) {
+    console.error('Error loading pending orders:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur lors du chargement des commandes' 
+    });
+  }
+});
+
+// Approve an order (generate and send vouchers)
+app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = global.orders[orderId];
+    
+    if (!order) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Commande non trouvée' 
+      });
+    }
+    
+    // Generate vouchers for each recipient
+    const vouchers = [];
+    const recipients = order.recipients || [];
+    
+    for (let i = 0; i < recipients.length; i++) {
+      const recipient = recipients[i];
+      const voucherCode = generateVoucherCode();
+      
+      const voucher = {
+        code: voucherCode,
+        orderId: orderId,
+        amount: parseFloat(order.amount),
+        currency: order.currency,
+        recipientName: recipient.name,
+        recipientPhone: recipient.phone,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
+      };
+      
+      vouchers.push(voucher);
+      
+      // Store voucher globally
+      if (!global.vouchers) global.vouchers = {};
+      global.vouchers[voucherCode] = voucher;
+      
+      // Send SMS to recipient
+      try {
+        const message = `Vous avez reçu un bon d'achat Nimwema de ${order.amount} ${order.currency}. Code: ${voucherCode}. Valide 90 jours. Utilisez sur www.nimwema.cd`;
+        await SMSService.sendSMS(recipient.phone, message);
+      } catch (smsError) {
+        console.error('SMS sending error:', smsError);
+      }
+    }
+    
+    // Update order status
+    order.status = 'sent';
+    order.payment_status = 'paid';
+    order.vouchers = vouchers;
+    order.approvedAt = new Date().toISOString();
+    order.approvedBy = req.user.id;
+    
+    // Send confirmation SMS to sender
+    try {
+      const senderMessage = `Votre commande ${orderId} a été approuvée. ${vouchers.length} bon(s) d'achat envoyé(s) aux destinataires. Merci!`;
+      await SMSService.sendSMS(order.sender_phone, senderMessage);
+    } catch (smsError) {
+      console.error('SMS sending error:', smsError);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Commande approuvée avec succès',
+      vouchers: vouchers
+    });
+  } catch (error) {
+    console.error('Error approving order:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur lors de l\'approbation' 
+    });
+  }
+});
+
+// Reject an order
+app.post('/api/admin/orders/:orderId/reject', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { reason } = req.body;
+    const order = global.orders[orderId];
+    
+    if (!order) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Commande non trouvée' 
+      });
+    }
+    
+    // Update order status
+    order.status = 'cancelled';
+    order.rejectedAt = new Date().toISOString();
+    order.rejectedBy = req.user.id;
+    order.rejectionReason = reason;
+    
+    // Send SMS to sender
+    try {
+      const message = `Votre commande ${orderId} a été rejetée. Raison: ${reason}. Contactez-nous pour plus d'informations.`;
+      await SMSService.sendSMS(order.sender_phone, message);
+    } catch (smsError) {
+      console.error('SMS sending error:', smsError);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Commande rejetée et expéditeur notifié'
+    });
+  } catch (error) {
+    console.error('Error rejecting order:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur lors du rejet' 
+    });
+  }
+});
+
+// ========== END NEW ENDPOINTS ==========
 
 app.get('/api/admin/merchants', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   try {

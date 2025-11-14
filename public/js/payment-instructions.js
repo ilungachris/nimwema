@@ -246,4 +246,5 @@ function showError(message) {
   if (instructionsContainer) {
     instructionsContainer.innerHTML = '';
   }
+  
 }
