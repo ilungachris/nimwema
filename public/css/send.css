@@ -1,6 +1,7 @@
 /* Nimwema Platform - Send Voucher Specific Styles */
 
-/* Currency Selector */
+/* Currencies Selector */
+
 .currency-selector-group {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
