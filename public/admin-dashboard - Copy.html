@@ -6,6 +6,7 @@
     <title>Admin Dashboard - Nimwema</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <style>
         .admin-dashboard {
             display: flex;
@@ -106,7 +107,7 @@
             padding: 20px 30px;
             border-radius: 12px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(00,0,0,0.05);
         }
 
         .dashboard-header h1 {
@@ -392,6 +393,68 @@
             color: #111111;
         }
 
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+                        background: #4caf50;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-pending {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .error-message {
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* New: Auth Banner */
+        .auth-banner {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .auth-banner.show {
+            display: block;
+        }
+
+        .auth-banner button {
+            margin-left: 10px;
+            background: #8BC34A;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .auth-banner button:hover {
+            background: #7CB342;
+        }
+
+        .login-prompt {
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -415,7 +478,6 @@
             }
         }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
     <div class="admin-dashboard">
@@ -465,8 +527,15 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- New: Auth Banner -->
+            <div id="authBanner" class="auth-banner">
+                <span id="authMessage">Session invalide ou expirée. Veuillez vous reconnecter pour accéder au tableau de bord.</span>
+                <button onclick="window.location.href='login.html'">Se connecter maintenant</button>
+                <button onclick="document.getElementById('authBanner').classList.remove('show')">Ignorer (pour debug)</button>
+            </div>
+
             <div class="dashboard-header">
-                <h1>Tableau de bord Administrateur</h1>
+                <h1>Tableau de bord Administrateurs</h1>
                 <p>Vue d'ensemble de la plateforme Nimwema</p>
             </div>
 
@@ -511,7 +580,7 @@
                 <div class="stat-card">
                     <div class="stat-card-header">
                         <span class="stat-card-title">Taux de rachat</span>
-                        <div class="stat-card-icon green">📈</div>
+                                                <div class="stat-card-icon green">📈</div>
                     </div>
                     <div class="stat-card-value" id="redemptionRate">0%</div>
                     <div class="stat-card-change">Moyenne plateforme</div>
@@ -644,15 +713,119 @@
 
     <script src="js/i18n.js"></script>
     <script>
-        // Load dashboard data
-        async function loadDashboardData() {
+        // DEBUG MODE: Enable detailed logging
+        const DEBUG = true;
+        function debugLog(...args) {
+            if (DEBUG) {
+                console.log('[DEBUG]', ...args);
+            }
+        }
+
+        // Global unauth flag and banner
+        let isUnauth = false;
+        function showAuthBanner(message = 'Session invalide ou expirée. Veuillez vous reconnecter.') {
+            isUnauth = true;
+            document.getElementById('authMessage').textContent = message;
+            document.getElementById('authBanner').classList.add('show');
+        }
+
+        // Authentication check and token retrieval (NO REDIRECT FOR DEBUG)
+        const userStr = localStorage.getItem('nimwema_user');
+        let token = null;
+        if (userStr) {
             try {
-                const response = await fetch('/api/admin/dashboard', {
-                    credentials: 'include'
+                const userData = JSON.parse(userStr);
+                if (userData.role === 'admin') {
+                    token = userData.token; // Assume token in user if JWT
+                }
+            } catch (e) {
+                localStorage.removeItem('nimwema_user');
+            }
+        }
+        debugLog('Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'MISSING');
+        if (!token && !userStr) {
+            console.warn('No token/user found. Requests will likely fail with 401.');
+            showAuthBanner('Aucun token trouvé. Veuillez vous connecter.');
+        }
+
+        const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
+        debugLog('Auth header prepared:', authHeader);
+
+        // Generic fetch helper with error handling and debugging (PAUSED REDIRECT)
+        async function apiFetch(url, options = {}) {
+            const defaults = {
+                headers: { ...authHeader, ...options.headers },
+                credentials: 'include' // Include cookies as backend expects both
+            };
+            const config = { ...defaults, ...options };
+            debugLog(`[API FETCH] Request to ${url} with config:`, config);
+
+            try {
+                const response = await fetch(url, config);
+                debugLog(`[API FETCH] Response from ${url}: status=${response.status}, ok=${response.ok}`);
+
+                // Log response headers for clues (e.g., Set-Cookie, auth issues)
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
                 });
-                const data = await response.json();
+                debugLog(`[API FETCH] Response headers:`, headers);
+
+                if (!response.ok) {
+                    // PAUSED: No auto-redirect on 401 for debugging
+                    if (response.status === 401) {
+                        console.warn(`[API FETCH] 401 Unauthorized on ${url}. Check token/cookies. Response body:`);
+                        try {
+                            const errorText = await response.text();
+                            console.warn('[API FETCH] 401 Response body:', errorText);
+                            showAuthBanner('Session invalide ou expirée (401).');
+                        } catch (e) {
+                            console.warn('[API FETCH] Could not read 401 body:', e);
+                        }
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                const responseText = await response.text();
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Detect redirect: If HTML, treat as unauth redirect
+                    if (responseText.includes('<html>') || responseText.includes('<!DOCTYPE html>')) {
+                        debugLog(`[API FETCH] Detected redirect to HTML on ${url} (likely unauth). Body snippet:`, responseText.substring(0, 200) + '...');
+                        showAuthBanner('Redirection vers la page d\'accueil détectée (non authentifié).');
+                        throw new Error('Redirected to login page (unauthorized)');
+                    }
+                    debugLog(`[API FETCH] Non-JSON response from ${url}:`, responseText.substring(0, 500) + '...');
+                    throw new Error(`Unexpected content type: ${contentType}`);
+                }
+
+                const data = JSON.parse(responseText); // Use pre-fetched text to avoid double-read
+                debugLog(`[API FETCH] Parsed JSON from ${url}:`, data);
+                return { response, data };
+            } catch (error) {
+                debugLog(`[API FETCH] Error on ${url}:`, error);
+                throw error;
+            }
+        }
+
+        // Load dashboard data (with unauth handling)
+        async function loadDashboardData() {
+            debugLog('[DASHBOARD] Starting loadDashboardData');
+            if (isUnauth) {
+                debugLog('[DASHBOARD] Skipping due to unauth');
+                return;
+            }
+            try {
+                const { data } = await apiFetch('/api/admin/dashboard');
                 
-                // Update stats
+                // Validate data structure
+                if (!data || typeof data !== 'object') {
+                    console.warn('[DASHBOARD] Invalid dashboard data structure:', data);
+                    return;
+                }
+                
+                debugLog('[DASHBOARD] Updating stats with data:', data);
+                // Update stats with fallbacks
                 document.getElementById('totalUsers').textContent = data.totalUsers || 0;
                 document.getElementById('activeMerchants').textContent = data.activeMerchants || 0;
                 document.getElementById('totalMerchants').textContent = data.totalMerchants || 0;
@@ -663,24 +836,38 @@
                 document.getElementById('redemptionRate').textContent = (data.redemptionRate || 0) + '%';
                 document.getElementById('pendingApprovals').textContent = data.pendingApprovals || 0;
                 
-                // Load pending merchants
+                // Load sub-components
                 await loadPendingMerchants();
-                
-                // Load recent activity
                 await loadRecentActivity();
+                debugLog('[DASHBOARD] loadDashboardData completed successfully');
             } catch (error) {
-                console.error('Error loading dashboard:', error);
+                console.error('[DASHBOARD] Error loading dashboard:', error);
+                if (error.message.includes('401') || error.message.includes('unauthorized') || error.message.includes('Redirected')) {
+                    // Already handled by banner
+                } else {
+                    showAuthBanner('Erreur de chargement du tableau de bord: ' + error.message);
+                }
             }
         }
 
         async function loadPendingMerchants() {
+            const tbody = document.getElementById('pendingMerchantsBody');
+            debugLog('[MERCHANTS] Starting loadPendingMerchants');
+            if (isUnauth) {
+                tbody.innerHTML = '<tr><td colspan="6" class="login-prompt">Veuillez vous connecter pour voir les demandes.</td></tr>';
+                return;
+            }
             try {
-                const response = await fetch('/api/admin/merchants?status=pending&limit=5', {
-                    credentials: 'include'
-                });
-                const merchants = await response.json();
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;
+                                    color: #999;">Chargement...</td></tr>';
+                const { data: merchants } = await apiFetch('/api/admin/merchants?status=pending&limit=5');
                 
-                const tbody = document.getElementById('pendingMerchantsBody');
+                if (!Array.isArray(merchants)) {
+                    console.warn('[MERCHANTS] Merchants data is not an array:', merchants);
+                    throw new Error('Invalid data format');
+                }
+                
+                debugLog('[MERCHANTS] Loaded merchants:', merchants);
                 if (merchants.length === 0) {
                     tbody.innerHTML = `
                         <tr>
@@ -692,14 +879,14 @@
                 } else {
                     tbody.innerHTML = merchants.map(m => `
                         <tr>
-                            <td>${m.businessName}</td>
-                            <td>${m.ownerName}</td>
-                            <td>${m.businessType}</td>
-                            <td>${m.city}</td>
-                            <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+                            <td>${m.businessName || 'N/A'}</td>
+                            <td>${m.ownerName || 'N/A'}</td>
+                            <td>${m.businessType || 'N/A'}</td>
+                            <td>${m.city || 'N/A'}</td>
+                            <td>${m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'N/A'}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="action-btn approve" onclick="approveMerchant('${m.id}')">Approuver</button>
+                                    <button class="action-btn approve" onclick="approveMerchant('${m.id}')">Valider</button>
                                     <button class="action-btn reject" onclick="rejectMerchant('${m.id}')">Rejeter</button>
                                     <button class="action-btn view" onclick="viewMerchant('${m.id}')">Voir</button>
                                 </div>
@@ -707,19 +894,37 @@
                         </tr>
                     `).join('');
                 }
+                debugLog('[MERCHANTS] loadPendingMerchants completed');
             } catch (error) {
-                console.error('Error loading pending merchants:', error);
+                console.error('[MERCHANTS] Error loading pending merchants:', error);
+                const msg = error.message.includes('unauthorized') || error.message.includes('Redirected') ? 'Veuillez vous connecter.' : 'Erreur de chargement.';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="login-prompt">
+                            ${msg} <button class="btn btn-secondary" onclick="loadPendingMerchants()">Réessayer</button>
+                        </td>
+                    </tr>
+                `;
             }
         }
 
         async function loadRecentActivity() {
+            const tbody = document.getElementById('activityBody');
+            debugLog('[ACTIVITY] Starting loadRecentActivity');
+            if (isUnauth) {
+                tbody.innerHTML = '<tr><td colspan="5" class="login-prompt">Veuillez vous connecter pour voir l\'activité.</td></tr>';
+                return;
+            }
             try {
-                const response = await fetch('/api/admin/activity?limit=10', {
-                    credentials: 'include'
-                });
-                const activities = await response.json();
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
+                const { data: activities } = await apiFetch('/api/admin/activity?limit=10');
                 
-                const tbody = document.getElementById('activityBody');
+                if (!Array.isArray(activities)) {
+                    console.warn('[ACTIVITY] Activities data is not an array:', activities);
+                    throw new Error('Invalid data format');
+                }
+                
+                debugLog('[ACTIVITY] Loaded activities:', activities);
                 if (activities.length === 0) {
                     tbody.innerHTML = `
                         <tr>
@@ -731,177 +936,204 @@
                 } else {
                     tbody.innerHTML = activities.map(a => `
                         <tr>
-                            <td>${a.type}</td>
-                            <td>${a.description}</td>
-                            <td>${a.user}</td>
-                            <td>${new Date(a.date).toLocaleString()}</td>
-                            <td><span class="status-badge ${a.status}">${a.statusText}</span></td>
+                            <td>${a.type || 'N/A'}</td>
+                            <td>${a.description || 'N/A'}</td>
+                            <td>${a.user || 'N/A'}</td>
+                            <td>${a.date ? new Date(a.date).toLocaleString() : 'N/A'}</td>
+                            <td><span class="status-badge ${a.status || 'pending'}">${a.statusText || a.status || 'N/A'}</span></td>
                         </tr>
                     `).join('');
                 }
+                debugLog('[ACTIVITY] loadRecentActivity completed');
             } catch (error) {
-                console.error('Error loading activity:', error);
+                console.error('[ACTIVITY] Error loading activity:', error);
+                const msg = error.message.includes('unauthorized') || error.message.includes('Redirected') ? 'Veuillez vous connecter.' : 'Erreur de chargement.';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="login-prompt">
+                            ${msg} <button class="btn btn-secondary" onclick="loadRecentActivity()">Réessayer</button>
+                        </td>
+                    </tr>
+                `;
             }
         }
 
         async function approveMerchant(id) {
+            debugLog(`[MERCHANT APPROVE] Approving merchant ${id}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             if (!confirm('Approuver ce commerçant ?')) return;
             
             try {
-                const response = await fetch(`/api/admin/merchants/${id}/approve`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
+                const { data } = await apiFetch(`/api/admin/merchants/${id}/approve`, { method: 'POST' });
                 
-                if (response.ok) {
+                if (data.success !== false) {
                     alert('Commerçant approuvé avec succès');
                     loadPendingMerchants();
                     loadDashboardData();
                 } else {
-                    alert('Erreur lors de l\'approbation');
+                    alert('Erreur lors de l\'approbation: ' + (data.message || 'Inconnu'));
                 }
             } catch (error) {
-                console.error('Error approving merchant:', error);
-                alert('Erreur lors de l\'approbation');
+                console.error('[MERCHANT APPROVE] Error approving merchant:', error);
+                alert('Erreur lors de l\'approbation: ' + error.message);
             }
         }
 
         async function rejectMerchant(id) {
+            debugLog(`[MERCHANT REJECT] Rejecting merchant ${id}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             const reason = prompt('Raison du rejet :');
             if (!reason) return;
             
             try {
-                const response = await fetch(`/api/admin/merchants/${id}/reject`, {
+                const { data } = await apiFetch(`/api/admin/merchants/${id}/reject`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', ...authHeader },
                     body: JSON.stringify({ reason })
                 });
                 
-                if (response.ok) {
+                if (data.success !== false) {
                     alert('Commerçant rejeté');
                     loadPendingMerchants();
                     loadDashboardData();
                 } else {
-                    alert('Erreur lors du rejet');
+                    alert('Erreur lors du rejet: ' + (data.message || 'Inconnu'));
                 }
             } catch (error) {
-                console.error('Error rejecting merchant:', error);
-                alert('Erreur lors du rejet');
+                console.error('[MERCHANT REJECT] Error rejecting merchant:', error);
+                alert('Erreur lors du rejet: ' + error.message);
             }
         }
 
         function viewMerchant(id) {
+            debugLog(`[MERCHANT VIEW] Viewing merchant ${id}`);
             window.location.href = `admin-merchants.html?id=${id}`;
         }
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                try {
-                    await fetch('/api/auth/logout', {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    console.error('Logout error:', error);
-                }
-            }
-        });
-
-        // Initialize
-        loadDashboardData();
-        loadPendingOrders();
-        setInterval(loadDashboardData, 60000); // Refresh every minute
-        setInterval(loadPendingOrders, 30000); // Refresh pending orders every 30 seconds
-        
-        // Load pending orders
+        // Load pending orders (with unauth handling)
         async function loadPendingOrders() {
+            const tbody = document.getElementById('pendingOrdersBody');
+            debugLog('[ORDERS] Starting loadPendingOrders');
+            if (isUnauth) {
+                tbody.innerHTML = '<tr><td colspan="7" class="login-prompt">Veuillez vous connecter pour voir les commandes.</td></tr>';
+                return;
+            }
             try {
-                const response = await fetch('/api/admin/pending-orders', {
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                    }
-                });
-                const data = await response.json();
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
+                const { data } = await apiFetch('/api/admin/pending-orders');
                 
-                const tbody = document.getElementById('pendingOrdersBody');
-                
-                if (!data.success || !data.orders || data.orders.length === 0) {
+                if (!data || !data.success || !Array.isArray(data.orders)) {
+                    debugLog('[ORDERS] Invalid or empty orders data:', data);
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucune commande en attente</td></tr>';
                     return;
                 }
                 
+                debugLog('[ORDERS] Loaded orders:', data.orders);
                 tbody.innerHTML = data.orders.map(order => `
                     <tr>
-                        <td><strong>${order.id}</strong></td>
+                        <td><strong>${order.id || 'N/A'}</strong></td>
                         <td>${order.senderName || 'N/A'}<br><small>${order.senderPhone || ''}</small></td>
-                        <td><strong>${order.amount} ${order.currency}</strong></td>
-                        <td>${order.quantity}</td>
-                        <td><span class="status-badge status-pending">${order.paymentMethod === 'cash' ? 'Cash/WU' : 'Virement'}</span></td>
-                        <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                        <td><strong>${order.amount || 0} ${order.currency || 'USD'}</strong></td>
+                        <td>${order.quantity || 0}</td>
+                        <td><span class="status-badge status-pending">${order.paymentMethod === 'cash' ? 'Cash/WU' : (order.paymentMethod === 'bank' ? 'Virement' : order.paymentMethod)}</span></td>
+                        <td>${order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
                         <td>
                             <button class="btn btn-success btn-sm" onclick="approveOrder('${order.id}')">Approuver</button>
                             <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">Rejeter</button>
                         </td>
                     </tr>
                 `).join('');
+                debugLog('[ORDERS] loadPendingOrders completed');
             } catch (error) {
-                console.error('Error loading pending orders:', error);
+                console.error('[ORDERS] Error loading pending orders:', error);
+                const msg = error.message.includes('unauthorized') || error.message.includes('Redirected') ? 'Veuillez vous connecter.' : 'Erreur de chargement.';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="login-prompt">
+                            ${msg} <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
+                        </td>
+                    </tr>
+                `;
             }
         }
         
         // Approve order
         async function approveOrder(orderId) {
+            debugLog(`[ORDER APPROVE] Approving order ${orderId}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             if (!confirm('Confirmer l\'approbation de cette commande? Les bons seront générés et envoyés par SMS.')) return;
             
             try {
-                const response = await fetch(`/api/admin/pending-orders/${orderId}/approve`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                    }
-                });
-                const data = await response.json();
+                const { data } = await apiFetch(`/api/admin/pending-orders/${orderId}/approve`, { method: 'POST' });
                 
-                if (data.success) {
-                    alert('✅ ' + data.message);
+                if (data && data.success) {
+                    alert('✅ ' + (data.message || 'Commande approuvée'));
                     loadPendingOrders();
                 } else {
-                    alert('❌ ' + data.message);
+                    alert('❌ ' + (data?.message || 'Erreur lors de l\'approbation'));
                 }
             } catch (error) {
+                console.error('[ORDER APPROVE] Error approving order:', error);
                 alert('❌ Erreur: ' + error.message);
             }
         }
         
         // Reject order
         async function rejectOrder(orderId) {
+            debugLog(`[ORDER REJECT] Rejecting order ${orderId}`);
+            if (isUnauth) return alert('Connectez-vous d\'abord.');
             const reason = prompt('Raison du rejet:');
             if (!reason) return;
             
             try {
-                const response = await fetch(`/api/admin/pending-orders/${orderId}/reject`, {
+                const { data } = await apiFetch(`/api/admin/pending-orders/${orderId}/reject`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json', ...authHeader },
                     body: JSON.stringify({ reason })
                 });
-                const data = await response.json();
                 
-                if (data.success) {
-                    alert('✅ ' + data.message);
+                if (data && data.success) {
+                    alert('✅ ' + (data.message || 'Commande rejetée'));
                     loadPendingOrders();
                 } else {
-                    alert('❌ ' + data.message);
+                    alert('❌ ' + (data?.message || 'Erreur lors du rejet'));
                 }
             } catch (error) {
+                console.error('[ORDER REJECT] Error rejecting order:', error);
                 alert('❌ Erreur: ' + error.message);
             }
         }
+
+        // Logout (kills session, clears localStorage, redirects to home)
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            debugLog('[LOGOUT] Starting logout');
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                try {
+                    await apiFetch('/api/auth/logout', { method: 'POST' });
+                } catch (error) {
+                    console.error('[LOGOUT] Logout error:', error);
+                } finally {
+                    localStorage.removeItem('nimwema_user');
+                    // Clear session cookie if possible (client-side hack; backend clears server-side)
+                    document.cookie = 'sessionToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    debugLog('[LOGOUT] Cleared storage/cookie, redirecting to index.html');
+                    window.location.href = 'index.html'; // Back to dashboard/home
+                }
+            }
+        });
+
+        // Initialize (with debug)
+        debugLog('[INIT] Initializing dashboard...');
+        loadDashboardData().catch(e => console.error('[INIT] Dashboard init failed:', e));
+        loadPendingOrders().catch(e => console.error('[INIT] Orders init failed:', e));
+        setInterval(() => {
+            if (!isUnauth) {
+                debugLog('[INTERVAL] Refreshing data...');
+                loadDashboardData().catch(console.error);
+                loadPendingOrders().catch(console.error);
+            }
+        }, 60000); // Refresh every minute, with error handling
+        debugLog('[INIT] Initialization complete');
     </script>
 </body>
 </html>
