@@ -281,6 +281,23 @@
             background: #e9ecef;
         }
 
+        /* Added for order action buttons */
+        .btn-success {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .btn-danger {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
         .table-container {
             overflow-x: auto;
         }
@@ -328,6 +345,12 @@
         .status-badge.rejected {
             background: #ffebee;
             color: #f44336;
+        }
+
+        /* For pending orders where class="status-badge status-pending" */
+        .status-badge.status-pending {
+            background: #fff3e0;
+            color: #ff9800;
         }
 
         .action-buttons {
@@ -392,6 +415,17 @@
             color: #111111;
         }
 
+        /* Simple banner for auth / API errors */
+        #dashboardAlert {
+            display: none;
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #fff3e0;
+            color: #ff9800;
+            font-size: 13px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -415,7 +449,7 @@
             }
         }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+    <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
     <div class="admin-dashboard">
@@ -465,6 +499,8 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <div id="dashboardAlert"></div>
+
             <div class="dashboard-header">
                 <h1>Tableau de bord Administrateurs</h1>
                 <p>Vue d'ensemble de la plateforme Nimwema</p>
@@ -552,7 +588,7 @@
             <div class="section-card">
                 <div class="section-header">
                     <h2 class="section-title">Commandes en attente de paiement</h2>
-                    <button class="btn btn-secondary" onclick="loadPendingOrders()">Actualiser</button>
+                    <button class="btn btn-secondary" id="refreshOrdersBtn">Actualiser</button>
                 </div>
                 <div class="table-container">
                     <table>
@@ -645,15 +681,110 @@
 
     <script src="js/i18n.js"></script>
     <script>
-        // Load dashboard data
+        // ======== API utilities & global error handling ========
+
+        const API_BASE = ''; // keeps paths relative: '/api/...'
+
+        const dashboardAlert = document.getElementById('dashboardAlert');
+
+        function showAlert(message, type = 'warning') {
+            if (!dashboardAlert) return;
+            dashboardAlert.style.display = 'block';
+            dashboardAlert.style.background =
+                type === 'error'
+                    ? '#ffebee'
+                    : type === 'success'
+                    ? '#e8f5e9'
+                    : '#fff3e0';
+            dashboardAlert.style.color =
+                type === 'error'
+                    ? '#f44336'
+                    : type === 'success'
+                    ? '#4caf50'
+                    : '#ff9800';
+            dashboardAlert.textContent = message;
+        }
+
+        function clearAlert() {
+            if (!dashboardAlert) return;
+            dashboardAlert.style.display = 'none';
+            dashboardAlert.textContent = '';
+        }
+
+        function getAuthHeaders(extra = {}) {
+            const headers = { ...extra };
+            const token = localStorage.getItem('token');
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            return headers;
+        }
+
+        function handleUnauthorized(context) {
+            console.warn('Unauthorized while loading ' + context + ' – redirecting to login.');
+            showAlert('Votre session a expiré. Vous allez être redirigé vers la page de connexion.', 'error');
+            // Short delay so the user can see the message
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 800);
+        }
+
+        async function jsonFetch(path, {
+            method = 'GET',
+            headers = {},
+            body = undefined,
+            withCredentials = true,
+            context = 'requête'
+        } = {}) {
+            const options = {
+                method,
+                headers: getAuthHeaders(headers)
+            };
+
+            if (body !== undefined) {
+                options.body = body;
+            }
+
+            if (withCredentials) {
+                options.credentials = 'include';
+            }
+
+            const res = await fetch(API_BASE + path, options);
+
+            const contentType = res.headers.get('content-type') || '';
+
+            if (res.status === 401) {
+                handleUnauthorized(context);
+                throw new Error('401 Unauthorized for ' + context);
+            }
+
+            if (!contentType.includes('application/json')) {
+                const text = await res.text();
+                console.error('Unexpected non-JSON response for ' + context, text.slice(0, 200));
+                throw new Error('Réponse inattendue pour ' + context);
+            }
+
+            let data;
+            try {
+                data = await res.json();
+            } catch (err) {
+                console.error('Error parsing JSON for ' + context, err);
+                throw err;
+            }
+
+            return data;
+        }
+
+        // ======== Dashboard data loaders ========
+
         async function loadDashboardData() {
             try {
-                const response = await fetch('/api/admin/dashboard', {
-                    credentials: 'include'
+                clearAlert();
+
+                const data = await jsonFetch('/api/admin/dashboard', {
+                    context: 'tableau de bord'
                 });
-                const data = await response.json();
-                
-                // Update stats
+
                 document.getElementById('totalUsers').textContent = data.totalUsers || 0;
                 document.getElementById('activeMerchants').textContent = data.activeMerchants || 0;
                 document.getElementById('totalMerchants').textContent = data.totalMerchants || 0;
@@ -663,26 +794,36 @@
                 document.getElementById('monthVolume').textContent = (data.monthVolume || 0) + ' USD';
                 document.getElementById('redemptionRate').textContent = (data.redemptionRate || 0) + '%';
                 document.getElementById('pendingApprovals').textContent = data.pendingApprovals || 0;
-                
-                // Load pending merchants
-                await loadPendingMerchants();
-                
-                // Load recent activity
-                await loadRecentActivity();
+
+                // Also refresh lists
+                await Promise.all([
+                    loadPendingMerchants(),
+                    loadRecentActivity()
+                ]);
             } catch (error) {
                 console.error('Error loading dashboard:', error);
+                showAlert('Impossible de charger le tableau de bord. Vérifiez votre connexion ou réessayez.', 'error');
             }
         }
 
         async function loadPendingMerchants() {
+            const tbody = document.getElementById('pendingMerchantsBody');
+
             try {
-                const response = await fetch('/api/admin/merchants?status=pending&limit=5', {
-                    credentials: 'include'
+                const merchantsResponse = await jsonFetch('/api/admin/merchants?status=pending&limit=5', {
+                    context: 'commerçants en attente'
                 });
-                const merchants = await response.json();
-                
-                const tbody = document.getElementById('pendingMerchantsBody');
-                if (merchants.length === 0) {
+
+                // Support both array and wrapped payloads: { merchants: [...] } or { data: [...] }
+                const merchants = Array.isArray(merchantsResponse)
+                    ? merchantsResponse
+                    : Array.isArray(merchantsResponse.merchants)
+                    ? merchantsResponse.merchants
+                    : Array.isArray(merchantsResponse.data)
+                    ? merchantsResponse.data
+                    : [];
+
+                if (!merchants || merchants.length === 0) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
@@ -693,11 +834,11 @@
                 } else {
                     tbody.innerHTML = merchants.map(m => `
                         <tr>
-                            <td>${m.businessName}</td>
-                            <td>${m.ownerName}</td>
-                            <td>${m.businessType}</td>
-                            <td>${m.city}</td>
-                            <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+                            <td>${m.businessName || ''}</td>
+                            <td>${m.ownerName || ''}</td>
+                            <td>${m.businessType || ''}</td>
+                            <td>${m.city || ''}</td>
+                            <td>${m.createdAt ? new Date(m.createdAt).toLocaleDateString() : ''}</td>
                             <td>
                                 <div class="action-buttons">
                                     <button class="action-btn approve" onclick="approveMerchant('${m.id}')">Valider</button>
@@ -710,18 +851,35 @@
                 }
             } catch (error) {
                 console.error('Error loading pending merchants:', error);
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                                Erreur lors du chargement des commerçants en attente
+                            </td>
+                        </tr>
+                    `;
+                }
             }
         }
 
         async function loadRecentActivity() {
+            const tbody = document.getElementById('activityBody');
+
             try {
-                const response = await fetch('/api/admin/activity?limit=10', {
-                    credentials: 'include'
+                const activitiesResponse = await jsonFetch('/api/admin/activity?limit=10', {
+                    context: 'activité récente'
                 });
-                const activities = await response.json();
-                
-                const tbody = document.getElementById('activityBody');
-                if (activities.length === 0) {
+
+                const activities = Array.isArray(activitiesResponse)
+                    ? activitiesResponse
+                    : Array.isArray(activitiesResponse.activities)
+                    ? activitiesResponse.activities
+                    : Array.isArray(activitiesResponse.data)
+                    ? activitiesResponse.data
+                    : [];
+
+                if (!activities || activities.length === 0) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
@@ -732,35 +890,42 @@
                 } else {
                     tbody.innerHTML = activities.map(a => `
                         <tr>
-                            <td>${a.type}</td>
-                            <td>${a.description}</td>
-                            <td>${a.user}</td>
-                            <td>${new Date(a.date).toLocaleString()}</td>
-                            <td><span class="status-badge ${a.status}">${a.statusText}</span></td>
+                            <td>${a.type || ''}</td>
+                            <td>${a.description || ''}</td>
+                            <td>${a.user || ''}</td>
+                            <td>${a.date ? new Date(a.date).toLocaleString() : ''}</td>
+                            <td><span class="status-badge ${a.status || ''}">${a.statusText || a.status || ''}</span></td>
                         </tr>
                     `).join('');
                 }
             } catch (error) {
                 console.error('Error loading activity:', error);
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                                Erreur lors du chargement de l'activité récente
+                            </td>
+                        </tr>
+                    `;
+                }
             }
         }
 
+        // ======== Merchant actions ========
+
         async function approveMerchant(id) {
             if (!confirm('Approuver ce commerçant ?')) return;
-            
+
             try {
-                const response = await fetch(`/api/admin/merchants/${id}/approve`, {
+                await jsonFetch(`/api/admin/merchants/${id}/approve`, {
                     method: 'POST',
-                    credentials: 'include'
+                    context: 'approbation commerçant'
                 });
-                
-                if (response.ok) {
-                    alert('Commerçant approuvé avec succès');
-                    loadPendingMerchants();
-                    loadDashboardData();
-                } else {
-                    alert('Erreur lors de l\'approbation');
-                }
+
+                alert('Commerçant approuvé avec succès');
+                loadPendingMerchants();
+                loadDashboardData();
             } catch (error) {
                 console.error('Error approving merchant:', error);
                 alert('Erreur lors de l\'approbation');
@@ -770,22 +935,18 @@
         async function rejectMerchant(id) {
             const reason = prompt('Raison du rejet :');
             if (!reason) return;
-            
+
             try {
-                const response = await fetch(`/api/admin/merchants/${id}/reject`, {
+                await jsonFetch(`/api/admin/merchants/${id}/reject`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ reason })
+                    body: JSON.stringify({ reason }),
+                    context: 'rejet commerçant'
                 });
-                
-                if (response.ok) {
-                    alert('Commerçant rejeté');
-                    loadPendingMerchants();
-                    loadDashboardData();
-                } else {
-                    alert('Erreur lors du rejet');
-                }
+
+                alert('Commerçant rejeté');
+                loadPendingMerchants();
+                loadDashboardData();
             } catch (error) {
                 console.error('Error rejecting merchant:', error);
                 alert('Erreur lors du rejet');
@@ -796,52 +957,45 @@
             window.location.href = `admin-merchants.html?id=${id}`;
         }
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                try {
-                    await fetch('/api/auth/logout', {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    console.error('Logout error:', error);
-                }
-            }
-        });
+        // ======== Orders ========
 
-        // Initialize
-        loadDashboardData();
-        loadPendingOrders();
-        setInterval(loadDashboardData, 60000); // Refresh every minute
-        setInterval(loadPendingOrders, 30000); // Refresh pending orders every 30 seconds
-        
-        // Load pending orders
         async function loadPendingOrders() {
+            const tbody = document.getElementById('pendingOrdersBody');
+
             try {
-                const response = await fetch('/api/admin/pending-orders', {
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                    }
+                const data = await jsonFetch('/api/admin/pending-orders', {
+                    // If your pending-orders endpoint uses only token and no cookies,
+                    // you could set withCredentials: false here.
+                    withCredentials: true,
+                    context: 'commandes en attente'
                 });
-                const data = await response.json();
-                
-                const tbody = document.getElementById('pendingOrdersBody');
-                
-                if (!data.success || !data.orders || data.orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucune commande en attente</td></tr>';
+
+                if (!data || !data.success || !Array.isArray(data.orders) || data.orders.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                                Aucune commande en attente
+                            </td>
+                        </tr>
+                    `;
                     return;
                 }
-                
+
                 tbody.innerHTML = data.orders.map(order => `
                     <tr>
                         <td><strong>${order.id}</strong></td>
-                        <td>${order.senderName || 'N/A'}<br><small>${order.senderPhone || ''}</small></td>
+                        <td>
+                            ${order.senderName || 'N/A'}<br>
+                            <small>${order.senderPhone || ''}</small>
+                        </td>
                         <td><strong>${order.amount} ${order.currency}</strong></td>
                         <td>${order.quantity}</td>
-                        <td><span class="status-badge status-pending">${order.paymentMethod === 'cash' ? 'Cash/WU' : 'Virement'}</span></td>
-                        <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <span class="status-badge status-pending">
+                                ${order.paymentMethod === 'cash' ? 'Cash/WU' : 'Virement'}
+                            </span>
+                        </td>
+                        <td>${order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}</td>
                         <td>
                             <button class="btn btn-success btn-sm" onclick="approveOrder('${order.id}')">Approuver</button>
                             <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">Rejeter</button>
@@ -850,59 +1004,112 @@
                 `).join('');
             } catch (error) {
                 console.error('Error loading pending orders:', error);
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                                Erreur lors du chargement des commandes en attente
+                            </td>
+                        </tr>
+                    `;
+                }
             }
         }
-        
-        // Approve order
+
         async function approveOrder(orderId) {
             if (!confirm('Confirmer l\'approbation de cette commande? Les bons seront générés et envoyés par SMS.')) return;
-            
+
             try {
-                const response = await fetch(`/api/admin/pending-orders/${orderId}/approve`, {
+                const data = await jsonFetch(`/api/admin/pending-orders/${orderId}/approve`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                    }
+                    // Most likely only token is needed, but we also send cookies just in case
+                    withCredentials: true,
+                    context: 'approbation commande'
                 });
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('✅ ' + data.message);
+
+                if (data && data.success) {
+                    alert('✅ ' + (data.message || 'Commande approuvée'));
                     loadPendingOrders();
+                    loadDashboardData();
                 } else {
-                    alert('❌ ' + data.message);
+                    alert('❌ ' + (data && data.message ? data.message : 'Erreur lors de l\'approbation'));
                 }
             } catch (error) {
-                alert('❌ Erreur: ' + error.message);
+                console.error('Error approving order:', error);
+                alert('❌ Erreur lors de l\'approbation de la commande');
             }
         }
-        
-        // Reject order
+
         async function rejectOrder(orderId) {
             const reason = prompt('Raison du rejet:');
             if (!reason) return;
-            
+
             try {
-                const response = await fetch(`/api/admin/pending-orders/${orderId}/reject`, {
+                const data = await jsonFetch(`/api/admin/pending-orders/${orderId}/reject`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ reason })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason }),
+                    withCredentials: true,
+                    context: 'rejet commande'
                 });
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('✅ ' + data.message);
+
+                if (data && data.success) {
+                    alert('✅ ' + (data.message || 'Commande rejetée'));
                     loadPendingOrders();
+                    loadDashboardData();
                 } else {
-                    alert('❌ ' + data.message);
+                    alert('❌ ' + (data && data.message ? data.message : 'Erreur lors du rejet'));
                 }
             } catch (error) {
-                alert('❌ Erreur: ' + error.message);
+                console.error('Error rejecting order:', error);
+                alert('❌ Erreur lors du rejet de la commande');
             }
         }
+
+        // ======== Logout ========
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function() {
+                if (!confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) return;
+
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                } finally {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+
+        // ======== Initialization ========
+
+        window.addEventListener('load', () => {
+            // Optional: ensure we have at least a token; if not, force login.
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.warn('No token found in localStorage; admin API calls may fail with 401.');
+                // If you want, uncomment to force login:
+                // window.location.href = 'login.html';
+            }
+
+            loadDashboardData();
+            loadPendingOrders();
+
+            const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
+            if (refreshOrdersBtn) {
+                refreshOrdersBtn.addEventListener('click', loadPendingOrders);
+            }
+
+            // Periodic refresh
+            setInterval(loadDashboardData, 60000);   // Refresh dashboard every minute
+            setInterval(loadPendingOrders, 30000);   // Refresh pending orders every 30 seconds
+        });
     </script>
 </body>
 </html>
