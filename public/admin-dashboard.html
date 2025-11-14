@@ -7,11 +7,13 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <style>
+        /* Admin Dashboard Specific Styles */
         .admin-dashboard {
             display: flex;
             min-height: 100vh;
             background: #f5f5f5;
         }
+
         .sidebar {
             width: 260px;
             background: #111111;
@@ -21,25 +23,30 @@
             height: 100vh;
             overflow-y: auto;
         }
+
         .sidebar-header {
             padding: 0 20px 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
+
         .sidebar-logo {
             font-size: 24px;
             font-weight: 700;
             color: #8BC34A;
             text-decoration: none;
         }
+
         .sidebar-user {
             padding: 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
+
         .user-info {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
         .user-avatar {
             width: 50px;
             height: 50px;
@@ -51,18 +58,22 @@
             font-size: 20px;
             font-weight: 600;
         }
+
         .user-details h3 {
             margin: 0;
             font-size: 16px;
         }
+
         .user-details p {
             margin: 5px 0 0;
             font-size: 12px;
             color: #8BC34A;
         }
+
         .sidebar-menu {
             padding: 20px 0;
         }
+
         .menu-item {
             padding: 12px 20px;
             color: rgba(255,255,255,0.7);
@@ -73,20 +84,24 @@
             transition: all 0.3s;
             cursor: pointer;
         }
+
         .menu-item:hover,
         .menu-item.active {
             background: rgba(139,195,74,0.1);
             color: #8BC34A;
         }
+
         .menu-item .icon {
             font-size: 20px;
             width: 24px;
         }
+
         .main-content {
             flex: 1;
             margin-left: 260px;
             padding: 30px;
         }
+
         .dashboard-header {
             background: white;
             padding: 20px 30px;
@@ -94,236 +109,182 @@
             margin-bottom: 30px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
+
         .dashboard-header h1 {
             margin: 0 0 5px 0;
             color: #111111;
         }
+
         .dashboard-header p {
             margin: 0;
             color: #666;
         }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .stat-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .stat-card-title {
-            font-size: 14px;
-            color: #666;
-            font-weight: 500;
-        }
-        .stat-card-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        .stat-card-icon.green {
-            background: #e8f5e9;
-            color: #8BC34A;
-        }
-        .stat-card-icon.blue {
-            background: #e3f2fd;
-            color: #2196F3;
-        }
-        .stat-card-icon.orange {
-            background: #fff3e0;
-            color: #ff9800;
-        }
-        .stat-card-icon.red {
-            background: #ffebee;
-            color: #f44336;
-        }
-        .stat-card-icon.purple {
-            background: #f3e5f5;
-            color: #9c27b0;
-        }
-        .stat-card-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #111111;
-            margin-bottom: 5px;
-        }
-        .stat-card-change {
-            font-size: 13px;
-            color: #8BC34A;
-        }
+
         .section-card {
             background: white;
             border-radius: 12px;
             padding: 25px;
+            margin-bottom: 30px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
         }
+
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
+
         .section-title {
             font-size: 20px;
-            font-weight: 600;
+            font-weight: 700;
             color: #111111;
+            margin: 0;
         }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn-primary {
-            background: #8BC34A;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #7CB342;
-        }
-        .btn-secondary {
-            background: #f8f9fa;
-            color: #111111;
-        }
-        .btn-secondary:hover {
-            background: #e9ecef;
-        }
-        .btn-success {
-            background: #4caf50;
-            color: white;
-        }
-        .btn-danger {
-            background: #f44336;
-            color: white;
-        }
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
+
         .table-container {
             overflow-x: auto;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
+
         thead {
-            background: #f8f9fa;
+            background: #f5f5f5;
         }
+
         th {
             padding: 12px;
             text-align: left;
             font-weight: 600;
-            color: #111111;
+            color: #666;
             font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+
         td {
-            padding: 12px;
+            padding: 15px 12px;
             border-bottom: 1px solid #f0f0f0;
-            font-size: 14px;
+            color: #333;
         }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
         .status-badge {
+            display: inline-block;
             padding: 4px 12px;
-            border-radius: 12px;
+            border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
         }
-        .status-badge.success {
-            background: #e8f5e9;
-            color: #4caf50;
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
         }
-        .status-badge.pending {
-            background: #fff3e0;
-            color: #ff9800;
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
         }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #8BC34A;
+            color: #111;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
         .action-buttons {
             display: flex;
             gap: 8px;
         }
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .action-btn.approve {
-            background: #e8f5e9;
-            color: #4caf50;
-        }
-        .action-btn.reject {
-            background: #ffebee;
-            color: #f44336;
-        }
-        .action-btn.view {
-            background: #e3f2fd;
-            color: #2196F3;
-        }
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .quick-action-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+        .empty-state {
             text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 60px 20px;
+            color: #999;
         }
-        .quick-action-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
         }
-        .quick-action-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        .quick-action-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #111111;
-        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.3s;
+                z-index: 1000;
             }
+
             .sidebar.mobile-open {
                 transform: translateX(0);
             }
+
             .main-content {
                 margin-left: 0;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
     <div class="admin-dashboard">
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="index.html" class="sidebar-logo">NIMWEMA</a>
@@ -331,9 +292,9 @@
 
             <div class="sidebar-user">
                 <div class="user-info">
-                    <div class="user-avatar">A</div>
+                    <div class="user-avatar" id="userAvatar">A</div>
                     <div class="user-details">
-                        <h3>Administrateur</h3>
+                        <h3 id="userName">Administrateur</h3>
                         <p>Admin</p>
                     </div>
                 </div>
@@ -356,10 +317,6 @@
                     <span class="icon">💰</span>
                     <span>Transactions</span>
                 </a>
-                <a href="admin-analytics.html" class="menu-item">
-                    <span class="icon">📈</span>
-                    <span>Analytics</span>
-                </a>
                 <a class="menu-item" id="logoutBtn">
                     <span class="icon">🚪</span>
                     <span>Déconnexion</span>
@@ -367,92 +324,22 @@
             </nav>
         </aside>
 
+        <!-- Main Content -->
         <main class="main-content">
             <div class="dashboard-header">
                 <h1>Tableau de bord Administrateur</h1>
-                <p>Vue d'ensemble de la plateforme Nimwema</p>
+                <p>Gérer les commandes en attente de validation</p>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">Utilisateurs totaux</span>
-                        <div class="stat-card-icon blue">👥</div>
-                    </div>
-                    <div class="stat-card-value" id="totalUsers">0</div>
-                    <div class="stat-card-change">+0% ce mois</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">Commerçants actifs</span>
-                        <div class="stat-card-icon green">🏪</div>
-                    </div>
-                    <div class="stat-card-value" id="activeMerchants">0</div>
-                    <div class="stat-card-change">Total: <span id="totalMerchants">0</span></div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">Bons créés</span>
-                        <div class="stat-card-icon orange">🎫</div>
-                    </div>
-                    <div class="stat-card-value" id="totalVouchers">0</div>
-                    <div class="stat-card-change">Ce mois: <span id="monthVouchers">0</span></div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">Volume total</span>
-                        <div class="stat-card-icon purple">💰</div>
-                    </div>
-                    <div class="stat-card-value" id="totalVolume">0 USD</div>
-                    <div class="stat-card-change">Ce mois: <span id="monthVolume">0 USD</span></div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">Taux de rachat</span>
-                        <div class="stat-card-icon green">📈</div>
-                    </div>
-                    <div class="stat-card-value" id="redemptionRate">0%</div>
-                    <div class="stat-card-change">Moyenne plateforme</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">En attente</span>
-                        <div class="stat-card-icon red">⏳</div>
-                    </div>
-                    <div class="stat-card-value" id="pendingApprovals">0</div>
-                    <div class="stat-card-change">Demandes commerçants</div>
-                </div>
-            </div>
-
-            <div class="quick-actions">
-                <div class="quick-action-card" onclick="window.location.href='admin-merchants.html'">
-                    <div class="quick-action-icon">✅</div>
-                    <div class="quick-action-title">Approuver commerçants</div>
-                </div>
-                <div class="quick-action-card" onclick="window.location.href='admin-users.html'">
-                    <div class="quick-action-icon">👥</div>
-                    <div class="quick-action-title">Gérer utilisateurs</div>
-                </div>
-                <div class="quick-action-card" onclick="window.location.href='admin-transactions.html'">
-                    <div class="quick-action-icon">💰</div>
-                    <div class="quick-action-title">Voir transactions</div>
-                </div>
-                <div class="quick-action-card" onclick="window.location.href='admin-analytics.html'">
-                    <div class="quick-action-icon">📊</div>
-                    <div class="quick-action-title">Analytics</div>
-                </div>
-            </div>
-
+            <!-- Pending Payment Orders Section -->
             <div class="section-card">
                 <div class="section-header">
-                    <h2 class="section-title">Commandes en attente de paiement</h2>
-                    <button class="btn btn-secondary" onclick="loadPendingOrders()">Actualiser</button>
+                    <h2 class="section-title">📋 Commandes en attente d'approbation</h2>
+                    <button class="btn btn-secondary" onclick="loadPendingOrders()">
+                        🔄 Actualiser
+                    </button>
                 </div>
+                
                 <div class="table-container">
                     <table>
                         <thead>
@@ -461,15 +348,18 @@
                                 <th>Expéditeur</th>
                                 <th>Montant</th>
                                 <th>Quantité</th>
+                                <th>Destinataires</th>
                                 <th>Méthode</th>
+                                <th>Statut</th>
                                 <th>Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="pendingOrdersBody">
                             <tr>
-                                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
-                                    Chargement...
+                                <td colspan="9" class="empty-state">
+                                    <div class="empty-state-icon">⏳</div>
+                                    <p>Chargement des commandes...</p>
                                 </td>
                             </tr>
                         </tbody>
@@ -477,199 +367,60 @@
                 </div>
             </div>
 
-            <div class="section-card">
-                <div class="section-header">
-                    <h2 class="section-title">Demandes commerçants en attente</h2>
-                    <a href="admin-merchants.html" class="btn btn-secondary">Voir tout</a>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Commerce</th>
-                                <th>Propriétaire</th>
-                                <th>Type</th>
-                                <th>Ville</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pendingMerchantsBody">
-                            <tr>
-                                <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                                    Aucune demande en attente
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <!-- Order Details Modal -->
+            <div id="orderModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Détails de la commande</h2>
+                        <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+                    </div>
+                    <div class="modal-body" id="orderModalBody">
+                        <!-- Will be filled dynamically -->
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script src="js/i18n.js"></script>
     <script>
-        const CONFIG = {
-            API_BASE: '/api',
-            REFRESH_INTERVAL: 30000
-        };
-        
-        let refreshIntervals = [];
-        
-        function getAuthToken() {
-            return localStorage.getItem('token') || sessionStorage.getItem('token');
-        }
-        
-        function getAuthHeaders() {
-            const token = getAuthToken();
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            };
-        }
-        
-        function escapeHTML(str) {
-            const div = document.createElement('div');
-            div.textContent = str || '';
-            return div.innerHTML;
-        }
-        
-        async function loadDashboardData() {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/dashboard`, {
-                    headers: getAuthHeaders(),
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-                document.getElementById('activeMerchants').textContent = data.activeMerchants || 0;
-                document.getElementById('totalMerchants').textContent = data.totalMerchants || 0;
-                document.getElementById('totalVouchers').textContent = data.totalVouchers || 0;
-                document.getElementById('monthVouchers').textContent = data.monthVouchers || 0;
-                document.getElementById('totalVolume').textContent = (data.totalVolume || 0) + ' USD';
-                document.getElementById('monthVolume').textContent = (data.monthVolume || 0) + ' USD';
-                document.getElementById('redemptionRate').textContent = (data.redemptionRate || 0) + '%';
-                document.getElementById('pendingApprovals').textContent = data.pendingApprovals || 0;
-                
-                await loadPendingMerchants();
-            } catch (error) {
-                console.error('Error loading dashboard:', error);
+        // Check authentication
+        window.addEventListener('DOMContentLoaded', function() {
+            const user = localStorage.getItem('nimwema_user');
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
             }
-        }
-
-        async function loadPendingMerchants() {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/merchants?status=pending&limit=5`, {
-                    headers: getAuthHeaders(),
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const merchants = await response.json();
-                
-                const tbody = document.getElementById('pendingMerchantsBody');
-                if (!merchants || merchants.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                                Aucune demande en attente
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML = merchants.map(m => `
-                        <tr>
-                            <td>${escapeHTML(m.businessName)}</td>
-                            <td>${escapeHTML(m.ownerName)}</td>
-                            <td>${escapeHTML(m.businessType)}</td>
-                            <td>${escapeHTML(m.city)}</td>
-                            <td>${new Date(m.createdAt).toLocaleDateString('fr-FR')}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="action-btn approve" onclick="approveMerchant('${escapeHTML(m.id)}')">Approuver</button>
-                                    <button class="action-btn reject" onclick="rejectMerchant('${escapeHTML(m.id)}')">Rejeter</button>
-                                    <button class="action-btn view" onclick="viewMerchant('${escapeHTML(m.id)}')">Voir</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading pending merchants:', error);
-            }
-        }
-
-        async function approveMerchant(id) {
-            if (!confirm('Approuver ce commerçant ?')) return;
             
-            try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/merchants/${encodeURIComponent(id)}/approve`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    alert('Commerçant approuvé avec succès');
-                    loadPendingMerchants();
-                    loadDashboardData();
-                } else {
-                    const data = await response.json();
-                    throw new Error(data.message || 'Erreur lors de l\'approbation');
-                }
-            } catch (error) {
-                console.error('Error approving merchant:', error);
-                alert('Erreur: ' + error.message);
+            const userData = JSON.parse(user);
+            if (userData.role !== 'admin') {
+                alert('Accès non autorisé');
+                window.location.href = '/';
+                return;
             }
-        }
-
-        async function rejectMerchant(id) {
-            const reason = prompt('Raison du rejet :');
-            if (!reason) return;
             
-            try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/merchants/${encodeURIComponent(id)}/reject`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    credentials: 'include',
-                    body: JSON.stringify({ reason })
-                });
-                
-                if (response.ok) {
-                    alert('Commerçant rejeté');
-                    loadPendingMerchants();
-                    loadDashboardData();
-                } else {
-                    const data = await response.json();
-                    throw new Error(data.message || 'Erreur lors du rejet');
-                }
-            } catch (error) {
-                console.error('Error rejecting merchant:', error);
-                alert('Erreur: ' + error.message);
+            // Set user info
+            document.getElementById('userName').textContent = userData.name || 'Admin';
+            const avatar = document.getElementById('userAvatar');
+            if (userData.name) {
+                avatar.textContent = userData.name.charAt(0).toUpperCase();
             }
-        }
+            
+            // Load pending orders
+            loadPendingOrders();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadPendingOrders, 30000);
+        });
 
-        function viewMerchant(id) {
-            window.location.href = `admin-merchants.html?id=${encodeURIComponent(id)}`;
-        }
-        
+        // Load pending orders
         async function loadPendingOrders() {
             try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/pending-orders`, {
-                    headers: getAuthHeaders()
+                const response = await fetch('/api/admin/orders/pending', {
+                    credentials: 'include'
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error('Failed to fetch orders');
                 }
                 
                 const data = await response.json();
@@ -677,108 +428,308 @@
                 const tbody = document.getElementById('pendingOrdersBody');
                 
                 if (!data.success || !data.orders || data.orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucune commande en attente</td></tr>';
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                <div class="empty-state-icon">✅</div>
+                                <p>Aucune commande en attente</p>
+                            </td>
+                        </tr>
+                    `;
                     return;
                 }
                 
-                tbody.innerHTML = data.orders.map(order => `
-                    <tr>
-                        <td><strong>${escapeHTML(order.id)}</strong></td>
-                        <td>${escapeHTML(order.senderName) || 'N/A'}<br><small>${escapeHTML(order.senderPhone) || ''}</small></td>
-                        <td><strong>${order.amount} ${order.currency}</strong></td>
-                        <td>${order.quantity}</td>
-                        <td><span class="status-badge pending">${order.paymentMethod === 'cash' ? 'Cash/WU' : 'Virement'}</span></td>
-                        <td>${new Date(order.createdAt).toLocaleDateString('fr-FR')}</td>
-                        <td>
-                            <button class="btn btn-success btn-sm" onclick="approveOrder('${escapeHTML(order.id)}')">Approuver</button>
-                            <button class="btn btn-danger btn-sm" onclick="rejectOrder('${escapeHTML(order.id)}')">Rejeter</button>
-                        </td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = data.orders.map(order => {
+                    const recipientsCount = order.recipients ? order.recipients.length : order.quantity;
+                    const paymentMethodLabel = getPaymentMethodLabel(order.payment_method);
+                    const statusLabel = getStatusLabel(order.status, order.payment_status);
+                    
+                    return `
+                        <tr>
+                            <td><strong>${order.id}</strong></td>
+                            <td>
+                                ${order.sender_name || 'N/A'}<br>
+                                <small style="color: #666;">${order.sender_phone || ''}</small>
+                            </td>
+                            <td><strong>${formatAmount(order.amount)} ${order.currency}</strong></td>
+                            <td>${order.quantity} bon(s)</td>
+                            <td>${recipientsCount} personne(s)</td>
+                            <td><span class="status-badge status-pending">${paymentMethodLabel}</span></td>
+                            <td><span class="status-badge ${getStatusClass(order.status)}">${statusLabel}</span></td>
+                            <td>${formatDate(order.created_at)}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-success btn-sm" onclick="approveOrder('${order.id}')">
+                                        ✅ Approuver
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">
+                                        ❌ Rejeter
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails('${order.id}')">
+                                        👁️ Voir
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Error loading pending orders:', error);
+                const tbody = document.getElementById('pendingOrdersBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <div class="empty-state-icon">⚠️</div>
+                            <p>Erreur lors du chargement des commandes</p>
+                            <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
+                        </td>
+                    </tr>
+                `;
             }
         }
-        
+
+        // Approve order
         async function approveOrder(orderId) {
-            if (!confirm('Confirmer l\'approbation de cette commande? Les bons seront générés et envoyés par SMS.')) return;
+            if (!confirm('⚠️ Confirmer l\'approbation de cette commande?\n\nLes bons d\'achat seront automatiquement:\n✓ Générés avec des codes uniques\n✓ Envoyés par SMS aux destinataires\n✓ Confirmés à l\'expéditeur')) {
+                return;
+            }
             
             try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/pending-orders/${encodeURIComponent(orderId)}/approve`, {
+                const response = await fetch(`/api/admin/orders/${orderId}/approve`, {
                     method: 'POST',
-                    headers: getAuthHeaders()
+                    credentials: 'include'
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('✅ ' + data.message);
+                    alert(`✅ ${data.message}\n\n${data.vouchers.length} bon(s) d'achat généré(s) et envoyé(s)`);
                     loadPendingOrders();
-                    loadDashboardData();
                 } else {
-                    alert('❌ ' + (data.message || 'Erreur lors de l\'approbation'));
+                    alert(`❌ Erreur: ${data.message}`);
                 }
             } catch (error) {
                 console.error('Error approving order:', error);
-                alert('❌ Erreur: ' + error.message);
+                alert('❌ Erreur lors de l\'approbation: ' + error.message);
             }
         }
-        
+
+        // Reject order
         async function rejectOrder(orderId) {
-            const reason = prompt('Raison du rejet:');
-            if (!reason) return;
+            const reason = prompt('📝 Raison du rejet de cette commande:\n(L\'expéditeur sera notifié par SMS)');
+            if (!reason || reason.trim() === '') {
+                return;
+            }
+            
+            if (!confirm(`Confirmer le rejet de cette commande?\n\nRaison: ${reason}`)) {
+                return;
+            }
             
             try {
-                const response = await fetch(`${CONFIG.API_BASE}/admin/pending-orders/${encodeURIComponent(orderId)}/reject`, {
+                const response = await fetch(`/api/admin/orders/${orderId}/reject`, {
                     method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ reason })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ reason: reason.trim() })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('✅ ' + data.message);
+                    alert(`✅ ${data.message}`);
                     loadPendingOrders();
-                    loadDashboardData();
                 } else {
-                    alert('❌ ' + (data.message || 'Erreur lors du rejet'));
+                    alert(`❌ Erreur: ${data.message}`);
                 }
             } catch (error) {
                 console.error('Error rejecting order:', error);
-                alert('❌ Erreur: ' + error.message);
+                alert('❌ Erreur lors du rejet: ' + error.message);
             }
         }
 
+        // View order details
+        async function viewOrderDetails(orderId) {
+            try {
+                const response = await fetch('/api/admin/orders/pending', {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                const order = data.orders.find(o => o.id === orderId);
+                
+                if (!order) {
+                    alert('Commande non trouvée');
+                    return;
+                }
+                
+                const modal = document.getElementById('orderModal');
+                const modalBody = document.getElementById('orderModalBody');
+                
+                modalBody.innerHTML = `
+                    <div style="padding: 20px;">
+                        <h3>Commande ${order.id}</h3>
+                        
+                        <div style="margin: 20px 0;">
+                            <h4>Expéditeur</h4>
+                            <p><strong>Nom:</strong> ${order.sender_name || 'N/A'}</p>
+                            <p><strong>Téléphone:</strong> ${order.sender_phone || 'N/A'}</p>
+                            ${order.user_email ? `<p><strong>Email:</strong> ${order.user_email}</p>` : ''}
+                        </div>
+                        
+                        <div style="margin: 20px 0;">
+                            <h4>Détails de la commande</h4>
+                            <p><strong>Montant par bon:</strong> ${formatAmount(order.amount)} ${order.currency}</p>
+                            <p><strong>Quantité:</strong> ${order.quantity} bon(s)</p>
+                            <p><strong>Frais de service:</strong> ${formatAmount(order.service_fee)} ${order.currency}</p>
+                            <p><strong>Total:</strong> ${formatAmount(order.total_amount)} ${order.currency}</p>
+                            <p><strong>Méthode de paiement:</strong> ${getPaymentMethodLabel(order.payment_method)}</p>
+                        </div>
+                        
+                        <div style="margin: 20px 0;">
+                            <h4>Destinataires (${order.recipients ? order.recipients.length : 0})</h4>
+                            ${order.recipients ? order.recipients.map(r => `
+                                <p>• ${r.name} - ${r.phone}</p>
+                            `).join('') : '<p>Aucun destinataire</p>'}
+                        </div>
+                        
+                        ${order.message ? `
+                            <div style="margin: 20px 0;">
+                                <h4>Message</h4>
+                                <p style="background: #f5f5f5; padding: 10px; border-radius: 8px;">${order.message}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="margin: 20px 0;">
+                            <h4>Statut</h4>
+                            <p><strong>Statut:</strong> ${getStatusLabel(order.status, order.payment_status)}</p>
+                            <p><strong>Date de création:</strong> ${formatDateTime(order.created_at)}</p>
+                        </div>
+                    </div>
+                `;
+                
+                modal.style.display = 'flex';
+            } catch (error) {
+                console.error('Error viewing order details:', error);
+                alert('Erreur lors du chargement des détails');
+            }
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        // Utility functions
+        function getPaymentMethodLabel(method) {
+            const labels = {
+                'cash': '💵 Cash / WU',
+                'bank': '🏦 Virement Bancaire',
+                'flexpay': '📱 FlexPay Mobile',
+                'flexpaycard': '💳 FlexPay Carte'
+            };
+            return labels[method] || method;
+        }
+
+        function getStatusLabel(status, paymentStatus) {
+            if (status === 'pending_payment') return 'En attente de paiement';
+            if (status === 'pending_approval') return 'En attente d\'approbation';
+            if (status === 'sent') return 'Envoyé';
+            if (status === 'paid') return 'Payé';
+            if (status === 'cancelled') return 'Annulé';
+            return status;
+        }
+
+        function getStatusClass(status) {
+            if (status === 'pending_payment' || status === 'pending_approval' || status === 'pending') return 'status-pending';
+            if (status === 'paid' || status === 'sent') return 'status-paid';
+            if (status === 'cancelled' || status === 'failed') return 'status-failed';
+            return 'status-pending';
+        }
+
+        function formatAmount(amount) {
+            return parseFloat(amount).toLocaleString('fr-FR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR');
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR');
+        }
+
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
                 try {
-                    await fetch(`${CONFIG.API_BASE}/auth/logout`, {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        credentials: 'include'
-                    });
+                    localStorage.removeItem('nimwema_user');
+                    window.location.href = 'login.html';
                 } catch (error) {
                     console.error('Logout error:', error);
-                } finally {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    window.location.href = 'login.html';
                 }
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
-            loadPendingOrders();
+        // Modal styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            }
             
-            refreshIntervals.push(setInterval(loadDashboardData, CONFIG.REFRESH_INTERVAL));
-            refreshIntervals.push(setInterval(loadPendingOrders, CONFIG.REFRESH_INTERVAL));
-        });
-        
-        window.addEventListener('beforeunload', function() {
-            refreshIntervals.forEach(interval => clearInterval(interval));
-        });
+            .modal-content {
+                background: white;
+                border-radius: 12px;
+                max-width: 800px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            }
+            
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            
+            .modal-header h2 {
+                margin: 0;
+            }
+            
+            .modal-close {
+                width: 32px;
+                height: 32px;
+                border: none;
+                background: #f0f0f0;
+                border-radius: 50%;
+                font-size: 20px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            
+            .modal-close:hover {
+                background: #e0e0e0;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
