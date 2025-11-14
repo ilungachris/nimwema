@@ -79,7 +79,7 @@
         }
 
         .password-toggle {
-            position: relative;
+                      position: relative;
         }
 
         .password-toggle-btn {
@@ -136,12 +136,6 @@
             text-decoration: underline;
         }
 
-        .divider {
-            text-align: center;
-            margin: 20px 0;
-            color: #999;
-        }
-
         .error-message {
             background: #ffebee;
             color: #c62828;
@@ -187,6 +181,24 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .error-text {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
         @media (max-width: 480px) {
@@ -420,10 +432,10 @@
 
         // Check if already logged in
         window.addEventListener('DOMContentLoaded', () => {
-            const user = localStorage.getItem('nimwema_user');
-            if (user) {
+                        const userStr = localStorage.getItem('nimwema_user');
+            if (userStr) {
                 try {
-                    const userData = JSON.parse(user);
+                    const userData = JSON.parse(userStr);
                     // Redirect to appropriate dashboard
                     switch (userData.role) {
                         case 'admin':

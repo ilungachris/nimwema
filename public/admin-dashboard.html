@@ -6,8 +6,8 @@
     <title>Admin Dashboard - Nimwema</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <style>
-        /* Existing styles unchanged... */
         .admin-dashboard {
             display: flex;
             min-height: 100vh;
@@ -107,7 +107,7 @@
             padding: 20px 30px;
             border-radius: 12px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(00,0,0,0.05);
         }
 
         .dashboard-header h1 {
@@ -399,7 +399,7 @@
         }
 
         .btn-success {
-            background: #4caf50;
+                        background: #4caf50;
             color: white;
         }
 
@@ -478,11 +478,10 @@
             }
         }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
     <div class="admin-dashboard">
-        <!-- Sidebar (unchanged) -->
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="index.html" class="sidebar-logo">NIMWEMA</a>
@@ -540,7 +539,7 @@
                 <p>Vue d'ensemble de la plateforme Nimwema</p>
             </div>
 
-            <!-- Stats Grid (unchanged) -->
+            <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-card-header">
@@ -581,7 +580,7 @@
                 <div class="stat-card">
                     <div class="stat-card-header">
                         <span class="stat-card-title">Taux de rachat</span>
-                        <div class="stat-card-icon green">📈</div>
+                                                <div class="stat-card-icon green">📈</div>
                     </div>
                     <div class="stat-card-value" id="redemptionRate">0%</div>
                     <div class="stat-card-change">Moyenne plateforme</div>
@@ -597,7 +596,7 @@
                 </div>
             </div>
 
-            <!-- Quick Actions (unchanged) -->
+            <!-- Quick Actions -->
             <div class="quick-actions">
                 <div class="quick-action-card" onclick="window.location.href='admin-merchants.html'">
                     <div class="quick-action-icon">✅</div>
@@ -668,8 +667,8 @@
                         <tbody id="pendingMerchantsBody">
                             <tr>
                                 <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                                Aucune demande en attente
-                            </td>
+                                    Aucune demande en attente
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -731,10 +730,21 @@
         }
 
         // Authentication check and token retrieval (NO REDIRECT FOR DEBUG)
-        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('nimwema_user');
+        let token = null;
+        if (userStr) {
+            try {
+                const userData = JSON.parse(userStr);
+                if (userData.role === 'admin') {
+                    token = userData.token; // Assume token in user if JWT
+                }
+            } catch (e) {
+                localStorage.removeItem('nimwema_user');
+            }
+        }
         debugLog('Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'MISSING');
-        if (!token) {
-            console.warn('No token found in localStorage. Requests will likely fail with 401.');
+        if (!token && !userStr) {
+            console.warn('No token/user found. Requests will likely fail with 401.');
             showAuthBanner('Aucun token trouvé. Veuillez vous connecter.');
         }
 
@@ -848,7 +858,8 @@
                 return;
             }
             try {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;
+                                    color: #999;">Chargement...</td></tr>';
                 const { data: merchants } = await apiFetch('/api/admin/merchants?status=pending&limit=5');
                 
                 if (!Array.isArray(merchants)) {
@@ -977,7 +988,8 @@
             try {
                 const { data } = await apiFetch(`/api/admin/merchants/${id}/reject`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...authHeader }
+                    headers: { 'Content-Type': 'application/json', ...authHeader },
+                    body: JSON.stringify({ reason })
                 });
                 
                 if (data.success !== false) {
@@ -1023,7 +1035,7 @@
                         <td>${order.senderName || 'N/A'}<br><small>${order.senderPhone || ''}</small></td>
                         <td><strong>${order.amount || 0} ${order.currency || 'USD'}</strong></td>
                         <td>${order.quantity || 0}</td>
-                        <td><span class="status-badge status-pending">${order.paymentMethod === 'cash' ? 'Cash/WU' : 'Virement'}</span></td>
+                        <td><span class="status-badge status-pending">${order.paymentMethod === 'cash' ? 'Cash/WU' : (order.paymentMethod === 'bank' ? 'Virement' : order.paymentMethod)}</span></td>
                         <td>${order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
                         <td>
                             <button class="btn btn-success btn-sm" onclick="approveOrder('${order.id}')">Approuver</button>
@@ -1092,7 +1104,7 @@
             }
         }
 
-        // Logout
+        // Logout (kills session, clears localStorage, redirects to home)
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             debugLog('[LOGOUT] Starting logout');
             if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
@@ -1101,9 +1113,11 @@
                 } catch (error) {
                     console.error('[LOGOUT] Logout error:', error);
                 } finally {
-                    localStorage.removeItem('token');
-                    debugLog('[LOGOUT] Token cleared, redirecting to login');
-                    window.location.href = 'login.html';
+                    localStorage.removeItem('nimwema_user');
+                    // Clear session cookie if possible (client-side hack; backend clears server-side)
+                    document.cookie = 'sessionToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    debugLog('[LOGOUT] Cleared storage/cookie, redirecting to index.html');
+                    window.location.href = 'index.html'; // Back to dashboard/home
                 }
             }
         });
