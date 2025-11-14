@@ -1,13 +1,11 @@
-/* Nimwema Platform - Send Voucher Styles */
+/* Nimwema Platform - Send Voucher Specific Styles */
 
-/* ============================================
-   CURRENCY SELECTOR
-   ============================================ */
+/* Currency Selector */
 .currency-selector-group {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-md);
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
 .currency-btn {
@@ -16,12 +14,11 @@
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-lg);
-  background: var(--white);
   border: 2px solid var(--grey-200);
   border-radius: var(--radius-input);
+  background: var(--white);
   cursor: pointer;
   transition: all var(--transition-fast);
-  font-family: inherit;
 }
 
 .currency-btn:hover {
@@ -32,10 +29,11 @@
 .currency-btn.active {
   border-color: var(--primary-green);
   background: var(--primary-green);
+  color: var(--ink-black);
 }
 
 .currency-symbol {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
 }
 
@@ -49,26 +47,20 @@
   padding: var(--space-md);
   background: var(--paper);
   border-radius: var(--radius-input);
-}
-
-.exchange-rate-display small {
-  display: block;
+  font-size: 14px;
   color: var(--grey-700);
-  margin-bottom: 4px;
 }
 
 .exchange-rate-display strong {
-  font-size: 18px;
   color: var(--ink-black);
+  margin-left: var(--space-xs);
 }
 
-/* ============================================
-   AMOUNT PRESET GRID
-   ============================================ */
+/* Amount Preset Grid */
 .amount-preset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-sm);
   margin-bottom: var(--space-lg);
 }
 
@@ -77,35 +69,37 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: var(--space-lg);
-  background: var(--white);
+  padding: var(--space-md);
   border: 2px solid var(--grey-200);
   border-radius: var(--radius-input);
+  background: var(--white);
   cursor: pointer;
   transition: all var(--transition-fast);
-  font-family: inherit;
 }
 
 .amount-preset-btn:hover {
   border-color: var(--primary-green);
   background: rgba(139, 195, 74, 0.05);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-card);
 }
 
 .amount-preset-btn.selected {
   border-color: var(--primary-green);
   background: var(--primary-green);
   color: var(--ink-black);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .amount-primary {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
+  color: inherit;
 }
 
 .amount-secondary {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--grey-700);
 }
 
@@ -113,46 +107,38 @@
   color: var(--ink-black);
 }
 
-/* ============================================
-   CUSTOM AMOUNT INPUT
-   ============================================ */
+/* Amount Input Group */
 .amount-input-group {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  position: relative;
 }
 
 .amount-currency {
   position: absolute;
   left: 16px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--grey-700);
   pointer-events: none;
 }
 
 .amount-input {
-  flex: 1;
-  padding-left: 40px !important;
-  font-size: 20px;
+  padding-left: 45px !important;
+  font-size: 18px;
   font-weight: 600;
 }
 
 .amount-equivalent {
-  min-width: 120px;
-  padding: var(--space-sm) var(--space-md);
-  background: var(--paper);
-  border-radius: var(--radius-input);
+  position: absolute;
+  right: 16px;
   font-size: 14px;
-  font-weight: 600;
   color: var(--grey-700);
-  text-align: center;
+  pointer-events: none;
 }
 
-/* ============================================
-   TOTAL AMOUNT DISPLAY
-   ============================================ */
+/* Total Amount Display */
 .total-amount-display {
   display: flex;
   justify-content: space-between;
@@ -160,177 +146,118 @@
   padding: var(--space-lg);
   background: var(--paper);
   border-radius: var(--radius-input);
-  margin-top: var(--space-lg);
+  margin-top: var(--space-md);
 }
 
 .total-label {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--grey-700);
 }
 
 .total-value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--primary-green);
 }
 
-/* ============================================
-   RECIPIENTS INPUT
-   ============================================ */
-.recipients-info-box {
-  padding: var(--space-md);
+/* Recipient Fields */
+.recipient-field {
+  padding: var(--space-lg);
   background: var(--paper);
-  color: var(--grey-700);
   border-radius: var(--radius-input);
-  border-left: 4px solid var(--primary-green);
-  margin-bottom: var(--space-lg);
-}
-
-.recipients-info-box p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.recipients-info-box strong {
-  font-weight: 700;
-  color: var(--ink-black);
-}
-
-#recipientsInputContainer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
   margin-bottom: var(--space-md);
 }
 
-.recipient-input-row {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: flex-start;
-}
-
-.recipient-input-row .form-input {
-  flex: 1;
-}
-
-.btn-remove-recipient {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--error);
-  color: var(--white);
-  border: none;
-  border-radius: var(--radius-input);
-  cursor: pointer;
-  font-size: 20px;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.btn-remove-recipient:hover {
-  background: #B71C1C;
-  transform: scale(1.05);
-}
-
-/* ============================================
-   WAITING LIST
-   ============================================ */
-.waiting-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  max-height: 400px;
-  overflow-y: auto;
-  padding: var(--space-sm);
-}
-
+/* Waiting List Items */
 .waiting-list-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
   padding: var(--space-md);
   background: var(--white);
   border: 2px solid var(--grey-200);
   border-radius: var(--radius-input);
-  cursor: pointer;
+  margin-bottom: var(--space-sm);
   transition: all var(--transition-fast);
 }
 
 .waiting-list-item:hover {
   border-color: var(--primary-green);
-  background: rgba(139, 195, 74, 0.05);
+  background: rgba(139, 195, 74, 0.02);
 }
 
-.waiting-list-item.selected {
-  border-color: var(--primary-green);
-  background: var(--primary-green);
-}
-
-.waiting-list-checkbox {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
+.waiting-list-checkbox:checked ~ .waiting-list-info {
+  color: var(--primary-green);
 }
 
 .waiting-list-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.waiting-list-name {
-  font-weight: 600;
+.waiting-list-info strong {
   font-size: 16px;
   color: var(--ink-black);
-  margin-bottom: 4px;
 }
 
-.waiting-list-details {
+.waiting-list-info span {
   font-size: 14px;
   color: var(--grey-700);
 }
 
-.waiting-list-time {
-  font-size: 12px;
+.waiting-list-info small {
+  font-size: 13px;
   color: var(--grey-700);
-  margin-top: 4px;
+  font-style: italic;
 }
 
-/* ============================================
-   FEE BREAKDOWN
-   ============================================ */
+/* Fee Breakdown */
 .fee-breakdown {
   background: var(--paper);
-  border-radius: var(--radius-input);
   padding: var(--space-lg);
+  border-radius: var(--radius-input);
   margin-bottom: var(--space-md);
 }
 
 .fee-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: var(--space-sm) 0;
-  font-size: 16px;
+  border-bottom: 1px solid var(--grey-200);
+  font-size: 15px;
 }
 
-.fee-row:not(:last-child) {
-  border-bottom: 1px solid var(--grey-200);
+.fee-row:last-child {
+  border-bottom: none;
+}
+
+.fee-row span:first-child {
+  color: var(--grey-700);
+}
+
+.fee-row span:last-child {
+  font-weight: 600;
+  color: var(--ink-black);
 }
 
 .fee-total {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-green);
   margin-top: var(--space-sm);
   padding-top: var(--space-md);
-  border-top: 2px solid var(--grey-200) !important;
+  border-top: 2px solid var(--ink-black) !important;
+  font-size: 18px;
 }
 
-/* ============================================
-   PAYMENT METHODS
-   ============================================ */
+.fee-total span {
+  font-weight: 700;
+  color: var(--ink-black);
+}
+
+.fee-total span:last-child {
+  color: var(--primary-green);
+  font-size: 20px;
+}
+
+/* Payment Methods Grid */
 .payment-methods-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -338,14 +265,12 @@
 }
 
 .payment-method-card {
-  position: relative;
+  display: block;
   cursor: pointer;
 }
 
 .payment-method-card input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+  display: none;
 }
 
 .payment-method-content {
@@ -354,9 +279,9 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-lg);
-  background: var(--white);
   border: 2px solid var(--grey-200);
   border-radius: var(--radius-input);
+  background: var(--white);
   transition: all var(--transition-fast);
   text-align: center;
 }
@@ -364,11 +289,16 @@
 .payment-method-card:hover .payment-method-content {
   border-color: var(--primary-green);
   background: rgba(139, 195, 74, 0.05);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .payment-method-card input[type="radio"]:checked + .payment-method-content {
   border-color: var(--primary-green);
   background: var(--primary-green);
+  color: var(--ink-black);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .payment-method-icon {
@@ -378,11 +308,10 @@
 .payment-method-name {
   font-size: 16px;
   font-weight: 700;
-  color: var(--ink-black);
 }
 
 .payment-method-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--grey-700);
 }
 
@@ -390,52 +319,17 @@
   color: var(--ink-black);
 }
 
-/* ============================================
-   CHECKBOX GROUP
-   ============================================ */
-.checkbox-group {
-  margin: var(--space-md) 0;
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
+/* Responsive */
 @media (max-width: 768px) {
   .amount-preset-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .amount-input-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .amount-equivalent {
-    min-width: auto;
   }
   
   .payment-methods-grid {
     grid-template-columns: 1fr;
   }
   
-  .recipient-input-row {
-    flex-direction: column;
+  .currency-selector-group {
+    grid-template-columns: 1fr;
   }
-  
-  .btn-remove-recipient {
-    width: 100%;
-  }
-}
-
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
-.hidden {
-  display: none !important;
-}
-
-.loading-state {
-  text-align: center;
-  padding: var(--space-xl);
-  color: var(--grey-700);
 }

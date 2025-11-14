@@ -6,14 +6,17 @@
     <title>Instructions de paiement - Nimwema</title>
     <meta name="description" content="Instructions pour compléter votre paiement">
     
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
 </head>
 <body>
+    <!-- Header -->
     <header class="header">
         <div class="header-top">
             <div class="language-selector">
@@ -21,8 +24,8 @@
                 <button class="lang-btn" data-lang="ln">LN</button>
                 <button class="lang-btn" data-lang="en">EN</button>
             </div>
-            <button class="login-btn" onclick="handleHeaderAction()">
-                <span id="headerActionText" data-i18n="login">Connexion</span>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span>
             </button>
         </div>
         
@@ -30,338 +33,288 @@
             <a href="/" class="logo">
                 NIM<span class="w">W</span>EMA
             </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
         </div>
     </header>
 
+    <!-- Main Content -->
     <main class="section">
-        <div class="container">
+        <div class="container container-narrow">
             <div class="confirmation-card">
-                <div class="confirmation-icon" style="background: #ff9800;">
+                <!-- Icon -->
+                <div class="confirmation-icon" style="background: var(--warning);">
                     ⏳
                 </div>
                 
-                <h1 class="confirmation-title" data-i18n="payment_pending_title">
+                <!-- Title -->
+                <h1 class="confirmation-title">
                     Paiement en attente
                 </h1>
                 
-                <p class="confirmation-message" data-i18n="payment_pending_message">
+                <!-- Message -->
+                <p class="confirmation-message">
                     Votre commande a été créée avec succès. Veuillez suivre les instructions ci-dessous pour compléter votre paiement.
                 </p>
                 
+                <!-- Order Details -->
                 <div class="confirmation-details" id="orderDetails">
                     <div class="loading-state">
                         <p>Chargement des détails...</p>
                     </div>
                 </div>
                 
-                <div class="card" style="text-align: left; margin-bottom: 2rem;" id="paymentInstructions">
+                <!-- Payment Instructions -->
+                <div class="card" style="text-align: left; margin-bottom: var(--space-xl);" id="paymentInstructions">
                     <div class="loading-state">
                         <p>Chargement des instructions...</p>
                     </div>
                 </div>
                 
-                <div style="margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #ff9800;">
-                    <p style="font-size: 14px; color: #666; margin: 0;">
-                        <strong>⚠️ Important:</strong> <span data-i18n="payment_important_note">Vos bons d'achat seront générés et envoyés aux destinataires une fois que nous aurons confirmé la réception de votre paiement. Cela peut prendre jusqu'à 24 heures.</span>
+                <!-- Important Note -->
+                <div style="margin-bottom: var(--space-xl); padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input); border-left: 4px solid var(--warning);">
+                    <p style="font-size: 14px; color: var(--grey-700); margin: 0;">
+                        <strong>⚠️ Important:</strong> Vos bons d'achat seront générés et envoyés aux destinataires une fois que nous aurons confirmé la réception de votre paiement. Cela peut prendre jusqu'à 24 heures.
                     </p>
                 </div>
                 
+                <!-- Optional Account Creation -->
+                <div class="card" style="background: var(--primary-green); padding: var(--space-xl); text-align: left; margin-bottom: var(--space-xl);" id="accountPromotion">
+                    <h3 style="margin-bottom: var(--space-md); color: var(--ink-black);">
+                        💡 Créez un compte pour suivre votre commande
+                    </h3>
+                    <p style="margin-bottom: var(--space-lg); color: var(--ink-black);">
+                        Avec un compte Nimwema, vous pouvez :
+                    </p>
+                    <ul style="margin-bottom: var(--space-lg); color: var(--ink-black); line-height: 1.8;">
+                        <li>✓ Suivre l'état de vos commandes en temps réel</li>
+                        <li>✓ Consulter l'historique de vos envois</li>
+                        <li>✓ Enregistrer vos destinataires favoris</li>
+                        <li>✓ Recevoir des notifications par SMS</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="showAccountCreationModal()" style="background: var(--ink-black); color: var(--white);">
+                        Créer mon compte (optionnel)
+                    </button>
+                </div>
+                
+                <!-- Actions -->
                 <div class="confirmation-actions">
-                    <div id="auth-actions" style="display: none;">
-                        <button class="btn btn-primary btn-large" onclick="window.location.href='/dashboard.html'">
-                            <span data-i18n="view_dashboard">Voir mon tableau de bord</span>
-                        </button>
-                    </div>
-                    
-                    <div id="guest-actions" style="display: none;">
-                        <p style="margin-bottom: 1rem; color: #666;">
-                            <span data-i18n="create_account_prompt">Créez un compte pour suivre vos commandes et gérer vos envois</span>
-                        </p>
-                        <button class="btn btn-primary btn-large" onclick="redirectToSignup()">
-                            <span data-i18n="create_account">Créer un compte</span>
-                        </button>
-                        <button class="btn btn-secondary btn-large" onclick="window.location.href='/login.html'">
-                            <span data-i18n="login">Se connecter</span>
-                        </button>
-                    </div>
-                    
                     <button class="btn btn-secondary btn-large" onclick="window.location.href='/send.html'">
-                        <span data-i18n="send_another">Envoyer un autre bon</span>
+                        Envoyer un autre bon
                     </button>
                     <button class="btn btn-secondary" onclick="window.location.href='/'">
-                        <span data-i18n="back_home">Retour à l'accueil</span>
+                        Retour à l'accueil
                     </button>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Account Creation Modal -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Créer votre compte</h2>
+                <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: var(--space-lg); color: var(--grey-700);">
+                    Créez un compte pour suivre cette commande et gérer vos futures transactions.
+                </p>
+                
+                <form id="accountCreationForm" onsubmit="createAccount(event)">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Email</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input type="email" 
+                               id="accountEmail" 
+                               class="form-input" 
+                               required
+                               placeholder="votre@email.com">
+                        <div class="form-helper">Nous vous enverrons une confirmation</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Mot de passe</span>
+                            <span class="required">*</span>
+                        </label>
+                        <div class="password-input-container">
+                            <input type="password" 
+                                   id="accountPassword" 
+                                   class="form-input" 
+                                   required
+                                   minlength="6"
+                                   placeholder="Minimum 6 caractères">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('accountPassword')">
+                                👁️
+                            </button>
+                        </div>
+                        <div class="form-helper">Au moins 6 caractères</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Confirmer le mot de passe</span>
+                            <span class="required">*</span>
+                        </label>
+                        <div class="password-input-container">
+                            <input type="password" 
+                                   id="accountPasswordConfirm" 
+                                   class="form-input" 
+                                   required
+                                   placeholder="Confirmez votre mot de passe">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('accountPasswordConfirm')">
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="accountError" class="form-error"></div>
+                    <div id="accountSuccess" class="form-success" style="display: none;"></div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">
+                            Plus tard
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="createAccountBtn">
+                            Créer mon compte
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
             </div>
         </div>
     </footer>
 
-    <script src="/js/i18n.js"></script>
-    <script src="/js/main.js"></script>
+    <!-- Scripts -->
+    <script src="/js/payment-instructions.js"></script>
     
     <script>
-        const CONFIG = {
-            API_BASE: '/api',
-            STORAGE_KEYS: {
-                USER: 'nimwema_user',
-                TOKEN: 'nimwema_token',
-                PENDING_ORDER: 'nimwema_pending_order'
-            }
-        };
+    // Password visibility toggle
+    function togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
         
-        function sanitizeHTML(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-        
-        function getAuthToken() {
-            return localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
-        }
-        
-        function isAuthenticated() {
-            const user = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
-            const token = getAuthToken();
-            return !!(user && token);
-        }
-        
-        function formatCurrency(amount, currency = 'USD') {
-            return new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: currency
-            }).format(amount);
-        }
-        
-        function formatDate(dateString) {
-            return new Intl.DateTimeFormat('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(new Date(dateString));
-        }
-        
-        function getOrderIdFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('order') || urlParams.get('orderId');
-        }
-        
-        async function loadOrderDetails() {
-            const orderId = getOrderIdFromURL();
-            
-            if (!orderId) {
-                showError('Aucun identifiant de commande fourni');
-                return;
-            }
-            
-            try {
-                const headers = {
-                    'Content-Type': 'application/json'
-                };
-                
-                const token = getAuthToken();
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-                
-                const response = await fetch(`${CONFIG.API_BASE}/orders/${encodeURIComponent(orderId)}`, {
-                    method: 'GET',
-                    headers: headers,
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success && data.order) {
-                    displayOrderDetails(data.order);
-                    displayPaymentInstructions(data.order);
-                    
-                    if (!isAuthenticated()) {
-                        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_ORDER, orderId);
-                    }
-                } else {
-                    throw new Error(data.message || 'Impossible de charger les détails de la commande');
-                }
-            } catch (error) {
-                console.error('Error loading order:', error);
-                showError('Impossible de charger les détails de la commande. Veuillez réessayer.');
-            }
-        }
-        
-        function displayOrderDetails(order) {
-            const container = document.getElementById('orderDetails');
-            
-            const html = `
-                <div class="detail-row">
-                    <span class="detail-label">Référence:</span>
-                    <span class="detail-value"><strong>${sanitizeHTML(order.id || order.reference)}</strong></span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Montant:</span>
-                    <span class="detail-value"><strong>${formatCurrency(order.amount, order.currency)}</strong></span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Quantité:</span>
-                    <span class="detail-value">${sanitizeHTML(order.quantity)} bon(s)</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Date:</span>
-                    <span class="detail-value">${formatDate(order.createdAt)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Statut:</span>
-                    <span class="detail-value">
-                        <span class="status-badge status-pending">En attente de paiement</span>
-                    </span>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-        }
-        
-        function displayPaymentInstructions(order) {
-            const container = document.getElementById('paymentInstructions');
-            let html = '<h3>Instructions de paiement</h3>';
-            
-            const paymentMethod = order.paymentMethod || 'cash';
-            
-            switch(paymentMethod) {
-                case 'cash':
-                    html += `
-                        <div class="payment-instruction-section">
-                            <h4>💵 Paiement en espèces ou Western Union</h4>
-                            <ol>
-                                <li>Contactez notre service client au <strong>+243 XXX XXX XXX</strong></li>
-                                <li>Communiquez votre référence de commande: <strong>${sanitizeHTML(order.id)}</strong></li>
-                                <li>Effectuez le paiement de <strong>${formatCurrency(order.totalAmount, order.currency)}</strong></li>
-                                <li>Conservez votre reçu comme preuve de paiement</li>
-                            </ol>
-                            <p class="text-small">
-                                Une fois votre paiement confirmé, vos bons seront générés et envoyés par SMS.
-                            </p>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'bank':
-                    html += `
-                        <div class="payment-instruction-section">
-                            <h4>🏦 Virement Bancaire</h4>
-                            <div class="bank-details">
-                                <p><strong>Bénéficiaire:</strong> Nimwema</p>
-                                <p><strong>Banque:</strong> [Nom de la banque]</p>
-                                <p><strong>IBAN:</strong> [IBAN]</p>
-                                <p><strong>SWIFT/BIC:</strong> [SWIFT]</p>
-                                <p><strong>Montant:</strong> ${formatCurrency(order.totalAmount, order.currency)}</p>
-                                <p><strong>Référence:</strong> ${sanitizeHTML(order.id)}</p>
-                            </div>
-                            <p class="text-small">
-                                ⚠️ <strong>Important:</strong> Mentionnez obligatoirement la référence de commande dans le libellé du virement.
-                            </p>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'flexpay':
-                case 'flexpaycard':
-                    html += `
-                        <div class="payment-instruction-section">
-                            <h4>📱 Paiement Mobile Money / Carte bancaire</h4>
-                            <p>Le paiement via ${paymentMethod === 'flexpay' ? 'Mobile Money' : 'Carte bancaire'} a été initié.</p>
-                            <p class="text-small">
-                                Si vous n'avez pas été redirigé automatiquement, veuillez vérifier vos SMS ou 
-                                contactez notre service client avec votre référence: <strong>${sanitizeHTML(order.id)}</strong>
-                            </p>
-                        </div>
-                    `;
-                    break;
-                    
-                default:
-                    html += `
-                        <div class="payment-instruction-section">
-                            <p>Pour compléter votre paiement, veuillez contacter notre service client avec votre référence de commande: <strong>${sanitizeHTML(order.id)}</strong></p>
-                        </div>
-                    `;
-            }
-            
-            container.innerHTML = html;
-        }
-        
-        function showError(message) {
-            const orderDetails = document.getElementById('orderDetails');
-            const paymentInstructions = document.getElementById('paymentInstructions');
-            
-            const errorHTML = `
-                <div class="alert alert-error">
-                    <p><strong>❌ Erreur:</strong> ${sanitizeHTML(message)}</p>
-                </div>
-            `;
-            
-            orderDetails.innerHTML = errorHTML;
-            paymentInstructions.innerHTML = '';
-        }
-        
-        function handleHeaderAction() {
-            if (isAuthenticated()) {
-                window.location.href = '/dashboard.html';
-            } else {
-                window.location.href = '/login.html';
-            }
-        }
-        
-        function redirectToSignup() {
-            const orderId = getOrderIdFromURL();
-            if (orderId) {
-                sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_ORDER, orderId);
-            }
-            window.location.href = '/signup.html';
-        }
-        
-        function initializePage() {
-            const authActions = document.getElementById('auth-actions');
-            const guestActions = document.getElementById('guest-actions');
-            const headerActionText = document.getElementById('headerActionText');
-            
-            if (isAuthenticated()) {
-                authActions.style.display = 'block';
-                guestActions.style.display = 'none';
-                if (headerActionText) {
-                    headerActionText.textContent = 'Mon compte';
-                }
-            } else {
-                authActions.style.display = 'none';
-                guestActions.style.display = 'block';
-                if (headerActionText) {
-                    headerActionText.textContent = 'Connexion';
-                }
-            }
-            
-            loadOrderDetails();
-        }
-        
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = '🙈';
         } else {
-            initializePage();
+            input.type = 'password';
+            button.textContent = '👁️';
         }
+    }
+    
+    // Show account creation modal
+    function showAccountCreationModal() {
+        const modal = document.getElementById('accountModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
+    }
+    
+    // Close account creation modal
+    function closeAccountModal() {
+        const modal = document.getElementById('accountModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+    
+    // Create account
+    async function createAccount(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById('accountEmail').value;
+        const password = document.getElementById('accountPassword').value;
+        const passwordConfirm = document.getElementById('accountPasswordConfirm').value;
+        const errorDiv = document.getElementById('accountError');
+        const successDiv = document.getElementById('accountSuccess');
+        const submitBtn = document.getElementById('createAccountBtn');
+        
+        // Clear previous messages
+        errorDiv.textContent = '';
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+        
+        // Validate passwords match
+        if (password !== passwordConfirm) {
+            errorDiv.textContent = 'Les mots de passe ne correspondent pas';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        // Get order data
+        const orderData = sessionStorage.getItem('pendingOrder');
+        if (!orderData) {
+            errorDiv.textContent = 'Données de commande non trouvées';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const order = JSON.parse(orderData);
+        
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Création en cours...';
+            
+            const response = await fetch('/api/auth/create-guest-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                    name: order.senderName,
+                    phone: order.senderPhone,
+                    orderId: order.id
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                successDiv.textContent = '✓ Compte créé avec succès! Redirection vers la connexion...';
+                successDiv.style.display = 'block';
+                
+                // Store credentials for auto-fill
+                sessionStorage.setItem('newUserCredentials', JSON.stringify({
+                    email: email,
+                    password: password
+                }));
+                
+                // Redirect to login after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+            } else {
+                errorDiv.textContent = result.message || 'Erreur lors de la création du compte';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Créer mon compte';
+            }
+        } catch (error) {
+            console.error('Account creation error:', error);
+            errorDiv.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Créer mon compte';
+        }
+    }
+    
+    // Close modal on outside click
+    document.getElementById('accountModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAccountModal();
+        }
+    });
     </script>
 </body>
 </html>
