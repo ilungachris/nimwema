@@ -670,46 +670,86 @@
 
     <script src="js/i18n.js"></script>
     <script>
-        // Authentication check and token retrieval
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = 'login.html';
-            throw new Error('No auth token found');
+        // DEBUG MODE: Enable detailed logging
+        const DEBUG = true;
+        function debugLog(...args) {
+            if (DEBUG) {
+                console.log('[DEBUG]', ...args);
+            }
         }
 
-        const authHeader = { 'Authorization': `Bearer ${token}` };
+        // Authentication check and token retrieval (NO REDIRECT FOR DEBUG)
+        const token = localStorage.getItem('token');
+        debugLog('Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'MISSING');
+        if (!token) {
+            console.warn('No token found in localStorage. Requests will likely fail with 401.');
+        }
 
-        // Generic fetch helper with error handling
+        const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
+        debugLog('Auth header prepared:', authHeader);
+
+        // Generic fetch helper with error handling and debugging (PAUSED REDIRECT)
         async function apiFetch(url, options = {}) {
             const defaults = {
                 headers: { ...authHeader, ...options.headers },
-                credentials: 'omit' // Avoid mixing with cookies
+                credentials: 'include' // Include cookies as backend expects both
             };
             const config = { ...defaults, ...options };
-            const response = await fetch(url, config);
-            if (!response.ok) {
-                if (response.status === 401) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'login.html';
-                    throw new Error('Unauthorized - Redirecting to login');
+            debugLog(`[API FETCH] Request to ${url} with config:`, config);
+
+            try {
+                const response = await fetch(url, config);
+                debugLog(`[API FETCH] Response from ${url}: status=${response.status}, ok=${response.ok}`);
+
+                // Log response headers for clues (e.g., Set-Cookie, auth issues)
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                debugLog(`[API FETCH] Response headers:`, headers);
+
+                if (!response.ok) {
+                    // PAUSED: No auto-redirect on 401 for debugging
+                    if (response.status === 401) {
+                        console.warn(`[API FETCH] 401 Unauthorized on ${url}. Check token/cookies. Response body:`);
+                        try {
+                            const errorText = await response.text();
+                            console.warn('[API FETCH] 401 Response body:', errorText);
+                        } catch (e) {
+                            console.warn('[API FETCH] Could not read 401 body:', e);
+                        }
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    debugLog(`[API FETCH] Non-JSON response from ${url}:`, await response.text());
+                    throw new Error(`Unexpected content type: ${contentType}`);
+                }
+
+                const data = await response.json();
+                debugLog(`[API FETCH] Parsed JSON from ${url}:`, data);
+                return { response, data };
+            } catch (error) {
+                debugLog(`[API FETCH] Error on ${url}:`, error);
+                throw error;
             }
-            return response;
         }
 
         // Load dashboard data
         async function loadDashboardData() {
+            debugLog('[DASHBOARD] Starting loadDashboardData');
             try {
-                const response = await apiFetch('/api/admin/dashboard');
-                const data = await response.json();
+                const { data } = await apiFetch('/api/admin/dashboard');
                 
                 // Validate data structure
                 if (!data || typeof data !== 'object') {
-                    console.warn('Invalid dashboard data structure');
+                    console.warn('[DASHBOARD] Invalid dashboard data structure:', data);
                     return;
                 }
                 
+                debugLog('[DASHBOARD] Updating stats with data:', data);
                 // Update stats with fallbacks
                 document.getElementById('totalUsers').textContent = data.totalUsers || 0;
                 document.getElementById('activeMerchants').textContent = data.activeMerchants || 0;
@@ -724,24 +764,26 @@
                 // Load sub-components
                 await loadPendingMerchants();
                 await loadRecentActivity();
+                debugLog('[DASHBOARD] loadDashboardData completed successfully');
             } catch (error) {
-                console.error('Error loading dashboard:', error);
+                console.error('[DASHBOARD] Error loading dashboard:', error);
                 // Optionally show a global error toast here
             }
         }
 
         async function loadPendingMerchants() {
             const tbody = document.getElementById('pendingMerchantsBody');
+            debugLog('[MERCHANTS] Starting loadPendingMerchants');
             try {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
-                const response = await apiFetch('/api/admin/merchants?status=pending&limit=5');
-                const merchants = await response.json();
+                const { data: merchants } = await apiFetch('/api/admin/merchants?status=pending&limit=5');
                 
                 if (!Array.isArray(merchants)) {
-                    console.warn('Merchants data is not an array');
+                    console.warn('[MERCHANTS] Merchants data is not an array:', merchants);
                     throw new Error('Invalid data format');
                 }
                 
+                debugLog('[MERCHANTS] Loaded merchants:', merchants);
                 if (merchants.length === 0) {
                     tbody.innerHTML = `
                         <tr>
@@ -768,8 +810,9 @@
                         </tr>
                     `).join('');
                 }
+                debugLog('[MERCHANTS] loadPendingMerchants completed');
             } catch (error) {
-                console.error('Error loading pending merchants:', error);
+                console.error('[MERCHANTS] Error loading pending merchants:', error);
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="error-message">
@@ -782,16 +825,17 @@
 
         async function loadRecentActivity() {
             const tbody = document.getElementById('activityBody');
+            debugLog('[ACTIVITY] Starting loadRecentActivity');
             try {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
-                const response = await apiFetch('/api/admin/activity?limit=10');
-                const activities = await response.json();
+                const { data: activities } = await apiFetch('/api/admin/activity?limit=10');
                 
                 if (!Array.isArray(activities)) {
-                    console.warn('Activities data is not an array');
+                    console.warn('[ACTIVITY] Activities data is not an array:', activities);
                     throw new Error('Invalid data format');
                 }
                 
+                debugLog('[ACTIVITY] Loaded activities:', activities);
                 if (activities.length === 0) {
                     tbody.innerHTML = `
                         <tr>
@@ -811,8 +855,9 @@
                         </tr>
                     `).join('');
                 }
+                debugLog('[ACTIVITY] loadRecentActivity completed');
             } catch (error) {
-                console.error('Error loading activity:', error);
+                console.error('[ACTIVITY] Error loading activity:', error);
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="5" class="error-message">
@@ -824,11 +869,11 @@
         }
 
         async function approveMerchant(id) {
+            debugLog(`[MERCHANT APPROVE] Approving merchant ${id}`);
             if (!confirm('Approuver ce commerçant ?')) return;
             
             try {
-                const response = await apiFetch(`/api/admin/merchants/${id}/approve`, { method: 'POST' });
-                const data = await response.json();
+                const { data } = await apiFetch(`/api/admin/merchants/${id}/approve`, { method: 'POST' });
                 
                 if (data.success !== false) { // Assume success if no explicit failure
                     alert('Commerçant approuvé avec succès');
@@ -838,21 +883,21 @@
                     alert('Erreur lors de l\'approbation: ' + (data.message || 'Inconnu'));
                 }
             } catch (error) {
-                console.error('Error approving merchant:', error);
+                console.error('[MERCHANT APPROVE] Error approving merchant:', error);
                 alert('Erreur lors de l\'approbation: ' + error.message);
             }
         }
 
         async function rejectMerchant(id) {
+            debugLog(`[MERCHANT REJECT] Rejecting merchant ${id}`);
             const reason = prompt('Raison du rejet :');
             if (!reason) return;
             
             try {
-                const response = await apiFetch(`/api/admin/merchants/${id}/reject`, {
+                const { data } = await apiFetch(`/api/admin/merchants/${id}/reject`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeader }
                 });
-                const data = await response.json();
                 
                 if (data.success !== false) {
                     alert('Commerçant rejeté');
@@ -862,28 +907,31 @@
                     alert('Erreur lors du rejet: ' + (data.message || 'Inconnu'));
                 }
             } catch (error) {
-                console.error('Error rejecting merchant:', error);
+                console.error('[MERCHANT REJECT] Error rejecting merchant:', error);
                 alert('Erreur lors du rejet: ' + error.message);
             }
         }
 
         function viewMerchant(id) {
+            debugLog(`[MERCHANT VIEW] Viewing merchant ${id}`);
             window.location.href = `admin-merchants.html?id=${id}`;
         }
 
         // Load pending orders
         async function loadPendingOrders() {
             const tbody = document.getElementById('pendingOrdersBody');
+            debugLog('[ORDERS] Starting loadPendingOrders');
             try {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Chargement...</td></tr>';
-                const response = await apiFetch('/api/admin/pending-orders');
-                const data = await response.json();
+                const { data } = await apiFetch('/api/admin/pending-orders');
                 
                 if (!data || !data.success || !Array.isArray(data.orders)) {
+                    debugLog('[ORDERS] Invalid or empty orders data:', data);
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucune commande en attente</td></tr>';
                     return;
                 }
                 
+                debugLog('[ORDERS] Loaded orders:', data.orders);
                 tbody.innerHTML = data.orders.map(order => `
                     <tr>
                         <td><strong>${order.id || 'N/A'}</strong></td>
@@ -898,8 +946,9 @@
                         </td>
                     </tr>
                 `).join('');
+                debugLog('[ORDERS] loadPendingOrders completed');
             } catch (error) {
-                console.error('Error loading pending orders:', error);
+                console.error('[ORDERS] Error loading pending orders:', error);
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="error-message">
@@ -912,11 +961,11 @@
         
         // Approve order
         async function approveOrder(orderId) {
+            debugLog(`[ORDER APPROVE] Approving order ${orderId}`);
             if (!confirm('Confirmer l\'approbation de cette commande? Les bons seront générés et envoyés par SMS.')) return;
             
             try {
-                const response = await apiFetch(`/api/admin/pending-orders/${orderId}/approve`, { method: 'POST' });
-                const data = await response.json();
+                const { data } = await apiFetch(`/api/admin/pending-orders/${orderId}/approve`, { method: 'POST' });
                 
                 if (data && data.success) {
                     alert('✅ ' + (data.message || 'Commande approuvée'));
@@ -925,23 +974,23 @@
                     alert('❌ ' + (data?.message || 'Erreur lors de l\'approbation'));
                 }
             } catch (error) {
-                console.error('Error approving order:', error);
+                console.error('[ORDER APPROVE] Error approving order:', error);
                 alert('❌ Erreur: ' + error.message);
             }
         }
         
         // Reject order
         async function rejectOrder(orderId) {
+            debugLog(`[ORDER REJECT] Rejecting order ${orderId}`);
             const reason = prompt('Raison du rejet:');
             if (!reason) return;
             
             try {
-                const response = await apiFetch(`/api/admin/pending-orders/${orderId}/reject`, {
+                const { data } = await apiFetch(`/api/admin/pending-orders/${orderId}/reject`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeader },
                     body: JSON.stringify({ reason })
                 });
-                const data = await response.json();
                 
                 if (data && data.success) {
                     alert('✅ ' + (data.message || 'Commande rejetée'));
@@ -950,32 +999,37 @@
                     alert('❌ ' + (data?.message || 'Erreur lors du rejet'));
                 }
             } catch (error) {
-                console.error('Error rejecting order:', error);
+                console.error('[ORDER REJECT] Error rejecting order:', error);
                 alert('❌ Erreur: ' + error.message);
             }
         }
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async function() {
+            debugLog('[LOGOUT] Starting logout');
             if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
                 try {
                     await apiFetch('/api/auth/logout', { method: 'POST' });
                 } catch (error) {
-                    console.error('Logout error:', error);
+                    console.error('[LOGOUT] Logout error:', error);
                 } finally {
                     localStorage.removeItem('token');
+                    debugLog('[LOGOUT] Token cleared, redirecting to login');
                     window.location.href = 'login.html';
                 }
             }
         });
 
-        // Initialize
-        loadDashboardData();
-        loadPendingOrders();
+        // Initialize (with debug)
+        debugLog('[INIT] Initializing dashboard...');
+        loadDashboardData().catch(e => console.error('[INIT] Dashboard init failed:', e));
+        loadPendingOrders().catch(e => console.error('[INIT] Orders init failed:', e));
         setInterval(() => {
+            debugLog('[INTERVAL] Refreshing data...');
             loadDashboardData().catch(console.error);
             loadPendingOrders().catch(console.error);
         }, 60000); // Refresh every minute, with error handling
+        debugLog('[INIT] Initialization complete');
     </script>
 </body>
 </html>
