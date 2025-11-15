@@ -1090,7 +1090,7 @@ app.post('/api/auth/signup', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
+/** 
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -1113,6 +1113,10 @@ if (userResult.rows.length === 0) {
   console.warn(`Login attempt failed: No active user found for email ${email}`); // Log for debugging
   return res.status(401).json({ error: 'Identifiants invalides' });
 }
+
+console.log('Reached password check');
+
+
 // Similarly for password:
 if (!isValid) {
   console.warn(`Login attempt failed: Invalid password for user ${user.id}`);
@@ -1143,7 +1147,97 @@ if (!response.ok) {
     console.error('Login error:', error);
     res.status(401).json({ error: error.message });
   }
+});*/
+
+
+
+
+const bcrypt = require('bcrypt');  // Add this at the TOP of server.js (outside any function)
+
+// ... other imports and app setup ...
+
+app.post('/api/auth/login', async (req, res) => {
+  const startTime = Date.now();  // For logging duration
+  const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const { email: rawEmail, password: rawPassword } = req.body;
+  
+  console.log('Login attempt:', { email: rawEmail, ip });  // Debug log
+
+  try {
+    // Trim and validate inputs
+    const email = rawEmail?.trim().toLowerCase();
+    const password = rawPassword?.trim();
+    
+    if (!email || !password) {
+      console.warn('Login failed: Missing credentials', { email, ip });
+      return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
+
+    // Query: Case-insensitive, select non-sensitive fields only
+    const userResult = await db.query(
+      'SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, last_login, is_active, name FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true',
+      [email]
+    );
+    
+    console.log('Query result:', { rows: userResult.rows.length, email });  // Debug: Confirms if user found
+
+    if (userResult.rows.length === 0) {
+      console.warn('Login failed: No active user found', { email, ip, duration: Date.now() - startTime });
+      return res.status(401).json({ error: 'Identifiants invalides' });
+    }
+
+    const user = userResult.rows[0];
+    
+    // Password check: Now in scope, only runs if user exists
+    console.log('Reached password check for user:', user.id);  // Debug
+    const isValid = await bcrypt.compare(password, user.password);  // Declare here
+    
+    if (!isValid) {
+      console.warn('Login failed: Invalid password', { userId: user.id, email, ip, duration: Date.now() - startTime });
+      return res.status(401).json({ error: 'Le mot de passe est incorrect' });
+    }
+
+    // Success: Set secure session (use random token, not user.id)
+    const crypto = require('crypto');  // If not imported, add at top
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    // TODO: Store sessionId -> user.id in DB/Redis for validation
+    res.cookie('sessionId', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days
+    });
+
+    console.info('Login successful', { userId: user.id, email, ip, duration: Date.now() - startTime });
+
+    res.json({
+      success: true,
+      user: {  // Exclude password
+        id: user.id,
+        phone: user.phone,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+        language: user.language,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_login: user.last_login,
+        name: user.name
+      },
+      redirectTo: getRedirectUrl(user.role)  // Assumes this function exists
+    });
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('Login exception:', { error: error.message, stack: error.stack, email: rawEmail, ip, duration });
+    res.status(500).json({ error: 'Erreur serveur interne' });  // Don't expose details in prod
+  }
 });
+
+
+
+
+
 
 app.post('/api/auth/logout', async (req, res) => {
   try {
