@@ -18,7 +18,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const bcrypt = require('bcrypt');
-
+const crypto = require('crypto');
 // MERGE: Added for exchange scraping (from backup)
 const axios = require('axios'); // npm install axios if missing
 
@@ -1156,8 +1156,8 @@ if (!response.ok) {
 
  
 
-// ... app setup ...
 
+// In your routes section...
 app.post('/api/auth/login', async (req, res) => {
   const startTime = Date.now();
   const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
@@ -1174,9 +1174,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    // Query: Include password for compare, but we'll exclude in response
+    // Query: Explicitly include password LAST
     const userResult = await db.query(
-      'SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, last_login, is_active, name, password FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true',
+      `SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, 
+       last_login, is_active, name, password 
+       FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true`,
       [email]
     );
     
@@ -1187,23 +1189,28 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
 
-    const user = userResult.rows[0];
+    const rawUser = userResult.rows[0];  // Keep raw for password
+    const user = { ...rawUser };  // Copy for response
+    delete user.password;  // Clean for JSON
     
-    // Delete password from user object to avoid leak (after query, before compare)
-    delete user.password;  // Safe: We have it in memory for compare
-    
-    console.log('Reached password check for user:', user.id);
-    const isValid = await bcrypt.compare(password, userResult.rows[0].password);  // Use original row's password
+    console.log('Password hash exists?', { hasHash: !!rawUser.password, userId: rawUser.id });
+
+    if (!rawUser.password) {
+      console.warn('Login failed: No password hash in DB', { userId: rawUser.id, email, ip });
+      return res.status(401).json({ error: 'Compte corrompu - contactez l\'admin' });
+    }
+
+    console.log('Reached password check for user:', rawUser.id);
+    const isValid = await bcrypt.compare(password, rawUser.password);
     
     if (!isValid) {
-      console.warn('Login failed: Invalid password', { userId: user.id, email, ip, duration: Date.now() - startTime });
+      console.warn('Login failed: Invalid password', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
       return res.status(401).json({ error: 'Le mot de passe est incorrect' });
     }
 
-    // Success: Generate secure session token
-    const crypto = require('crypto');
+    // Success: Secure session token
     const sessionId = crypto.randomBytes(32).toString('hex');
-    // TODO: INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days'); [sessionId, user.id]
+    // TODO: Store in sessions table: await db.query('INSERT INTO sessions ...', [sessionId, rawUser.id]);
     
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
@@ -1212,12 +1219,12 @@ app.post('/api/auth/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    console.info('Login successful', { userId: user.id, email, ip, duration: Date.now() - startTime });
+    console.info('Login successful', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
 
     res.json({
       success: true,
-      user,  // Already sans password
-      redirectTo: getRedirectUrl(user.role)  // Define if missing: function getRedirectUrl(role) { ... }
+      user,
+      redirectTo: getRedirectUrl(rawUser.role)  // Define if missing, e.g., function getRedirectUrl(role) { return '/dashboard.html'; }
     });
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -1225,7 +1232,6 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
-
 
 
 
