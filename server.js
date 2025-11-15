@@ -323,6 +323,14 @@ const authMiddleware = {
 
 // ========== API ENDPOINTS ==========
 
+
+app.post('/api/auth/logout', authMiddleware.requireAuth, async (req, res) => {
+  await db.query('DELETE FROM sessions WHERE id = $1', [req.cookies.sessionId]);
+  res.clearCookie('sessionId');
+  res.json({ success: true });
+});
+
+
 // Exchange Rate (merged: advanced from backup with fallback)
 app.get('/api/exchange-rate', async (req, res) => {
   try {
@@ -2298,7 +2306,8 @@ app.get('/api/admin/dashboard', authMiddleware.requireAuth, authMiddleware.requi
 
 // ========== NEW ENDPOINTS FOR ADMIN ORDER MANAGEMENT ==========
 
-// Get pending orders (orders waiting for admin approval)
+// Get pending orders (orders waiting for admin approval) 
+/**
 app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   try {
     // Get all orders with status 'pending_approval' or 'pending_payment'
@@ -2318,7 +2327,35 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
       message: 'Erreur lors du chargement des commandes' 
     });
   }
+}); */
+
+app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  try {
+    const pendingOrders = Object.values(global.orders || {}).filter(order => 
+      order.status === 'pending_approval' || order.status === 'pending_payment'
+    );
+    
+    res.json({
+      success: true,
+      orders: pendingOrders.map(order => ({  // Sanitize if needed
+        id: order.id,
+        sender_name: order.sender_name,
+        sender_phone: order.sender_phone,
+        amount: order.amount,
+        quantity: order.quantity,
+        recipients: order.recipients,
+        payment_method: order.payment_method,
+        status: order.status,
+        created_at: order.created_at,
+        // Add others as per frontend
+      }))
+    });
+  } catch (error) {
+    console.error('Error loading pending orders:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors du chargement des commandes' });
+  }
 });
+
 
 // Approve an order (generate and send vouchers)
 app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
