@@ -256,6 +256,71 @@ function getRedirectUrl(role) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Auth Middleware (add this before app.get/post routes)
+const authMiddleware = {
+  requireAuth: async (req, res, next) => {
+    try {
+      const sessionId = req.cookies.sessionId;  // Assumes cookie-parser middleware: app.use(require('cookie-parser')());
+      if (!sessionId) {
+        return res.status(401).json({ error: 'Non authentifié' });
+      }
+
+      // Validate session in DB
+      const result = await db.query(
+        'SELECT s.user_id, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP AND u.is_active = true',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({ error: 'Session invalide ou expirée' });
+      }
+
+      req.user = result.rows[0];  // Attach {user_id, role}
+      next();
+    } catch (error) {
+      console.error('Auth middleware error:', error);
+      res.status(500).json({ error: 'Erreur authentification' });
+    }
+  },
+
+  requireRole: (role) => {
+    return (req, res, next) => {
+      if (!req.user || req.user.role !== role) {
+        return res.status(403).json({ error: `Accès refusé: rôle ${role} requis` });
+      }
+      next();
+    };
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ========== API ENDPOINTS ==========
 
 // Exchange Rate (merged: advanced from backup with fallback)
