@@ -1125,6 +1125,15 @@ if (!isValid) {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
+
+
+if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Erreur de serveur' }));
+    throw new Error(errorData.error || `Erreur HTTP ${response.status}`);  // Use .error
+}
+
+
+
     res.json({
       success: true,
       user: user,
