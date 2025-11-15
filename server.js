@@ -1152,7 +1152,7 @@ if (!response.ok) {
 
 
 
-const bcrypt = require('bcrypt');  // Add this at the TOP of server.js (outside any function)
+ 
 
 // ... other imports and app setup ...
 
