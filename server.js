@@ -1107,7 +1107,7 @@ app.post('/api/auth/login', async (req, res) => {
       const user = userResult.rows[0];
       const isValid = await require('bcrypt').compare(password, user.password);
       if (!isValid) {
-        return res.status(401).json({ error: 'Invalid email or password' });
+        return res.status(401).json({ error: 'Le mot de passe est incorrect' });
       }
     // Set session cookie
     res.cookie('sessionId', user.id, {
