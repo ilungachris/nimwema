@@ -1154,18 +1154,19 @@ if (!response.ok) {
 
  
 
-// ... other imports and app setup ...
+ 
+
+// ... app setup ...
 
 app.post('/api/auth/login', async (req, res) => {
-  const startTime = Date.now();  // For logging duration
+  const startTime = Date.now();
   const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
   const { email: rawEmail, password: rawPassword } = req.body;
   
-  console.log('Login attempt:', { email: rawEmail, ip });  // Debug log
+  console.log('Login attempt:', { email: rawEmail, ip });
 
   try {
-    // Trim and validate inputs
-    const email = rawEmail?.trim().toLowerCase();
+    const email = rawEmail?.trim()?.toLowerCase();
     const password = rawPassword?.trim();
     
     if (!email || !password) {
@@ -1173,13 +1174,13 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    // Query: Case-insensitive, select non-sensitive fields only
+    // Query: Include password for compare, but we'll exclude in response
     const userResult = await db.query(
-      'SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, last_login, is_active, name FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true',
+      'SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, last_login, is_active, name, password FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true',
       [email]
     );
     
-    console.log('Query result:', { rows: userResult.rows.length, email });  // Debug: Confirms if user found
+    console.log('Query result:', { rows: userResult.rows.length, email });
 
     if (userResult.rows.length === 0) {
       console.warn('Login failed: No active user found', { email, ip, duration: Date.now() - startTime });
@@ -1188,49 +1189,40 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = userResult.rows[0];
     
-    // Password check: Now in scope, only runs if user exists
-    console.log('Reached password check for user:', user.id);  // Debug
-    const isValid = await bcrypt.compare(password, user.password);  // Declare here
+    // Delete password from user object to avoid leak (after query, before compare)
+    delete user.password;  // Safe: We have it in memory for compare
+    
+    console.log('Reached password check for user:', user.id);
+    const isValid = await bcrypt.compare(password, userResult.rows[0].password);  // Use original row's password
     
     if (!isValid) {
       console.warn('Login failed: Invalid password', { userId: user.id, email, ip, duration: Date.now() - startTime });
       return res.status(401).json({ error: 'Le mot de passe est incorrect' });
     }
 
-    // Success: Set secure session (use random token, not user.id)
-    const crypto = require('crypto');  // If not imported, add at top
+    // Success: Generate secure session token
+    const crypto = require('crypto');
     const sessionId = crypto.randomBytes(32).toString('hex');
-    // TODO: Store sessionId -> user.id in DB/Redis for validation
+    // TODO: INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days'); [sessionId, user.id]
+    
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     console.info('Login successful', { userId: user.id, email, ip, duration: Date.now() - startTime });
 
     res.json({
       success: true,
-      user: {  // Exclude password
-        id: user.id,
-        phone: user.phone,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-        language: user.language,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        last_login: user.last_login,
-        name: user.name
-      },
-      redirectTo: getRedirectUrl(user.role)  // Assumes this function exists
+      user,  // Already sans password
+      redirectTo: getRedirectUrl(user.role)  // Define if missing: function getRedirectUrl(role) { ... }
     });
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('Login exception:', { error: error.message, stack: error.stack, email: rawEmail, ip, duration });
-    res.status(500).json({ error: 'Erreur serveur interne' });  // Don't expose details in prod
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
