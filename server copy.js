@@ -17,7 +17,6 @@ const session = require('express-session');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
-const bcrypt = require('bcrypt');
 
 // MERGE: Added for exchange scraping (from backup)
 const axios = require('axios'); // npm install axios if missing
@@ -1095,29 +1094,21 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-   const { email, password } = req.body;
-const trimmedEmail = email?.trim().toLowerCase();
-const trimmedPassword = password?.trim();
-if (!trimmedEmail || !trimmedPassword) {
-  return res.status(400).json({ error: 'Email et mot de passe requis' });
-}
-// Use trimmedEmail in query
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
 
       // Use database authentication
-      //const userResult = await db.query('SELECT * FROM users WHERE email = $1 AND is_active = true', [email]);
-      const userResult = await db.query('SELECT id, email, password, role, is_active FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true', [email]);
-console.info(`Login query result: ${userResult.rows.length} rows for ${email}`); // Log query outcome
+      const userResult = await db.query('SELECT * FROM users WHERE email = $1 AND is_active = true', [email]);
+      if (userResult.rows.length === 0) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
       
       const user = userResult.rows[0];
-if (userResult.rows.length === 0) {
-  console.warn(`Login attempt failed: No active user found for email ${email}`); // Log for debugging
-  return res.status(401).json({ error: 'Identifiants invalides' });
-}
-// Similarly for password:
-if (!isValid) {
-  console.warn(`Login attempt failed: Invalid password for user ${user.id}`);
-  return res.status(401).json({ error: 'Le mot de passe est incorrect' });
-}
+      const isValid = await require('bcrypt').compare(password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ error: 'Le mot de passe est incorrect' });
+      }
     // Set session cookie
     res.cookie('sessionId', user.id, {
       httpOnly: true,
