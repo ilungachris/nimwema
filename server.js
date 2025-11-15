@@ -1095,7 +1095,7 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-   const { email, password } = req.body;
+    
 const trimmedEmail = email?.trim().toLowerCase();
 const trimmedPassword = password?.trim();
 if (!trimmedEmail || !trimmedPassword) {
