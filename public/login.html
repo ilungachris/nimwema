@@ -382,10 +382,18 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                if (!response.ok) {
+                /**if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ message: 'Erreur de serveur' }));
                     throw new Error(errorData.message || `Erreur HTTP ${response.status}`);
-                }
+                }*/
+
+
+if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Erreur de serveur' }));
+    throw new Error(errorData.error || `Erreur HTTP ${response.status}`);  // Use .error
+}
+
+
 
                 const result = await response.json();
 
