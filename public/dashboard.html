@@ -47,6 +47,10 @@
                     <span class="nav-icon">⏳</span>
                     <span class="nav-text">Commandes en attente</span>
                 </a>
+                <a href="#transactions" class="nav-item" onclick="showSection('transactions')" data-i18n="my_transactions">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Transactions</span>
+                </a>
                 <a href="#requests" class="nav-item" onclick="showSection('requests')" data-i18n="my_requests">
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">Mes Demandes</span>
@@ -79,13 +83,58 @@
                 </div>
             </section>
 
+            <section id="transactionsSection" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h1 data-i18n="my_transactions">Mes Transactions</h1>
+                        <p class="text-small" data-i18n="transactions_subtitle">Vos bons envoyés et reçus</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="exportTransactions()" data-i18n="export">Exporter</button>
+                </div>
+
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label data-i18n="filter_by_type">Type:</label>
+                        <select id="transactionTypeFilter" class="form-select" onchange="filterTransactions()">
+                            <option value="all" data-i18n="all_types">Tous</option>
+                            <option value="sent" data-i18n="sent">Envoyés</option>
+                            <option value="received" data-i18n="received">Reçus</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label data-i18n="filter_by_status">Statut:</label>
+                        <select id="transactionStatusFilter" class="form-select" onchange="filterTransactions()">
+                            <option value="all" data-i18n="all_statuses">Tous</option>
+                            <option value="pending" data-i18n="pending">En attente</option>
+                            <option value="active" data-i18n="active">Actif</option>
+                            <option value="redeemed" data-i18n="redeemed">Utilisé</option>
+                            <option value="expired" data-i18n="expired">Expiré</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label data-i18n="sort_by">Trier par:</label>
+                        <select id="transactionSortBy" class="form-select" onchange="sortTransactions()">
+                            <option value="date_desc" data-i18n="newest_first">Plus récent</option>
+                            <option value="date_asc" data-i18n="oldest_first">Plus ancien</option>
+                            <option value="amount_desc" data-i18n="highest_amount">Montant décroissant</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="transactionsList" class="requests-list">
+                    <div class="loading-state">
+                        <p data-i18n="loading">Chargement...</p>
+                    </div>
+                </div>
+            </section>
+
             <section id="requestsSection" class="dashboard-section">
                 <div class="section-header">
                     <div>
                         <h1 data-i18n="my_requests">Mes Demandes</h1>
-                        <p class="text-small" data-i18n="requests_subtitle">
-                            Gérez toutes vos demandes de bons d'achat
-                        </p>
+                        <p class="text-small" data-i18n="requests_subtitle">Gérez toutes vos demandes de bons d'achat</p>
                     </div>
                     <button class="btn btn-primary" onclick="window.location.href='/request.html'" data-i18n="new_request">
                         ➕ Nouvelle Demande
@@ -133,9 +182,7 @@
                 <div class="section-header">
                     <div>
                         <h1 data-i18n="my_senders">Mes Expéditeurs</h1>
-                        <p class="text-small" data-i18n="senders_subtitle">
-                            Gérez vos contacts expéditeurs favoris
-                        </p>
+                        <p class="text-small" data-i18n="senders_subtitle">Gérez vos contacts expéditeurs favoris</p>
                     </div>
                     <button class="btn btn-primary" onclick="showAddSenderModal()" data-i18n="add_sender">
                         ➕ Ajouter un expéditeur
@@ -235,280 +282,6 @@
 
     <script src="/js/i18n.js"></script>
     <script src="/js/main.js"></script>
-    <script>
-        const CONFIG = {
-            API_BASE: '/api',
-            STORAGE_KEYS: {
-                USER: 'nimwema_user',
-                TOKEN: 'nimwema_token'
-            },
-            REFRESH_INTERVAL: 30000
-        };
-        
-        let refreshInterval = null;
-        
-        function checkAuth() {
-            const user = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
-            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
-            
-            if (!user || !token) {
-                window.location.href = '/login.html';
-                return false;
-            }
-            
-            try {
-                const userData = JSON.parse(user);
-                document.getElementById('userName').textContent = userData.name || 'Utilisateur';
-                return true;
-            } catch (error) {
-                console.error('Error parsing user data:', error);
-                logout();
-                return false;
-            }
-        }
-        
-        function getAuthHeaders() {
-            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            };
-        }
-        
-        async function logout() {
-            try {
-                await fetch(`${CONFIG.API_BASE}/auth/logout`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    credentials: 'include'
-                });
-            } catch (error) {
-                console.error('Logout error:', error);
-            } finally {
-                localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
-                localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
-                window.location.href = '/login.html';
-            }
-        }
-        
-        function showSection(sectionName) {
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.currentTarget.classList.add('active');
-            
-            document.querySelectorAll('.dashboard-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            let targetSection;
-            switch(sectionName) {
-                case 'pending-orders':
-                    targetSection = document.getElementById('pendingOrdersSection');
-                    loadPendingOrders();
-                    break;
-                case 'requests':
-                    targetSection = document.getElementById('requestsSection');
-                    loadRequests();
-                    break;
-                case 'senders':
-                    targetSection = document.getElementById('sendersSection');
-                    loadSenders();
-                    break;
-            }
-            
-            if (targetSection) {
-                targetSection.classList.add('active');
-            }
-        }
-        
-        async function loadPendingOrders() {
-            const container = document.getElementById('pendingOrdersList');
-            
-            try {
-                const response = await fetch(`${CONFIG.API_BASE}/user/pending-orders`, {
-                    headers: getAuthHeaders(),
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success && data.orders && data.orders.length > 0) {
-                    container.innerHTML = data.orders.map(order => `
-                        <div class="order-card">
-                            <div class="order-header">
-                                <div>
-                                    <h3>Commande #${escapeHTML(order.id)}</h3>
-                                    <p class="text-small">${formatDate(order.createdAt)}</p>
-                                </div>
-                                <span class="status-badge status-pending">En attente</span>
-                            </div>
-                            <div class="order-details">
-                                <div class="detail-row">
-                                    <span>Montant:</span>
-                                    <strong>${formatCurrency(order.amount, order.currency)}</strong>
-                                </div>
-                                <div class="detail-row">
-                                    <span>Quantité:</span>
-                                    <strong>${order.quantity} bon(s)</strong>
-                                </div>
-                                <div class="detail-row">
-                                    <span>Méthode:</span>
-                                    <strong>${getPaymentMethodLabel(order.paymentMethod)}</strong>
-                                </div>
-                            </div>
-                            <div class="order-actions">
-                                <button class="btn btn-secondary btn-sm" onclick="viewOrderInstructions('${order.id}')">
-                                    Voir instructions
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('${order.id}')">
-                                    Annuler
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <p>Aucune commande en attente</p>
-                            <button class="btn btn-primary" onclick="window.location.href='/send.html'">
-                                Envoyer un bon d'achat
-                            </button>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading pending orders:', error);
-                container.innerHTML = `
-                    <div class="error-state">
-                        <p>Erreur lors du chargement des commandes</p>
-                        <button class="btn btn-secondary" onclick="loadPendingOrders()">Réessayer</button>
-                    </div>
-                `;
-            }
-        }
-        
-        function escapeHTML(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-        
-        function formatCurrency(amount, currency = 'USD') {
-            return new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: currency
-            }).format(amount);
-        }
-        
-        function formatDate(dateString) {
-            return new Intl.DateTimeFormat('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(new Date(dateString));
-        }
-        
-        function getPaymentMethodLabel(method) {
-            const labels = {
-                'flexpay': 'Mobile Money',
-                'flexpaycard': 'Carte bancaire',
-                'cash': 'Cash/Western Union',
-                'bank': 'Virement bancaire'
-            };
-            return labels[method] || method;
-        }
-        
-        function viewOrderInstructions(orderId) {
-            window.location.href = `/payment-instructions.html?order=${encodeURIComponent(orderId)}`;
-        }
-        
-        function confirmDeleteOrder(orderId) {
-            if (confirm('Êtes-vous sûr de vouloir annuler cette commande ?')) {
-                deleteOrder(orderId);
-            }
-        }
-        
-        async function deleteOrder(orderId) {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE}/user/orders/${encodeURIComponent(orderId)}`, {
-                    method: 'DELETE',
-                    headers: getAuthHeaders(),
-                    credentials: 'include'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('Commande annulée avec succès');
-                    loadPendingOrders();
-                } else {
-                    throw new Error(data.message || 'Erreur lors de l\'annulation');
-                }
-            } catch (error) {
-                console.error('Error deleting order:', error);
-                alert('Erreur lors de l\'annulation de la commande');
-            }
-        }
-        
-        function loadRequests() {
-            document.getElementById('requestsList').innerHTML = `
-                <div class="empty-state">
-                    <p>Fonction en développement</p>
-                </div>
-            `;
-        }
-        
-        function loadSenders() {
-            document.getElementById('sendersList').innerHTML = `
-                <div class="empty-state">
-                    <p>Fonction en développement</p>
-                </div>
-            `;
-        }
-        
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-        
-        function showAddSenderModal() {
-            document.getElementById('senderModal').style.display = 'block';
-        }
-        
-        function saveSender(event) {
-            event.preventDefault();
-            alert('Fonction en développement');
-        }
-        
-        function confirmDelete() {
-            alert('Fonction en développement');
-        }
-        
-        function toggleMenu() {
-            document.querySelector('.dashboard-sidebar').classList.toggle('mobile-open');
-        }
-        
-        function filterRequests() {}
-        function sortRequests() {}
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            if (checkAuth()) {
-                loadPendingOrders();
-                refreshInterval = setInterval(loadPendingOrders, CONFIG.REFRESH_INTERVAL);
-            }
-        });
-        
-        window.addEventListener('beforeunload', function() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-        });
-    </script>
+    <script src="/js/dashboard.js"></script> <!-- Separate JS file for dashboard logic -->
 </body>
 </html>

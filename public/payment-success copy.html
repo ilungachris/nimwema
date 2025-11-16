@@ -4,12 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paiement réussi - Nimwema</title>
-    <meta name="description" content="Votre paiement a été traité avec succès. Les bons d'achat ont été générés et envoyés par SMS.">
-    
-    <!-- Security Headers (for production) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://sites.super.myninja.ai; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com;">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="description" content="Votre paiement a été traité avec succès">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,12 +14,10 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
-    
-    <!-- Analytics (keep for production if needed; otherwise remove) -->
-    <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js" defer></script>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <!-- Header (coherent with app structure: logo, lang selector, auth) -->
+    <!-- Header -->
     <header class="header">
         <div class="header-top">
             <div class="language-selector">
@@ -63,12 +56,12 @@
                     Paiement réussi !
                 </h1>
                 
-                <!-- Message (coherent with backend: vouchers created/redeemed via FlexPay callback) -->
+                <!-- Message -->
                 <p class="confirmation-message" data-i18n="payment_success_message">
-                    Votre paiement a été traité avec succès via FlexPay. Les bons d'achat ont été générés, les commandes approuvées (status: 'paid'), et les codes uniques envoyés aux destinataires par SMS.
+                    Votre paiement a été traité avec succès. Les bons d'achat ont été générés et envoyés aux destinataires par SMS.
                 </p>
                 
-                <!-- Success Details (aligned with backend flows: orders pending->paid, vouchers CRUD, metadata JSONB for recipients) -->
+                <!-- Success Details -->
                 <div class="card" style="text-align: left; margin-bottom: var(--space-xl);">
                     <h3 style="margin-bottom: var(--space-md);" data-i18n="what_happens_next">
                         Que se passe-t-il maintenant ?
@@ -77,31 +70,31 @@
                         <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
                             <span style="color: var(--primary-green); font-weight: 700;">1.</span>
                             <span data-i18n="success_step_1">
-                                Les bons d'achat ont été créés avec des codes uniques et métadonnées (JSONB) pour les destinataires
+                                Les bons d'achat ont été générés avec des codes uniques
                             </span>
                         </li>
                         <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
                             <span style="color: var(--primary-green); font-weight: 700;">2.</span>
                             <span data-i18n="success_step_2">
-                                Un SMS a été envoyé à chaque destinataire avec son code de bon via l'endpoint /api/vouchers
+                                Un SMS a été envoyé à chaque destinataire avec son code
                             </span>
                         </li>
                         <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
                             <span style="color: var(--primary-green); font-weight: 700;">3.</span>
                             <span data-i18n="success_step_3">
-                                Les destinataires peuvent racheter leurs bons dans nos marchands partenaires
+                                Les destinataires peuvent utiliser leurs codes dans nos marchands partenaires
                             </span>
                         </li>
                         <li style="padding: var(--space-sm) 0; display: flex; gap: var(--space-sm);">
                             <span style="color: var(--primary-green); font-weight: 700;">4.</span>
                             <span data-i18n="success_step_4">
-                                Vous recevrez un email de confirmation ; consultez vos commandes en attente via /api/orders/my-pending si needed
+                                Vous recevrez un email de confirmation avec tous les détails
                             </span>
                         </li>
                     </ul>
                 </div>
                 
-                <!-- Actions (conditional on auth: guest vs authenticated, linking to dashboard for /api/senders, /api/requests) -->
+                <!-- Actions -->
                 <div class="confirmation-actions">
                     <div id="auth-actions" style="display: none;">
                         <button class="btn btn-primary btn-large" onclick="window.location.href='/dashboard.html'">
@@ -137,105 +130,84 @@
         </div>
     </main>
 
-    <!-- Footer (updated copyright for 2025) -->
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2025 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
             </div>
         </div>
     </footer>
 
-    <!-- Scripts (defer for performance; i18n and main for coherence) -->
-    <script src="/js/i18n.js" defer></script>
-    <script src="/js/main.js" defer></script>
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
     
     <script>
-        // Production-ready: Remove console.logs in prod build; use error boundaries
-        // Get order ID from URL (from FlexPay redirect/callback)
+        // Get order ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order');
         
-        // Process FlexPay callback (coherent with backend: /api/flexpay/callback, but using /api/payment/flexpay/card/callback as per provided; adjust if backend path differs)
-        // This simulates/triggers backend voucher creation on success (status='paid', metadata JSONB)
+        // Process FlexPay callback - create voucher and add transaction
         async function processFlexPayCallback() {
             if (!orderId) {
-                // Fallback: redirect or show error if no orderId in prod
-                console.warn('No order ID found in URL params'); // Remove in prod
+                console.log('No order ID found');
                 return;
             }
             
             try {
-                // In prod, ensure credentials: 'include' for session cookies
+                console.log('Processing FlexPay callback for order:', orderId);
+                
+                // Create voucher and record transaction
                 const response = await fetch('/api/payment/flexpay/card/callback', {
                     method: 'POST',
-                    credentials: 'include', // Ensures cookies/session sent for auth
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        // Add CSRF if implemented in backend
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         reference: orderId,
-                        status: 'success' // Triggers order update to 'paid', voucher gen/redeem
+                        status: 'success'
                     })
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
                 const result = await response.json();
+                console.log('Voucher creation result:', result);
                 
                 if (result.success) {
-                    // Optionally update UI with dynamic data (e.g., voucher codes from result)
-                    console.info('Voucher created and order approved successfully'); // Remove in prod
+                    console.log('✅ Voucher created and transaction recorded');
                 } else {
-                    throw new Error(result.message || 'Callback processing failed');
+                    console.error('❌ Failed to create voucher:', result.message);
                 }
             } catch (error) {
-                console.error('Error processing FlexPay callback:', error); // Log to service like Sentry in prod
-                // In prod: show user-friendly toast/error modal instead of console
-                alert('Une erreur est survenue lors du traitement. Veuillez contacter le support.'); // Temp; replace with UI
+                console.error('Error processing callback:', error);
             }
         }
         
-        // Check authentication status (coherent with backend auth: cookie/session DB check)
+        // Check authentication status
         async function checkAuthStatus() {
             try {
-                const response = await fetch('/api/auth/status', {
-                    credentials: 'include' // For session cookie
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Auth check failed: ${response.status}`);
-                }
-                
+                const response = await fetch('/api/auth/status');
                 const result = await response.json();
                 
                 const authActions = document.getElementById('auth-actions');
                 const guestActions = document.getElementById('guest-actions');
                 
                 if (result.authenticated && result.user) {
-                    // Optionally personalize: e.g., greet user.role (guest/user)
                     authActions.style.display = 'block';
-                    guestActions.style.display = 'none';
                 } else {
                     guestActions.style.display = 'block';
-                    authActions.style.display = 'none';
                 }
             } catch (error) {
-                console.warn('Auth check failed, defaulting to guest options:', error); // Remove in prod
+                console.log('Auth check failed, showing guest options');
                 document.getElementById('guest-actions').style.display = 'block';
             }
         }
         
-        // Init on DOM load (for perf)
-        document.addEventListener('DOMContentLoaded', () => {
-            if (orderId) {
-                processFlexPayCallback();
-            }
-            checkAuthStatus();
-        });
+        // Process when page loads
+        if (orderId) {
+            processFlexPayCallback();
+        }
+        
+        // Check auth status
+        checkAuthStatus();
     </script>
 </body>
 </html>
