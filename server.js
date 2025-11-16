@@ -2149,14 +2149,17 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
   }
 });
 
- // Approve an order (generate and send vouchers) - FIXED: Valid status ('pending') + quantity sync + logging
+// Approve an order (generate and send vouchers) - FIXED: Scope orderId + safe logging + connection handling
 app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  const client = await db.pool.connect(); // Use transaction for DB ops
+  const orderId = req.params.orderId; // FIXED: Define at top (always available)
+  let client; // Declare outside for finally
   try {
-    console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry
-    await client.query('BEGIN');
+    console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry (now safe)
     
-    const { orderId } = req.params;
+    client = await db.pool.connect(); // Move inside try, but log connection
+    console.log('✅ DB client connected for approve'); // Log: Connection success
+    
+    await client.query('BEGIN');
     
     // Fetch order from DB
     const orderResult = await client.query(
@@ -2228,7 +2231,7 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
         recipient_phone: recipient.phone,
         sender_name: order.sender_name,
         message: order.message || '',
-        status: 'pending', // FIXED: Use 'pending' instead of 'active' to satisfy constraint
+        status: 'pending', // FIXED: Valid per constraint
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
       };
@@ -2298,9 +2301,9 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
       vouchers: vouchers
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK'); // Safe rollback
     console.error('❌ Error approving order [DETAILED]:', { 
-      orderId, 
+      orderId: orderId || 'unknown', // FIXED: Safe reference
       error: error.message, 
       stack: error.stack,
       code: error.code // For Postgres errors
@@ -2310,9 +2313,18 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
       message: 'Erreur lors de l\'approbation' 
     });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
+
+
+
+
+
+
+
+
+
 
 /////////////////////////////////////////
 
