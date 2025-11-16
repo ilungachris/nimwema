@@ -2149,12 +2149,12 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
   }
 });
 
-// Approve an order (generate and send vouchers) - FIXED: Scope orderId + safe logging + connection handling
+// Approve an order (generate and send vouchers) - FIXED: Valid order status ('paid') + logging
 app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   const orderId = req.params.orderId; // FIXED: Define at top (always available)
   let client; // Declare outside for finally
   try {
-    console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry (now safe)
+    console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry
     
     client = await db.pool.connect(); // Move inside try, but log connection
     console.log('✅ DB client connected for approve'); // Log: Connection success
@@ -2231,7 +2231,7 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
         recipient_phone: recipient.phone,
         sender_name: order.sender_name,
         message: order.message || '',
-        status: 'pending', // FIXED: Valid per constraint
+        status: 'pending', // Valid per vouchers constraint
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
       };
@@ -2264,15 +2264,16 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
       }
     }
     
-    // Update order status in DB
+    // FIXED: Update order status to valid value ('paid' instead of 'approved')
+    console.log('🔄 Updating order status to "paid"...'); // Log 10: Before update
     await client.query(
       'UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      ['approved', orderId]
+      ['paid', orderId] // FIXED: 'paid' (adjust if your constraint uses 'fulfilled'/'completed')
     );
-    console.log('✅ Order status updated to approved'); // Log 10: Update
+    console.log('✅ Order status updated to paid'); // Log 11: Update success
     
     await client.query('COMMIT');
-    console.log('✅ Transaction committed'); // Log 11: Commit
+    console.log('✅ Transaction committed'); // Log 12: Commit
     
     // Send confirmation SMS to sender (outside transaction)
     try {
@@ -2282,18 +2283,18 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
         amount: order.total_amount,
         currency: order.currency
       });
-      console.log(`📱 Sender confirmation SMS sent to ${order.sender_phone}`); // Log 12: Sender SMS
+      console.log(`📱 Sender confirmation SMS sent to ${order.sender_phone}`); // Log 13: Sender SMS
     } catch (senderSmsErr) {
-      console.warn(`⚠️ Sender SMS failed:`, senderSmsErr.message); // Log 13: Non-fatal
+      console.warn(`⚠️ Sender SMS failed:`, senderSmsErr.message); // Log 14: Non-fatal
     }
     
     // Update global memory for consistency
     if (global.orders[orderId]) {
-      global.orders[orderId].status = 'approved';
+      global.orders[orderId].status = 'paid';
       global.orders[orderId].vouchers = vouchers;
     }
     
-    console.log('🎉 Approve completed successfully:', { orderId, vouchersCount: vouchers.length }); // Log 14: Success
+    console.log('🎉 Approve completed successfully:', { orderId, vouchersCount: vouchers.length }); // Log 15: Success
     
     res.json({
       success: true,
