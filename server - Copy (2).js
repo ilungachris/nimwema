@@ -639,30 +639,16 @@ app.post('/api/orders/create', async (req, res) => {
 });
 
 // Vouchers: create pending (kept from current, enhanced with backup totals)
-// Vouchers: create pending - FIXED: Require/validate recipients + INSERT metadata
 app.post('/api/vouchers/create-pending', async (req, res) => {
   try {
     const orderData = req.body;
     const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     // Calculate totals
-    const { amount, quantity, coverFees, senderPhone, senderName, email, password, paymentMethod, recipients, hideIdentity } = orderData;
+    const { amount, quantity, coverFees, senderPhone, senderName, email, password, paymentMethod } = orderData;
     const subtotal = amount * quantity;
     const feeAmount = subtotal * 0.035;
     const total = coverFees ? subtotal + feeAmount : subtotal;
-    
-    // FIXED: Validate recipients (must be non-empty array)
-    if (!recipients || !Array.isArray(recipients) || recipients.length === 0 || recipients.length !== quantity) {
-      console.warn('❌ Invalid recipients in create-pending:', { orderId, provided: recipients, quantity });
-      return res.status(400).json({ 
-        success: false, 
-        message: `Liste des destinataires requise (tableau de ${quantity} éléments minimum)` 
-      });
-    }
-    console.log('✅ Recipients validated:', { orderId, count: recipients.length, sample: recipients[0] }); // Log first for debug
-    
-    // Prepare metadata
-    const metadata = { recipients, hideIdentity: hideIdentity || false }; // Include hideIdentity if sent
     
     // Check/Create user for Cash/Bank payments
     let userId = null;
@@ -673,7 +659,7 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
           userId = existingUser.rows[0].id;
         } else {
           const nameParts = senderName.split(' ');
-          const hashedPassword = await bcrypt.hash(password, 10);
+          const hashedPassword = await bcrypt.hash(password, 10); // PRODUCTION: Hash
           const newUser = await dbQueries.createUser({
             phone: senderPhone,
             firstName: nameParts[0] || 'User',
@@ -690,7 +676,7 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
       }
     }
     
-    // Store in memory
+    // Store in memory (for existing flow)
     global.orders[orderId] = {
       ...orderData,
       id: orderId,
@@ -698,24 +684,24 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
       subtotal,
       feeAmount,
       total,
-      metadata,
       createdAt: new Date()
     };
     
-    // FIXED: INSERT with metadata ($15::jsonb)
+    // Store in database
     try {
+      // Fix status to match database constraint
       const dbStatus = global.orders[orderId].status === 'pending_payment' ? 'pending' : global.orders[orderId].status;
       await db.query(
         `INSERT INTO orders (id, sender_id, sender_phone, sender_name, amount, currency, quantity, 
-         service_fee, total_amount, payment_method, status, message, hide_identity, cover_fees, metadata, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)`,
+         service_fee, total_amount, payment_method, status, message, hide_identity, cover_fees, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [orderId, userId, senderPhone, senderName, amount, orderData.currency || 'USD', quantity,
-         feeAmount, total, paymentMethod, dbStatus, orderData.message || '', hideIdentity || false, coverFees || false, 
-         JSON.stringify(metadata), new Date()]
+         feeAmount, total, paymentMethod, dbStatus, orderData.message || '',
+         orderData.hideIdentity || false, coverFees || false, new Date()]
       );
-      console.log('✅ Order stored with metadata:', orderId);
+      console.log('✅ Order stored in database:', orderId);
     } catch (dbError) {
-      console.error('❌ DB INSERT error (check metadata column):', dbError.message);
+      console.error('❌ Database storage error:', dbError.message);
     }
     
     data.orders.push(global.orders[orderId]);
@@ -2172,42 +2158,15 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
     }
     
     const order = orderResult.rows[0];
-
-
-
-
-let recipients = [];
-try {
-  let parsedMetadata = {};
-  if (order.metadata) {
-    if (typeof order.metadata === 'string') {
-      parsedMetadata = JSON.parse(order.metadata);
-    } else if (typeof order.metadata === 'object') {
-      parsedMetadata = order.metadata; // Direct from jsonb
+    const recipients = JSON.parse(order.metadata || '[]'); // Assume stored as JSON
+    
+    if (!recipients.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false,
+        message: 'Aucun destinataire trouvé pour cette commande' 
+      });
     }
-    recipients = Array.isArray(parsedMetadata.recipients) ? parsedMetadata.recipients : [];
-  }
-  console.log('🔍 Parsed metadata for approve:', { orderId, metadata: order.metadata, recipientsCount: recipients.length }); // Debug
-} catch (parseErr) {
-  console.warn('Failed to parse metadata:', orderId, parseErr);
-}
-
-// FIXED: Fallback for legacy/empty (generate based on quantity)
-if (recipients.length === 0 && order.quantity > 0) {
-  console.warn('⚠️ Generating fallback recipients for legacy order:', orderId);
-  recipients = Array.from({ length: order.quantity }, (_, i) => ({
-    name: `Destinataire ${i + 1} (via approbation admin)`,
-    phone: order.sender_phone ? order.sender_phone : `+243${String(800000000 + i * 1000000).slice(-9)}` // Fallback DRC format
-  }));
-}
-
-if (!recipients.length) {
-  await client.query('ROLLBACK');
-  return res.status(400).json({ 
-    success: false,
-    message: 'Aucun destinataire trouvé pour cette commande' 
-  });
-}
     
     // Generate vouchers and insert into DB
     const vouchers = [];

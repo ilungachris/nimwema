@@ -182,6 +182,21 @@ function updateTotalAmount() {
   
   updateFees();
   updateBatchInfo(quantity);
+
+
+
+  // Auto-add recipient fields based on quantity (for specific type)
+const recipientType = document.querySelector('input[name="recipientType"]:checked')?.value;
+if (recipientType === 'specific') {
+  const currentFields = document.querySelectorAll('.recipient-field').length;
+  const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
+  if (quantity > currentFields) {
+    for (let i = currentFields; i < quantity; i++) {
+      addRecipientField();
+    }
+    console.log('✅ Auto-added fields to match quantity:', quantity);
+  }
+}
 }
 
 function updateFees() {
@@ -461,6 +476,17 @@ function validateForm() {
       return false;
     }
   }
+
+  // In validateForm(), after recipient checks:
+const tempFormData = collectFormData(); // Temp collect to validate
+if (tempFormData.recipients.length === 0) {
+  showNotification('Aucun destinataire valide collecté. Ajoutez-en au moins un.', 'error');
+  return false;
+}
+if (tempFormData.recipients.length !== quantity) {
+  showNotification(`Nombre de destinataires (${tempFormData.recipients.length}) ne correspond pas à la quantité (${quantity})`, 'error');
+  return false;
+}
   
   return true;
 }
@@ -621,6 +647,10 @@ async function processFlexPayCardPayment(formData) {
 // Manual Payment (Cash/Bank)
 async function processManualPayment(formData) {
   try {
+
+    // In processManualPayment(), before fetch:
+console.log('🔍 Sending formData to create-pending:', formData); // Debug payload
+
     // Create pending order
     const response = await fetch('/api/vouchers/create-pending', {
       method: 'POST',
