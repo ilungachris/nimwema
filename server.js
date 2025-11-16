@@ -2423,7 +2423,7 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
       message: 'Erreur lors du chargement des commandes' 
     });
   }
-}); */
+}); 
 
 app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   try {
@@ -2450,7 +2450,79 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
     console.error('Error loading pending orders:', error);
     res.status(500).json({ success: false, message: 'Erreur lors du chargement des commandes' });
   }
+}); */
+
+
+
+
+
+
+
+app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  console.log('Admin fetching pending orders for user:', req.user.user_id);  // Debug: Confirms auth
+  try {
+    // Query DB for pending orders (exact match to your statuses)
+    const result = await db.query(
+      `SELECT 
+         id, sender_name, sender_phone, amount, currency, quantity, 
+         payment_method, status, created_at, message, total_amount,
+         metadata  -- For recipients JSON
+       FROM orders 
+       WHERE status IN ('pending', 'pending_payment')
+       ORDER BY created_at DESC`
+    );
+
+    // Map to frontend format (sanitize, parse recipients from metadata if JSON)
+    const pendingOrders = result.rows.map(order => {
+      let recipients = [];
+      try {
+        if (order.metadata && typeof order.metadata === 'string') {
+          const parsed = JSON.parse(order.metadata);
+          recipients = Array.isArray(parsed) ? parsed : [];  // Assume [{name, phone}]
+        }
+      } catch (parseErr) {
+        console.warn('Failed to parse metadata for order:', order.id, parseErr);
+      }
+
+      return {
+        id: order.id,
+        sender_name: order.sender_name,
+        sender_phone: order.sender_phone,
+        amount: order.amount,
+        currency: order.currency,
+        quantity: order.quantity,
+        recipients: recipients,  // Array or []
+        payment_method: order.payment_method,
+        status: order.status,
+        created_at: order.created_at,
+        message: order.message || '',
+        total_amount: order.total_amount  // For display
+      };
+    });
+
+    console.log(`Found ${pendingOrders.length} pending orders`);  // Debug
+
+    res.json({
+      success: true,
+      orders: pendingOrders
+    });
+  } catch (error) {
+    console.error('Error loading pending orders:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors du chargement des commandes' });
+  }
 });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Approve an order (generate and send vouchers)
