@@ -2153,6 +2153,8 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
 app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   const client = await db.pool.connect(); // Use transaction for DB ops
   try {
+        console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry
+
     await client.query('BEGIN');
     
     const { orderId } = req.params;
@@ -2173,6 +2175,7 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
     
     const order = orderResult.rows[0];
 
+    console.log('✅ Order fetched:', { orderId, quantity: order.quantity, metadata: order.metadata }); // Log 2: Order data
 
 
 
@@ -2188,6 +2191,8 @@ try {
     recipients = Array.isArray(parsedMetadata.recipients) ? parsedMetadata.recipients : [];
   }
   console.log('🔍 Parsed metadata for approve:', { orderId, metadata: order.metadata, recipientsCount: recipients.length }); // Debug
+      console.log('🔍 Parsed metadata for approve:', { orderId, metadata: order.metadata, recipientsCount: recipients.length }); // Log 3: Parsing
+
 } catch (parseErr) {
   console.warn('Failed to parse metadata:', orderId, parseErr);
 }
@@ -2199,6 +2204,9 @@ if (recipients.length === 0 && order.quantity > 0) {
     name: `Destinataire ${i + 1} (via approbation admin)`,
     phone: order.sender_phone ? order.sender_phone : `+243${String(800000000 + i * 1000000).slice(-9)}` // Fallback DRC format
   }));
+
+        console.log('✅ Fallback recipients generated:', { count: recipients.length, sample: recipients[0] }); // Log 4: Fallback
+
 }
 
 if (!recipients.length) {
@@ -2208,13 +2216,18 @@ if (!recipients.length) {
     message: 'Aucun destinataire trouvé pour cette commande' 
   });
 }
-    
+        console.log('🔄 Starting voucher generation loop...'); // Log 5: Before loop
+
     // Generate vouchers and insert into DB
     const vouchers = [];
     for (let i = 0; i < recipients.length; i++) {
       const recipient = recipients[i];
       const voucherCode = generateVoucherCode();
       
+      console.log(`📄 Generating voucher ${i+1}/${recipients.length} for phone: ${recipient.phone}`); // Log 6: Per voucher
+
+
+
       const voucher = {
         code: voucherCode,
         order_id: orderId,
@@ -2240,15 +2253,26 @@ if (!recipients.length) {
       voucher.id = voucherResult.rows[0].id;
       vouchers.push(voucher);
       
+
+      console.log(`✅ Voucher inserted: ${voucherCode} for ${recipient.name}`); // Log 7: Per insert
+
+
+
       // Send SMS to recipient
-      await sendSMSNotification(recipient.phone, {
-        type: 'voucher_sent',
-        code: voucherCode,
-        amount: order.amount,
-        currency: order.currency,
-        senderName: order.sender_name,
-        expiresAt: voucher.expires_at
-      });
+      try {
+        await sendSMSNotification(recipient.phone, {
+          type: 'voucher_sent',
+          code: voucherCode,
+          amount: order.amount,
+          currency: order.currency,
+          senderName: order.sender_name,
+          expiresAt: voucher.expires_at
+        });
+        console.log(`📱 SMS sent to ${recipient.phone}`); // Log 8: SMS success
+      } catch (smsErr) {
+        console.warn(`⚠️ SMS failed for ${recipient.phone}:`, smsErr.message); // Log 9: SMS fail (non-fatal)
+      }
+    }
     }
     
     // Update order status in DB
@@ -2256,23 +2280,31 @@ if (!recipients.length) {
       'UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       ['approved', orderId]
     );
-    
+        console.log('✅ Order status updated to approved'); // Log 10: Update
+
     await client.query('COMMIT');
-    
+        console.log('✅ Transaction committed'); // Log 11: Commit
+
     // Send confirmation SMS to sender (outside transaction)
-    await sendSMSNotification(order.sender_phone, {
-      type: 'payment_confirmation',
-      quantity: order.quantity,
-      amount: order.total_amount,
-      currency: order.currency
-    });
+   try {
+      await sendSMSNotification(order.sender_phone, {
+        type: 'payment_confirmation',
+        quantity: order.quantity,
+        amount: order.total_amount,
+        currency: order.currency
+      });
+      console.log(`📱 Sender confirmation SMS sent to ${order.sender_phone}`); // Log 12: Sender SMS
+    } catch (senderSmsErr) {
+      console.warn(`⚠️ Sender SMS failed:`, senderSmsErr.message); // Log 13: Non-fatal
+    }
     
     // Update global memory for consistency
     if (global.orders[orderId]) {
       global.orders[orderId].status = 'approved';
       global.orders[orderId].vouchers = vouchers;
     }
-    
+        console.log('🎉 Approve completed successfully:', { orderId, vouchersCount: vouchers.length }); // Log 14: Success
+
     res.json({
       success: true,
       message: 'Commande approuvée avec succès',
