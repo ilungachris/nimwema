@@ -25,7 +25,7 @@ const axios = require('axios'); // npm install axios if missing
 // MERGE: Added imports for services/middleware (from backup) - Files confirmed to exist
 const SMSService = require('./services/sms');
 const authService = require('./services/auth');
-const authMiddleware = require('./middleware/auth');
+//const authMiddleware = require('./middleware/auth');
 const FlexPayService = require('./services/flexpay');
 const flexpayService = new FlexPayService();
 
