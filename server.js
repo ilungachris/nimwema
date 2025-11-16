@@ -2149,84 +2149,77 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
   }
 });
 
-// Approve an order (generate and send vouchers) - FIXED: DB saves, SMS to recipients/sender
+ // Approve an order (generate and send vouchers) - FIXED: DB saves, SMS to recipients/sender
 app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   const client = await db.pool.connect(); // Use transaction for DB ops
+  const { orderId } = req.params;
+
   try {
-        console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry
+    console.log('🔍 Starting approve for orderId:', orderId); // Log 1: Entry
 
     await client.query('BEGIN');
-    
-    const { orderId } = req.params;
-    
+
     // Fetch order from DB
     const orderResult = await client.query(
       'SELECT * FROM orders WHERE id = $1 AND status IN ($2, $3)',
       [orderId, 'pending', 'pending_payment']
     );
-    
+
     if (orderResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Commande non trouvée ou déjà traitée' 
+        message: 'Commande non trouvée ou déjà traitée'
       });
     }
-    
-    const order = orderResult.rows[0];
 
+    const order = orderResult.rows[0];
     console.log('✅ Order fetched:', { orderId, quantity: order.quantity, metadata: order.metadata }); // Log 2: Order data
 
-
-
-let recipients = [];
-try {
-  let parsedMetadata = {};
-  if (order.metadata) {
-    if (typeof order.metadata === 'string') {
-      parsedMetadata = JSON.parse(order.metadata);
-    } else if (typeof order.metadata === 'object') {
-      parsedMetadata = order.metadata; // Direct from jsonb
+    // Parse recipients from metadata (supports json/text/jsonb)
+    let recipients = [];
+    try {
+      let parsedMetadata = {};
+      if (order.metadata) {
+        if (typeof order.metadata === 'string') {
+          parsedMetadata = JSON.parse(order.metadata);
+        } else if (typeof order.metadata === 'object') {
+          parsedMetadata = order.metadata; // Direct from jsonb
+        }
+        recipients = Array.isArray(parsedMetadata.recipients) ? parsedMetadata.recipients : [];
+      }
+      console.log('🔍 Parsed metadata for approve:', { orderId, metadata: order.metadata, recipientsCount: recipients.length }); // Debug
+    } catch (parseErr) {
+      console.warn('Failed to parse metadata:', orderId, parseErr);
     }
-    recipients = Array.isArray(parsedMetadata.recipients) ? parsedMetadata.recipients : [];
-  }
-  console.log('🔍 Parsed metadata for approve:', { orderId, metadata: order.metadata, recipientsCount: recipients.length }); // Debug
-      console.log('🔍 Parsed metadata for approve:', { orderId, metadata: order.metadata, recipientsCount: recipients.length }); // Log 3: Parsing
 
-} catch (parseErr) {
-  console.warn('Failed to parse metadata:', orderId, parseErr);
-}
+    // Fallback for legacy/empty (generate based on quantity)
+    if (recipients.length === 0 && order.quantity > 0) {
+      console.warn('⚠️ Generating fallback recipients for legacy order:', orderId);
+      recipients = Array.from({ length: order.quantity }, (_, i) => ({
+        name: `Destinataire ${i + 1} (via approbation admin)`,
+        phone: order.sender_phone ? order.sender_phone : `+243${String(800000000 + i * 1000000).slice(-9)}` // Fallback DRC format
+      }));
+      console.log('✅ Fallback recipients generated:', { count: recipients.length, sample: recipients[0] }); // Log 4: Fallback
+    }
 
-// FIXED: Fallback for legacy/empty (generate based on quantity)
-if (recipients.length === 0 && order.quantity > 0) {
-  console.warn('⚠️ Generating fallback recipients for legacy order:', orderId);
-  recipients = Array.from({ length: order.quantity }, (_, i) => ({
-    name: `Destinataire ${i + 1} (via approbation admin)`,
-    phone: order.sender_phone ? order.sender_phone : `+243${String(800000000 + i * 1000000).slice(-9)}` // Fallback DRC format
-  }));
+    if (!recipients.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun destinataire trouvé pour cette commande'
+      });
+    }
 
-        console.log('✅ Fallback recipients generated:', { count: recipients.length, sample: recipients[0] }); // Log 4: Fallback
-
-}
-
-if (!recipients.length) {
-  await client.query('ROLLBACK');
-  return res.status(400).json({ 
-    success: false,
-    message: 'Aucun destinataire trouvé pour cette commande' 
-  });
-}
-        console.log('🔄 Starting voucher generation loop...'); // Log 5: Before loop
+    console.log('🔄 Starting voucher generation loop...'); // Log 5: Before loop
 
     // Generate vouchers and insert into DB
     const vouchers = [];
     for (let i = 0; i < recipients.length; i++) {
       const recipient = recipients[i];
       const voucherCode = generateVoucherCode();
-      
+
       console.log(`📄 Generating voucher ${i+1}/${recipients.length} for phone: ${recipient.phone}`); // Log 6: Per voucher
-
-
 
       const voucher = {
         code: voucherCode,
@@ -2241,7 +2234,7 @@ if (!recipients.length) {
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
       };
-      
+
       // Insert voucher into DB
       const voucherResult = await client.query(
         `INSERT INTO vouchers (code, order_id, amount, currency, recipient_name, recipient_phone, sender_name, message, status, created_at, expires_at)
@@ -2249,16 +2242,13 @@ if (!recipients.length) {
         [voucher.code, voucher.order_id, voucher.amount, voucher.currency, voucher.recipient_name, voucher.recipient_phone,
          voucher.sender_name, voucher.message, voucher.status, voucher.created_at, voucher.expires_at]
       );
-      
+
       voucher.id = voucherResult.rows[0].id;
       vouchers.push(voucher);
-      
 
       console.log(`✅ Voucher inserted: ${voucherCode} for ${recipient.name}`); // Log 7: Per insert
 
-
-
-      // Send SMS to recipient
+      // Send SMS to recipient (non-fatal)
       try {
         await sendSMSNotification(recipient.phone, {
           type: 'voucher_sent',
@@ -2273,20 +2263,19 @@ if (!recipients.length) {
         console.warn(`⚠️ SMS failed for ${recipient.phone}:`, smsErr.message); // Log 9: SMS fail (non-fatal)
       }
     }
-    }
-    
+
     // Update order status in DB
     await client.query(
       'UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       ['approved', orderId]
     );
-        console.log('✅ Order status updated to approved'); // Log 10: Update
+    console.log('✅ Order status updated to approved'); // Log 10: Update
 
     await client.query('COMMIT');
-        console.log('✅ Transaction committed'); // Log 11: Commit
+    console.log('✅ Transaction committed'); // Log 11: Commit
 
     // Send confirmation SMS to sender (outside transaction)
-   try {
+    try {
       await sendSMSNotification(order.sender_phone, {
         type: 'payment_confirmation',
         quantity: order.quantity,
@@ -2297,13 +2286,13 @@ if (!recipients.length) {
     } catch (senderSmsErr) {
       console.warn(`⚠️ Sender SMS failed:`, senderSmsErr.message); // Log 13: Non-fatal
     }
-    
+
     // Update global memory for consistency
     if (global.orders[orderId]) {
       global.orders[orderId].status = 'approved';
       global.orders[orderId].vouchers = vouchers;
     }
-        console.log('🎉 Approve completed successfully:', { orderId, vouchersCount: vouchers.length }); // Log 14: Success
+    console.log('🎉 Approve completed successfully:', { orderId, vouchersCount: vouchers.length }); // Log 14: Success
 
     res.json({
       success: true,
@@ -2311,11 +2300,11 @@ if (!recipients.length) {
       vouchers: vouchers
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
     console.error('Error approving order:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Erreur lors de l\'approbation' 
+      message: 'Erreur lors de l\'approbation'
     });
   } finally {
     client.release();
