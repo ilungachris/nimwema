@@ -1220,7 +1220,7 @@ if (!response.ok) {
     console.error('Login error:', error);
     res.status(401).json({ error: error.message });
   }
-});*/
+});
 
 
 
@@ -1304,7 +1304,103 @@ app.post('/api/auth/login', async (req, res) => {
     console.error('Login exception:', { error: error.message, stack: error.stack, email: rawEmail, ip, duration });
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
+});*/
+
+
+
+
+
+
+ 
+
+// Your login route (replace existing)
+app.post('/api/auth/login', async (req, res) => {
+  const startTime = Date.now();
+  const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const { email: rawEmail, password: rawPassword } = req.body;
+  
+  console.log('Login attempt:', { email: rawEmail, ip });
+
+  try {
+    const email = rawEmail?.trim()?.toLowerCase();
+    const password = rawPassword?.trim();
+    
+    if (!email || !password) {
+      console.warn('Login failed: Missing credentials', { email, ip });
+      return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
+
+    // Query: Include password for compare
+    const userResult = await db.query(
+      `SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, 
+       last_login, is_active, name, password 
+       FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true`,
+      [email]
+    );
+    
+    console.log('Query result:', { rows: userResult.rows.length, email });
+
+    if (userResult.rows.length === 0) {
+      console.warn('Login failed: No active user found', { email, ip, duration: Date.now() - startTime });
+      return res.status(401).json({ error: 'Identifiants invalides' });
+    }
+
+    const rawUser = userResult.rows[0];
+    const user = { ...rawUser };  // Copy for response
+    delete user.password;  // Clean for JSON
+    
+    console.log('Password hash exists?', { hasHash: !!rawUser.password, userId: rawUser.id });
+
+    if (!rawUser.password) {
+      console.warn('Login failed: No password hash in DB', { userId: rawUser.id, email, ip });
+      return res.status(401).json({ error: 'Compte corrompu - contactez l\'admin' });
+    }
+
+    console.log('Reached password check for user:', rawUser.id);
+    const isValid = await bcrypt.compare(password, rawUser.password);
+    
+    if (!isValid) {
+      console.warn('Login failed: Invalid password', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+      return res.status(401).json({ error: 'Le mot de passe est incorrect' });
+    }
+
+    // **NEW: Generate & INSERT session** (THIS WAS MISSING)
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);  // 7 days
+
+    await db.query(
+      'INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
+      [sessionId, rawUser.id, expiresAt]
+    );
+    console.log('✅ Session created:', { sessionId: sessionId.slice(0, 8) + '...', userId: rawUser.id });
+
+    // Set cookie
+    res.cookie('sessionId', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    // Update last_login
+    await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [rawUser.id]);
+
+    console.info('Login successful', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+
+    res.json({
+      success: true,
+      user,  // Sans password
+      redirectTo: getRedirectUrl(rawUser.role)
+    });
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('Login exception:', { error: error.message, stack: error.stack, email: rawEmail, ip, duration });
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
 });
+
+
+
 
 
 
