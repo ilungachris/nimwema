@@ -429,7 +429,7 @@ app.get('/api/auth/me', authenticateSession, async (req, res) => {  // Assumes a
 });
 
 // FIXED: /api/orders/my-pending - Robust filter (sender_id OR sender_phone), normalize phone (+243 strip/test)
-app.get('/api/orders/my-pending', authenticateSession, async (req, res) => {
+/**app.get('/api/orders/my-pending', authenticateSession, async (req, res) => {
   try {
     const { rows: [user] } = await pool.query(
       'SELECT phone FROM users WHERE id = $1',
@@ -459,7 +459,7 @@ app.get('/api/orders/my-pending', authenticateSession, async (req, res) => {
     console.error('Orders/my-pending error:', err);
     res.status(500).json({ success: false, error: 'Server error', orders: [] });
   }
-});
+});*/
 
 // ... (rest of routes unchanged: login sets cookie/sessionId, logout DELETE sessions, etc.)
 

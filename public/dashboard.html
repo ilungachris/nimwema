@@ -235,6 +235,48 @@
 <script src="/js/i18n.js"></script>
 <script src="/js/main.js"></script>
 <script>
+
+
+
+function renderOrders(orders) {
+    const container = document.getElementById('pendingOrdersList');
+
+    if (!orders || orders.length === 0) {
+        container.innerHTML = '<p class="empty-message">Aucune commande en attente.</p>';
+        return;
+    }
+
+    container.innerHTML = orders.map(order => `
+        <div class="order-card">
+            <div class="order-header">
+                <h3>Commande #${escapeHTML(order.id)}</h3>
+                <p>${formatDate(order.createdAt)}</p>
+            </div>
+
+            <div class="order-details">
+                <div class="detail-row">
+                    <span>Montant:</span>
+                    <strong>${formatCurrency(order.amount, order.currency)}</strong>
+                </div>
+
+                <div class="detail-row">
+                    <span>Quantité:</span>
+                    <strong>${order.quantity} bon(s)</strong>
+                </div>
+
+                <div class="detail-row">
+                    <span>Méthode:</span>
+                    <strong>${getPaymentMethodLabel(order.paymentMethod)}</strong>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+
+
+
+
     const CONFIG = {
         API_BASE: '/api',
         STORAGE_KEYS: {
@@ -246,26 +288,33 @@
     
     let refreshInterval = null;
     
-    function checkAuth() {
-        const user = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
-        const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
-        
-        if (!user || !token) {
-            window.location.href = '/login.html';
-            return false;
-        }
-        
-        try {
-            currentUser = JSON.parse(user);
-            document.getElementById('userName').textContent = userData.name || 'Utilisateur';
-            return true;
-        } catch (error) {
-            console.error('Error parsing user data:', error);
-            logout();
-            return false;
-        }
+let currentUser = null;
+
+function checkAuth() {
+    const userStr = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
+    const token   = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN); // may be null
+
+    if (!userStr) {
+        window.location.href = '/login.html';
+        return false;
     }
+
+    try {
+        currentUser = JSON.parse(userStr);
+        const name = currentUser.name || currentUser.email || 'Utilisateur';
+        document.getElementById('userName').textContent = name;
+        // do NOT fail if token is missing
+        return true;
+    } catch (error) {
+        console.error('Error parsing user data:', error);
+        logout();
+        return false;
+    }
+}
+
     
+
+    ////////
     function getAuthHeaders() {
         const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
         return {
@@ -334,7 +383,8 @@
         const container = document.getElementById('pendingOrdersList');
         
         try {
-            const response = await fetch(`${CONFIG.API_BASE}/user/pending-orders`, {
+                    const response = await fetch(`${CONFIG.API_BASE}/orders/my-pending`, {
+
                 headers: getAuthHeaders(),
                 credentials: 'include'
             });
@@ -344,6 +394,13 @@
             }
             
             const data = await response.json();
+
+
+                    if (!response.ok || !data.success) {
+            console.error('Error loading pending orders:', data);
+            // show some error message if you want
+            return;
+        }
             
             if (data.success && data.orders && data.orders.length > 0) {
                 container.innerHTML = data.orders.map(order => `
@@ -391,6 +448,8 @@
             }
         } catch (error) {
             console.error('Error loading pending orders:', error);
+                    
+
             container.innerHTML = `
                 <div class="error-state">
                     <p>Erreur lors du chargement des commandes</p>
