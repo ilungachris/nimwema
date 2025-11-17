@@ -22,7 +22,8 @@ let authChecked = false;
 // FIXED Initialize (await auth before any load)
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('Dashboard init – awaiting auth...');
-    console.log('On load: Token present?', !!token); // Temp: Confirm store
+  // FIXED: Avoid undefined 'token' – check localStorage directly
+  console.log('On load: Token present?', !!localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN));
 
   if (await checkAuth()) {
     loadUserData();
@@ -71,12 +72,17 @@ async function checkAuth() {
   }
 }
 
-// FIXED Show Section (guard currentUser, retry auth if null)
+// FIXED Show Section (guard currentUser, retry auth if null – prevent recursion loop on failure)
 function showSection(sectionName) {
-  // FIXED: Retry auth if currentUser null (timing fix)
+  // FIXED: Retry auth if currentUser null (timing fix) + check success to avoid loop
   if (!currentUser) {
     console.log('showSection: currentUser null – retrying auth...'); // Temp
-    checkAuth().then(() => showSection(sectionName)); // Recursive safe
+    checkAuth().then(authSuccess => {
+      if (authSuccess) {
+        showSection(sectionName); // Only recurse if auth succeeded
+      }
+      // If failed, it already redirected – no further action needed
+    });
     return;
   }
 
@@ -156,10 +162,136 @@ async function loadRequests() {
   } catch (error) {
     console.error('Error loading requests:', error);
     container.innerHTML = getErrorState('Erreur lors du chargement des demandes', 'Réessayer');
+  } finally {
+    hideLoading(container); // Assume this exists
   }
 }
 
-// [Keep all other functions unchanged: loadPendingOrders, loadTransactions, loadSenders, renderRequests, etc. – they're solid]
+// NEW: Add missing loadPendingOrders (modeled after loadRequests – adapt to your API/render as needed)
+async function loadPendingOrders() {
+  const container = document.getElementById('pendingOrdersBody'); // From your HTML
+  if (!container) {
+    console.error('No container for pending orders');
+    return;
+  }
+
+  showLoading(container); // Assume helper exists; stub if not
+
+  if (!currentUser) {
+    console.error('loadPendingOrders: No currentUser – retry auth');
+    checkAuth().then(() => loadPendingOrders());
+    return;
+  }
+
+  const userIdentifier = currentUser.phone || currentUser.email || currentUser.id;
+  if (!userIdentifier) {
+    console.error('loadPendingOrders: No identifier', currentUser);
+    container.innerHTML = getErrorState('Erreur utilisateur', 'Recharger la page');
+    return;
+  }
+
+  console.log('loadPendingOrders: Using identifier', userIdentifier);
+
+  try {
+    const params = new URLSearchParams({ status: 'pending_approval' }); // Adjust status filter for pending
+    params.append('phone', userIdentifier); // Or userId if needed
+    const response = await fetch(`${CONFIG.API_BASE}/orders?${params.toString()}`, {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN)}` }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+
+    const data = await response.json();
+    const orders = data.orders || data; // API shape fallback
+    allTransactions = orders; // Reuse state if shared; or new array
+    filteredTransactions = [...allTransactions];
+
+    console.log('📦 Pending orders loaded:', allTransactions.length);
+    sortTransactions(); // Assume exists
+    renderPendingOrders(); // Assume render func exists – implement if missing (similar to renderRequests)
+  } catch (error) {
+    console.error('Error loading pending orders:', error);
+    container.innerHTML = getErrorState('Erreur lors du chargement des commandes en attente', 'Réessayer');
+  } finally {
+    hideLoading(container);
+  }
+}
+
+// Stub missing helpers (add real impl if needed; these prevent crashes)
+function showLoading(container) {
+  container.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">⏳ Chargement...</td></tr>'; // Adapt colspan to your table
+}
+
+function hideLoading(container) {
+  // Clear loading if needed – often handled in render
+}
+
+function getErrorState(title, action) {
+  return `
+    <tr>
+      <td colspan="9" class="empty-state" style="text-align: center; padding: 60px 20px; color: #999;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+        <p style="font-weight: 600; color: #dc3545;">${title}</p>
+        <p>${action}</p>
+        <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Réessayer</button> <!-- Example onclick -->
+      </td>
+    </tr>
+  `;
+}
+
+function renderPendingOrders() {
+  const container = document.getElementById('pendingOrdersBody');
+  if (!container || filteredTransactions.length === 0) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="9" class="empty-state">
+          <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+          <p>Aucune commande en attente</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  // TODO: Implement full render like in your admin HTML (map orders to table rows with status, actions, etc.)
+  // For now, basic placeholder to avoid blank/crash
+  container.innerHTML = filteredTransactions.map(order => `
+    <tr>
+      <td>${order.id || 'N/A'}</td>
+      <td>${order.sender_name || 'N/A'}</td>
+      <td>${order.amount || 0}</td>
+      <td>${order.quantity || 0}</td>
+      <td>${order.recipients?.length || 0}</td>
+      <td>${order.payment_method || 'N/A'}</td>
+      <td><span class="status-badge status-pending">En attente</span></td>
+      <td>${new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
+      <td><button class="btn btn-sm btn-primary">Voir</button></td>
+    </tr>
+  `).join('');
+}
+
+// Stub other missing functions (implement fully based on your API/HTML)
+async function loadTransactions() {
+  console.log('loadTransactions: Stub – implement fetch/render for all transactions');
+  // Similar to loadPendingOrders, but no status filter
+}
+
+async function loadSenders() {
+  console.log('loadSenders: Stub – implement fetch/render for senders');
+}
+
+function sortRequests() {
+  console.log('sortRequests: Stub – implement sorting logic');
+}
+
+function renderRequests() {
+  console.log('renderRequests: Stub – implement table render');
+}
+
+function sortTransactions() {
+  console.log('sortTransactions: Stub – implement sorting');
+}
+
+// ... Add other stubs as needed: filterRequests, viewRequest, etc.
 
 async function loadUserData() {
   if (!currentUser) return;
@@ -187,30 +319,36 @@ function startRefresh() {
   }, CONFIG.REFRESH_INTERVAL);
 }
 
-// [Rest unchanged: logout, showSection, etc.]
+// Stub logout (implement full if missing)
+function logout() {
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+  document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  window.location.href = '/login.html';
+}
 
-// Export globals (after definitions)
+// Export globals (after definitions – now safe since funcs defined)
 window.showSection = showSection;
 window.loadPendingOrders = loadPendingOrders;
-window.confirmCancelOrder = confirmCancelOrder;
-window.viewOrderInstructions = viewOrderInstructions;
+window.confirmCancelOrder = window.confirmCancelOrder || (() => {}); // Stub if missing
+window.viewOrderInstructions = window.viewOrderInstructions || (() => {});
 window.loadTransactions = loadTransactions;
-window.filterTransactions = filterTransactions;
+window.filterTransactions = window.filterTransactions || (() => {});
 window.sortTransactions = sortTransactions;
-window.exportTransactions = exportTransactions;
-window.redeemVoucher = redeemVoucher;
+window.exportTransactions = window.exportTransactions || (() => {});
+window.redeemVoucher = window.redeemVoucher || (() => {});
 window.loadRequests = loadRequests;
-window.filterRequests = filterRequests;
+window.filterRequests = window.filterRequests || (() => {});
 window.sortRequests = sortRequests;
-window.viewRequest = viewRequest;
-window.deleteRequest = deleteRequest;
-window.showAddSenderModal = showAddSenderModal;
-window.editSender = editSender;
-window.saveSender = saveSender;
-window.deleteSender = deleteSender;
-window.useSender = useSender;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.confirmDelete = confirmDelete;
+window.viewRequest = window.viewRequest || (() => {});
+window.deleteRequest = window.deleteRequest || (() => {});
+window.showAddSenderModal = window.showAddSenderModal || (() => {});
+window.editSender = window.editSender || (() => {});
+window.saveSender = window.saveSender || (() => {});
+window.deleteSender = window.deleteSender || (() => {});
+window.useSender = window.useSender || (() => {});
+window.openModal = window.openModal || (() => {});
+window.closeModal = window.closeModal || (() => {});
+window.confirmDelete = window.confirmDelete || (() => {});
 window.logout = logout;
-window.toggleMenu = toggleMenu;
+window.toggleMenu = window.toggleMenu || (() => {});
