@@ -427,7 +427,7 @@ if (!response.ok) {
                 } else {
                     throw new Error(result.message || 'Erreur de connexion');
                 }
-            } catch (error) {} catch (error) {
+            }   catch (error) {
   console.error('Login error:', error); // Keep for dev; remove prod
   let msg = error.message || 'Une erreur est survenue. Veuillez réessayer.';
   if (error.message === 'Identifiants invalides') msg = 'Email ou mot de passe incorrect.';
