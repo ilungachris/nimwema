@@ -3,7 +3,7 @@
 
 // Config (Prod-only)
 const CONFIG = {
-    API_BASE: '/api', // Render proxy
+    API_BASE: '/api',
     REFRESH_INTERVAL: 30000,
     STORAGE_KEYS: { USER: 'nimwema_user', TOKEN: 'nimwema_token' }
 };
@@ -17,11 +17,10 @@ let allTransactions = [];
 let filteredTransactions = [];
 let deleteTarget = null;
 let refreshInterval = null;
-let authChecked = false; // Anti-loop
+let authChecked = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log('Dashboard init – checking auth...'); // Temp
   if (await checkAuth()) {
     loadUserData();
     showSection('pending-orders');
@@ -29,29 +28,27 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 });
 
-// FIXED Auth Check (token Bearer first, cookie fallback, detailed logs, no loop)
-async function checkAuth() {
+// FIXED Auth Check (persistent token read, retry for cookie race, no loop)
+async function checkAuth(retry = true) {
   if (authChecked) return true;
   authChecked = true;
 
   try {
-    // Token first (from login localStorage)
+    // Persistent token from localStorage (survives reload)
     const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
     const sessionId = document.cookie.split('; ').find(row => row.startsWith('sessionId='));
-    console.log('Auth: Checks', { hasToken: !!token, hasSession: !!sessionId }); // Temp
-
-    let headers = { credentials: 'include' }; // Cookie always
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-      console.log('Auth: Using token Bearer'); // Temp
-    } else if (!sessionId) {
+    
+    if (!token && !sessionId) {
       throw new Error('No auth');
     }
 
-    const response = await fetch(`${CONFIG.API_BASE}/auth/me`, headers);
-    console.log('Auth API:', { status: response.status, ok: response.ok, url: `${CONFIG.API_BASE}/auth/me` }); // Temp: Pinpoint fail
+    let headers = { credentials: 'include' };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
-    if (!response.ok) throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+    const response = await fetch(`${CONFIG.API_BASE}/auth/me`, headers);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
     if (!data.success || !data.user) throw new Error('Invalid user data');
@@ -62,19 +59,23 @@ async function checkAuth() {
       userNameEl.textContent = currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email || 'Utilisateur';
     }
 
-    console.log('✅ Auth success:', { userId: currentUser.id }); // Temp
     return true;
   } catch (error) {
-    console.error('Auth error details:', { message: error.message, token: !!localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN), session: !!document.cookie.match(/sessionId=/) }); // Temp: Debug
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN); // Clear stale
-    window.location.href = '/login.html'; // One-way
+    // Retry once (3s for cookie set post-login)
+    if (retry && error.message === 'No auth') {
+      console.log('Auth retry in 3s...'); // Temp
+      setTimeout(() => checkAuth(false), 3000);
+      return false; // Hold page during retry
+    }
+
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
+    window.location.href = '/login.html';
     return false;
   }
 }
 
 // FIXED Show Section (null-check)
 function showSection(sectionName) {
-  console.log('showSection:', sectionName); // Temp
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   event?.currentTarget?.classList.add('active');
   
@@ -99,19 +100,15 @@ function showSection(sectionName) {
       if (targetSection) loadSenders();
       break;
     default:
-      console.warn('Unknown section:', sectionName); // Temp
       return;
   }
   
   if (targetSection) {
     targetSection.classList.add('active');
-    console.log('Section active:', sectionName); // Temp
-  } else {
-    console.error('Section null:', sectionName); // Temp
   }
 }
 
-// [Keep all other functions unchanged: loadUserData, loadPendingOrders, etc. – they're solid]
+// [Keep all other functions unchanged: loadUserData, loadPendingOrders, createPendingOrderCard, loadTransactions, etc.]
 
 async function loadUserData() {
   if (!currentUser) return;
@@ -122,11 +119,9 @@ async function loadUserData() {
     loadRequests(),
     loadSenders()
   ]).then(results => {
-    console.log('Dashboard loaded:', results.map(r => r.status)); // Temp
+    console.log('Dashboard loaded'); // Prod log
   });
 }
-
-// [Rest unchanged: createPendingOrderCard, loadTransactions, etc. – no edits needed]
 
 // Refresh (unchanged)
 function startRefresh() {
