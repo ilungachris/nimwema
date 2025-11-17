@@ -379,10 +379,6 @@ async function handleFormSubmit(e) {
       'error'
     );
     form.classList.remove('form-loading');
-  }  catch (error) {
-    console.error('Error submitting request:', error);
-    window.Nimwema.showNotification(error.message || 'Erreur lors de l\'envoi de la demande', 'error');
-    form.classList.remove('form-loading');
   }
 }
 
