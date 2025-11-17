@@ -4,7 +4,29 @@ document.addEventListener('DOMContentLoaded', function() {
   initRequestForm();
 });
 
-function initRequestForm()
+function initRequestForm() {
+  const form = document.getElementById('requestVoucherForm');
+  if (!form) {
+    console.warn('[RequestForm] no form found on this page');
+    return;
+  }
+
+  console.log('[RequestForm] initRequestForm: form found, wiring submit handler');
+
+  // Safety: if the old handler was ever attached, remove it
+  if (typeof window.handleRequestVoucher === 'function') {
+    form.removeEventListener('submit', window.handleRequestVoucher);
+  }
+
+  // Setup form validation
+  setupFormValidation();
+  setupMessageCounter();
+  setupPhoneFormatting();
+
+  // ✅ Attach our handler (bubble phase is enough now)
+  form.addEventListener('submit', handleFormSubmit);
+}
+
 /////
 // Toggle sender fields based on radio selection
 function toggleSenderFields() {
