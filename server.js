@@ -589,74 +589,137 @@ app.post('/api/auth/merchant-signup', async (req, res) => {
 
 // Create guest account from payment instructions page
 app.post('/api/auth/create-guest-account', async (req, res) => {
+  console.warn('=== GUEST ACCOUNT ENTRY ===', { body: req.body, ip: req.ip }); // Temp: Confirm hit
+  let client;
   try {
     const { email, password, name, phone, orderId } = req.body;
     
-    // Validate required fields
     if (!email || !password || !orderId) {
+      console.warn('Guest: Missing required', { email, orderId }); // Temp
       return res.status(400).json({ 
         success: false,
         message: 'Email, mot de passe et numéro de commande requis' 
       });
     }
-    
-    // Check if email already exists
-    const existingUser = data.users.find(u => u.email === email);
-    if (existingUser) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Un compte avec cet email existe déjà' 
+
+    // DB if connected, fallback memory
+    if (dbConnected) {
+      client = await db.pool.connect();
+      await client.query('BEGIN');
+      console.warn('✅ Guest Tx begun'); // Temp
+
+      // Existing user check
+      const existingResult = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email.toLowerCase()]);
+      console.warn('Guest: Existing check', { rows: existingResult.rows.length }); // Temp
+      if (existingResult.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          success: false,
+          message: 'Un compte avec cet email existe déjà' 
+        });
+      }
+
+      // Verify order (from global.orders or DB)
+      let order;
+      if (global.orders[orderId]) {
+        order = global.orders[orderId];
+      } else {
+        const orderResult = await client.query('SELECT id, sender_phone, sender_name FROM orders WHERE id = $1', [orderId]);
+        if (orderResult.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ success: false, message: 'Commande non trouvée' });
+        }
+        order = orderResult.rows[0];
+      }
+      console.warn('Guest: Order found', { orderId }); // Temp
+
+      if (order.user_id) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, message: 'Cette commande est déjà associée à un compte' });
+      }
+
+      // Prep (match CSV)
+      const nameParts = (name || order.sender_name || 'Guest').trim().split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || 'Guest';
+      const lastName = nameParts.slice(1).join(' ') || 'Account';
+      const fullName = `${firstName} ${lastName}`.trim();
+      const hashedPassword = await bcrypt.hash(password, 10);
+      console.warn('Guest: Prep', { firstName, lastName, fullName, email }); // Temp
+
+      // INSERT user (CSV schema)
+      const userResult = await client.query(
+        `INSERT INTO users (phone, first_name, last_name, email, password, role, language, name, is_active, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         RETURNING id, email, phone, role`,
+        [phone || order.sender_phone, firstName, lastName, email.toLowerCase(), hashedPassword, 'user', 'fr', fullName]
+      );
+      const newUser = userResult.rows[0];
+      console.warn('✅ Guest User INSERT success', { id: newUser.id, email: newUser.email }); // Temp
+
+      // Link order (DB + global)
+      await client.query('UPDATE orders SET sender_id = $1 WHERE id = $2', [newUser.id, orderId]);
+      if (global.orders[orderId]) {
+        global.orders[orderId].user_id = newUser.id;
+        global.orders[orderId].user_email = newUser.email;
+      }
+      console.warn('✅ Order linked', { orderId, userId: newUser.id }); // Temp
+
+      await client.query('COMMIT');
+      console.warn('✅ Guest Tx commit'); // Temp
+
+      // Clean response
+      const { password: _, ...userWithoutPassword } = newUser;
+
+      res.json({
+        success: true,
+        message: 'Compte créé avec succès',
+        user: userWithoutPassword
+      });
+    } else {
+      // Fallback in-memory (original logic, for !dbConnected)
+      console.warn('Guest: DB fallback to memory'); // Temp
+      const existingUser = data.users.find(u => u.email === email);
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: 'Un compte avec cet email existe déjà' });
+      }
+
+      const order = global.orders[orderId];
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Commande non trouvée' });
+      }
+
+      if (order.user_id) {
+        return res.status(400).json({ success: false, message: 'Cette commande est déjà associée à un compte' });
+      }
+
+      const newUser = {
+        id: `USR-${Date.now()}`,
+        email,
+        password: hashedPassword, // Hash here too
+        name: name || order.sender_name,
+        phone: phone || order.sender_phone,
+        role: 'user',
+        createdAt: new Date().toISOString()
+      };
+
+      data.users.push(newUser);
+      order.user_id = newUser.id;
+      order.user_email = newUser.email;
+
+      const { password: _, ...userWithoutPassword } = newUser;
+
+      res.json({
+        success: true,
+        message: 'Compte créé avec succès',
+        user: userWithoutPassword
       });
     }
-    
-    // Verify order exists
-    const order = global.orders[orderId];
-    if (!order) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'Commande non trouvée' 
-      });
-    }
-    
-    // Check if order is already linked to a user
-    if (order.user_id) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Cette commande est déjà associée à un compte' 
-      });
-    }
-    
-    // Create new user
-    const newUser = {
-      id: `USR-${Date.now()}`,
-      email: email,
-      password: password, // In production, hash this with bcrypt!
-      name: name || order.sender_name,
-      phone: phone || order.sender_phone,
-      role: 'customer',
-      createdAt: new Date().toISOString()
-    };
-    
-    data.users.push(newUser);
-    
-    // Link order to user
-    order.user_id = newUser.id;
-    order.user_email = newUser.email;
-    
-    // Return success (without password)
-    const { password: _, ...userWithoutPassword } = newUser;
-    
-    res.json({
-      success: true,
-      message: 'Compte créé avec succès',
-      user: userWithoutPassword
-    });
   } catch (error) {
-    console.error('Create guest account error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Erreur lors de la création du compte' 
-    });
+    if (client) await client.query('ROLLBACK');
+    console.warn('=== GUEST ERROR ===', { message: error.message, code: error.code, stack: error.stack ? error.stack.slice(0, 200) : 'No stack' }); // Temp
+    res.status(500).json({ success: false, message: 'Erreur lors de la création du compte' });
+  } finally {
+    if (client) client.release();
   }
 });
 
