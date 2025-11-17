@@ -3,285 +3,455 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Tableau de Bord - Nimwema</title>
-    <meta name="description" content="Gérez vos demandes de bons d'achat et vos expéditeurs">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="/css/forms.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
+    <title>Admin Dashboard - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Admin Dashboard Specific Styles */
+        .admin-dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #111111;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8BC34A;
+            text-decoration: none;
+        }
+
+        .sidebar-user {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #8BC34A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .user-details p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #8BC34A;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: rgba(139,195,74,0.1);
+            color: #8BC34A;
+        }
+
+        .menu-item .icon {
+            font-size: 20px;
+            width: 24px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-header h1 {
+            margin: 0 0 5px 0;
+            color: #111111;
+        }
+
+        .dashboard-header p {
+            margin: 0;
+            color: #666;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111111;
+            margin: 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f5f5f5;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #8BC34A;
+            color: #111;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 1000;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: #e0e0e0;
+        }
+    </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-top">
-            <div class="language-selector">
-                <button class="lang-btn active" data-lang="fr">FR</button>
-                <button class="lang-btn" data-lang="ln">LN</button>
-                <button class="lang-btn" data-lang="en">EN</button>
+    <div class="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">NIMWEMA</a>
             </div>
-            <div class="user-menu">
-                <span class="user-name" id="userName">Utilisateur</span>
-                <button class="btn-logout" onclick="logout()" data-i18n="logout">Déconnexion</button>
-            </div>
-        </div>
-        
-        <div class="header-main">
-            <a href="/" class="logo">
-                NIM<span class="w">W</span>EMA
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </header>
 
-    <main class="dashboard-container">
-        <aside class="dashboard-sidebar">
-            <nav class="dashboard-nav">
-                <a href="#pending-orders" class="nav-item active" onclick="showSection('pending-orders')" data-i18n="pending_orders">
-                    <span class="nav-icon">⏳</span>
-                    <span class="nav-text">Commandes en attente</span>
+            <div class="sidebar-user">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-details">
+                        <h3 id="userName">Administrateur</h3>
+                        <p>Admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" onclick="showSection('pending-orders'); return false;">
+                    <span class="icon">📊</span>
+                    <span>Vue d'ensemble</span>
                 </a>
-                <a href="#transactions" class="nav-item" onclick="showSection('transactions')" data-i18n="my_transactions">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-text">Transactions</span>
+                <a href="admin-merchants.html" class="menu-item">
+                    <span class="icon">🏪</span>
+                    <span>Commerçants</span>
                 </a>
-                <a href="#requests" class="nav-item" onclick="showSection('requests')" data-i18n="my_requests">
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-text">Mes Demandes</span>
+                <a href="admin-users.html" class="menu-item">
+                    <span class="icon">👥</span>
+                    <span>Utilisateurs</span>
                 </a>
-                <a href="#senders" class="nav-item" onclick="showSection('senders')" data-i18n="my_senders">
-                    <span class="nav-icon">👥</span>
-                    <span class="nav-text">Mes Expéditeurs</span>
+                <a href="#" class="menu-item" onclick="showSection('transactions'); return false;">
+                    <span class="icon">💰</span>
+                    <span>Transactions</span>
                 </a>
-                <a href="#new-request" class="nav-item nav-item-primary" onclick="window.location.href='/request.html'" data-i18n="new_request">
-                    <span class="nav-icon">➕</span>
-                    <span class="nav-text">Nouvelle Demande</span>
+                <a class="menu-item" id="logoutBtn" onclick="logout(); return false;">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
                 </a>
             </nav>
         </aside>
 
-        <div class="dashboard-content">
-            <section id="pendingOrdersSection" class="dashboard-section active">
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h1>Tableau de bord Administrateur</h1>
+                <p>Gérer les commandes en attente de validation</p>
+            </div>
+
+            <!-- Pending Payment Orders Section -->
+            <div id="pendingOrdersSection" class="section-card dashboard-section active">
                 <div class="section-header">
-                    <div>
-                        <h1>Mes Commandes en Attente</h1>
-                        <p class="text-small">Commandes en attente de validation de paiement</p>
-                    </div>
-                    <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Actualiser</button>
+                    <h2 class="section-title">📋 Commandes en attente d'approbation</h2>
+                    <button class="btn btn-secondary" onclick="loadPendingOrders()">
+                        🔄 Actualiser
+                    </button>
                 </div>
                 
-                <div id="pendingOrdersList">
-                    <div class="loading-state">
-                        <p>Chargement...</p>
-                    </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Référence</th>
+                                <th>Expéditeur</th>
+                                <th>Montant</th>
+                                <th>Quantité</th>
+                                <th>Destinataires</th>
+                                <th>Méthode</th>
+                                <th>Statut</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingOrdersBody">
+                            <tr>
+                                <td colspan="9" class="empty-state">
+                                    <div class="empty-state-icon">⏳</div>
+                                    <p>Chargement des commandes...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </section>
-
-            <section id="transactionsSection" class="dashboard-section">
-                <div class="section-header">
-                    <div>
-                        <h1 data-i18n="my_transactions">Mes Transactions</h1>
-                        <p class="text-small" data-i18n="transactions_subtitle">Vos bons envoyés et reçus</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="exportTransactions()" data-i18n="export">Exporter</button>
-                </div>
-
-                <div class="filters-bar">
-                    <div class="filter-group">
-                        <label data-i18n="filter_by_type">Type:</label>
-                        <select id="transactionTypeFilter" class="form-select" onchange="filterTransactions()">
-                            <option value="all" data-i18n="all_types">Tous</option>
-                            <option value="sent" data-i18n="sent">Envoyés</option>
-                            <option value="received" data-i18n="received">Reçus</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label data-i18n="filter_by_status">Statut:</label>
-                        <select id="transactionStatusFilter" class="form-select" onchange="filterTransactions()">
-                            <option value="all" data-i18n="all_statuses">Tous</option>
-                            <option value="pending" data-i18n="pending">En attente</option>
-                            <option value="active" data-i18n="active">Actif</option>
-                            <option value="redeemed" data-i18n="redeemed">Utilisé</option>
-                            <option value="expired" data-i18n="expired">Expiré</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label data-i18n="sort_by">Trier par:</label>
-                        <select id="transactionSortBy" class="form-select" onchange="sortTransactions()">
-                            <option value="date_desc" data-i18n="newest_first">Plus récent</option>
-                            <option value="date_asc" data-i18n="oldest_first">Plus ancien</option>
-                            <option value="amount_desc" data-i18n="highest_amount">Montant décroissant</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="transactionsList" class="requests-list">
-                    <div class="loading-state">
-                        <p data-i18n="loading">Chargement...</p>
-                    </div>
-                </div>
-            </section>
-
-            <section id="requestsSection" class="dashboard-section">
-                <div class="section-header">
-                    <div>
-                        <h1 data-i18n="my_requests">Mes Demandes</h1>
-                        <p class="text-small" data-i18n="requests_subtitle">Gérez toutes vos demandes de bons d'achat</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="window.location.href='/request.html'" data-i18n="new_request">
-                        ➕ Nouvelle Demande
-                    </button>
-                </div>
-
-                <div class="filters-bar">
-                    <div class="filter-group">
-                        <label data-i18n="filter_by_status">Filtrer par statut:</label>
-                        <select id="statusFilter" class="form-select" onchange="filterRequests()">
-                            <option value="all" data-i18n="all_statuses">Tous</option>
-                            <option value="pending" data-i18n="pending">En attente</option>
-                            <option value="fulfilled" data-i18n="fulfilled">Satisfait</option>
-                            <option value="expired" data-i18n="expired">Expiré</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label data-i18n="filter_by_type">Filtrer par type:</label>
-                        <select id="typeFilter" class="form-select" onchange="filterRequests()">
-                            <option value="all" data-i18n="all_types">Tous</option>
-                            <option value="known_sender" data-i18n="known_sender">Expéditeur connu</option>
-                            <option value="waiting_list" data-i18n="waiting_list">Liste d'attente</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label data-i18n="sort_by">Trier par:</label>
-                        <select id="sortBy" class="form-select" onchange="sortRequests()">
-                            <option value="date_desc" data-i18n="newest_first">Plus récent</option>
-                            <option value="date_asc" data-i18n="oldest_first">Plus ancien</option>
-                            <option value="status" data-i18n="status">Statut</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="requestsList" class="requests-list">
-                    <div class="loading-state">
-                        <p data-i18n="loading">Chargement...</p>
-                    </div>
-                </div>
-            </section>
-
-            <section id="sendersSection" class="dashboard-section">
-                <div class="section-header">
-                    <div>
-                        <h1 data-i18n="my_senders">Mes Expéditeurs</h1>
-                        <p class="text-small" data-i18n="senders_subtitle">Gérez vos contacts expéditeurs favoris</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="showAddSenderModal()" data-i18n="add_sender">
-                        ➕ Ajouter un expéditeur
-                    </button>
-                </div>
-
-                <div id="sendersList" class="senders-grid">
-                    <div class="loading-state">
-                        <p data-i18n="loading">Chargement...</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <div id="requestModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 data-i18n="request_details">Détails de la demande</h2>
-                <button class="modal-close" onclick="closeModal('requestModal')">&times;</button>
             </div>
-            <div class="modal-body" id="requestModalBody"></div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('requestModal')" data-i18n="close">Fermer</button>
+
+            <!-- Add other sections if needed, e.g., <div id="transactionsSection" class="section-card dashboard-section">...</div> -->
+
+            <!-- Order Details Modal -->
+            <div id="orderModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Détails de la commande</h2>
+                        <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+                    </div>
+                    <div class="modal-body" id="orderModalBody">
+                        <!-- Will be filled dynamically -->
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <div id="senderModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="senderModalTitle" data-i18n="add_sender">Ajouter un expéditeur</h2>
-                <button class="modal-close" onclick="closeModal('senderModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="senderForm" onsubmit="saveSender(event)">
-                    <input type="hidden" id="senderId" name="senderId">
-                    
-                    <div class="form-group">
-                        <label for="senderFormName" class="form-label">
-                            <span data-i18n="sender_name">Nom</span>
-                            <span class="required">*</span>
-                        </label>
-                        <input type="text" id="senderFormName" name="name" class="form-input" required
-                            data-i18n-placeholder="sender_name_placeholder" placeholder="Nom de l'expéditeur">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="senderFormPhone" class="form-label">
-                            <span data-i18n="sender_phone">Numéro de téléphone</span>
-                            <span class="required">*</span>
-                        </label>
-                        <input type="tel" id="senderFormPhone" name="phone" class="form-input" required
-                            data-i18n-placeholder="phone_placeholder" placeholder="+243 XXX XXX XXX">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="senderFormRelation" class="form-label">
-                            <span data-i18n="relation">Relation</span>
-                        </label>
-                        <input type="text" id="senderFormRelation" name="relation" class="form-input"
-                            data-i18n-placeholder="relation_placeholder" placeholder="Ex: Famille, Ami, Collègue">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('senderModal')" data-i18n="cancel">Annuler</button>
-                        <button type="submit" class="btn btn-primary" data-i18n="save">Enregistrer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Load external JS -->
+    <script src="dashboard.js"></script>
+    <script>
+        // Utilities only (no DOMContentLoaded – handled in external)
+        // These are already in dashboard.js, but duplicated here if needed for inline access
 
-    <div id="deleteModal" class="modal">
-        <div class="modal-content modal-small">
-            <div class="modal-header">
-                <h2 data-i18n="confirm_delete">Confirmer la suppression</h2>
-                <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p id="deleteMessage" data-i18n="delete_confirmation">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('deleteModal')" data-i18n="cancel">Annuler</button>
-                <button class="btn btn-primary" style="background: var(--error);" onclick="confirmDelete()" data-i18n="delete">Supprimer</button>
-            </div>
-        </div>
-    </div>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="/js/i18n.js"></script>
-    <script src="/js/main.js"></script>
-    <script src="/js/dashboard.js"></script> <!-- Separate JS file for dashboard logic -->
+        // Logout listener (safe, no dupe)
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[TRACE] INLINE: DOMContentLoaded - Only for logout listener');
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logout();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
