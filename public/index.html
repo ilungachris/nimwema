@@ -54,7 +54,17 @@
                 
                 <!-- Line 4: Hero Card with Image -->
                 <div class="hero-card">
-                    <img src="/images/homepic.jpg" alt="Nimwema Hero" class="hero-image">
+                    <!--<img src="/images/homepic.jpg" alt="Nimwema Hero" class="hero-image">-->
+                    <picture class="hero-image-wrapper">
+    <!-- Desktop image -->
+    <source srcset="/images/homepic-desktop.jpg" media="(min-width: 992px)">
+
+    <!-- Tablet image -->
+    <source srcset="/images/homepic-tablet.jpg" media="(min-width: 600px)">
+
+    <!-- Mobile fallback -->
+    <img src="/images/homepic-mobile.jpg" alt="Nimwema Hero" class="hero-image">
+</picture>
                     <div class="hero-overlay">
                         <div class="hero-text">
                             <span data-i18n="hero_line1">Le <span class="text-green">bien</span> circule.</span><br>
