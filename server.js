@@ -445,12 +445,14 @@ app.post('/api/auth/signup', async (req, res) => {
     await client.query('COMMIT');
     console.warn('✅ Tx commit'); // Temp
 
-    res.cookie('sessionId', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+res.cookie('sessionId', sessionId, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production' ? true : false, // FIXED: false for Render http test
+  sameSite: 'lax', // FIXED: lax for cross-path
+  domain: '.onrender.com', // FIXED: Render subdomain share
+  path: '/', // FIXED: Root path
+  maxAge: 7 * 24 * 60 * 60 * 1000
+});
 
     await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [newUser.id]);
 

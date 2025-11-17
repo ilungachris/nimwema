@@ -22,6 +22,8 @@ let authChecked = false;
 // FIXED Initialize (await auth before any load)
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('Dashboard init – awaiting auth...');
+    console.log('On load: Token present?', !!token); // Temp: Confirm store
+
   if (await checkAuth()) {
     loadUserData();
     showSection('pending-orders');

@@ -276,6 +276,14 @@
     </div>
 
     <script>
+        // FIXED: Add CONFIG (matches dashboard)
+        const CONFIG = {
+            STORAGE_KEYS: {
+                USER: 'nimwema_user',
+                TOKEN: 'nimwema_token'
+            }
+        };
+
         // Elements
         const form = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
@@ -382,29 +390,33 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                /**if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: 'Erreur de serveur' }));
-                    throw new Error(errorData.message || `Erreur HTTP ${response.status}`);
-                }*/
-
-
-if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Erreur de serveur' }));
-    throw new Error(errorData.error || `Erreur HTTP ${response.status}`);  // Use .error
-}
-
-
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Erreur de serveur' }));
+                    throw new Error(errorData.error || `Erreur HTTP ${response.status}`);  // Use .error
+                }
 
                 const result = await response.json();
 
+                // FIXED Success Block (paste here – stores token + user)
+                const CONFIG = {
+                    STORAGE_KEYS: {
+                        USER: 'nimwema_user',
+                        TOKEN: 'nimwema_token'
+                    }
+                };
+
                 if (result.success) {
-                    // Assume backend sets session cookie; store user info (no sensitive data)
-                    localStorage.setItem('nimwema_user', JSON.stringify({
+                    // FIXED: Store user + token (sessionId for dashboard Bearer fallback)
+                    localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify({
                         id: result.user.id,
                         email: result.user.email,
                         role: result.user.role,
-                        name: result.user.name // If available
+                        name: result.user.name || `${result.user.firstName || ''} ${result.user.lastName || ''}`.trim(),
+                        phone: result.user.phone // If backend returns
                     }));
+                    if (result.token) {
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.TOKEN, result.token);
+                    }
 
                     showSuccess('Connexion réussie ! Redirection en cours...');
 
@@ -425,15 +437,14 @@ if (!response.ok) {
                         }
                     }, 1500);
                 } else {
-                    throw new Error(result.message || 'Erreur de connexion');
+                    throw new Error(result.message || result.error || 'Erreur de connexion'); // FIXED: .message fallback
                 }
-            }   catch (error) {
-  console.error('Login error:', error); // Keep for dev; remove prod
-  let msg = error.message || 'Une erreur est survenue. Veuillez réessayer.';
-  if (error.message === 'Identifiants invalides') msg = 'Email ou mot de passe incorrect.';
-  showAlert(msg, 'error');
-  // Reset UI...
-}finally {
+            } catch (error) {
+                console.error('Login error:', error);
+                let msg = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                if (msg.includes('401') || msg.includes('Identifiants')) msg = 'Email ou mot de passe incorrect.';
+                showError(msg);
+            } finally {
                 // Re-enable button
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Se connecter';
@@ -441,9 +452,9 @@ if (!response.ok) {
             }
         });
 
-        // Check if already logged in
+        // FIXED Already Logged Check (use CONFIG key)
         window.addEventListener('DOMContentLoaded', () => {
-                        const userStr = localStorage.getItem('nimwema_user');
+            const userStr = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
             if (userStr) {
                 try {
                     const userData = JSON.parse(userStr);
@@ -463,7 +474,7 @@ if (!response.ok) {
                     }
                 } catch (e) {
                     console.error('Invalid user data in localStorage:', e);
-                    localStorage.removeItem('nimwema_user');
+                    localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
                 }
             }
         });
