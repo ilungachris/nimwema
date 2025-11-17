@@ -341,46 +341,107 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
-// MERGE: Prioritized advanced auth from backup (service-based with roles) - Fixed with bcrypt
+// REPLACEMENT SNIPPET: Replace the entire app.post('/api/auth/signup', ...) block with this.
+// Key Fixes:
+// - Generate sessionId + INSERT into sessions table (like login) for immediate auth.
+// - Return { success: true, user, token: sessionId } – matches frontend localStorage expectation.
+// - Wrap in transaction (BEGIN/COMMIT) for atomicity (user + session).
+// - Temp DEBUG LOGS: console.warn for entry/body, query results, errors (remove post-fix; explains slow query?).
+// - Error handling: Specific codes for EMAIL_EXISTS/PHONE_EXISTS (matches frontend setFieldError).
+// - Coherent: Uses dbQueries.createUser (assumes it INSERTs to users); role default 'user'.
+// - Prod: No slow query fix (add INDEX on users(email, phone) in PG if persists: CREATE INDEX idx_users_email_phone ON users (LOWER(email), phone);).
+
 app.post('/api/auth/signup', async (req, res) => {
+  const startTime = Date.now(); // For slow query debug
+  console.warn('=== SIGNUP DEBUG START ===', { body: req.body, ip: req.ip }); // Temp: Log entry/body
+  let client; // For transaction
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, pendingOrder } = req.body;
     
     // Validate input
     if (!name || !email || !phone || !password) {
+      console.warn('Signup validation failed: Missing fields'); // Temp
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
-    // Create user using database queries
-    try {
-      const existingUser = await db.query('SELECT id FROM users WHERE email = $1 OR phone = $2', [email, phone]);
-      if (existingUser.rows.length > 0) {
-        return res.status(400).json({ error: 'User already exists' });
-      }
-      
-      const nameParts = name.split(' ');
-      const hashedPassword = await bcrypt.hash(password, 10); // PRODUCTION: Hash password
-      const newUser = await dbQueries.createUser({
-        phone: phone,
-        firstName: nameParts[0] || 'User',
-        lastName: nameParts.slice(1).join(' ') || 'Account',
-        email: email,
-        password: hashedPassword, // Use hashed
-        role: role || 'user'
-      });
-      
-      return res.json({ 
-        success: true, 
-        message: 'User created successfully',
-        user: { id: newUser.id, email: newUser.email, phone: newUser.phone }
-      });
-    } catch (error) {
-      console.error('Signup error:', error);
-      return res.status(500).json({ error: 'Error creating user' });
+    client = await db.pool.connect(); // Temp client for tx
+    await client.query('BEGIN');
+    console.warn('✅ Transaction begun'); // Temp
+
+    // Check existing (slow query culprit? Log rows)
+    const existingResult = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2', [email.toLowerCase(), phone]);
+    console.warn('Existing user query:', { rows: existingResult.rows.length, email, phone }); // Temp: Debug slow/select
+    if (existingResult.rows.length > 0) {
+      const errorCode = existingResult.rows[0].email === email.toLowerCase() ? 'EMAIL_EXISTS' : 'PHONE_EXISTS';
+      await client.query('ROLLBACK');
+      console.warn('Signup duplicate:', errorCode); // Temp
+      return res.status(400).json({ error: 'User already exists', error: errorCode });
     }
+    
+    // Hash & create user
+    const nameParts = name.split(' ');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await dbQueries.createUser({
+      phone: phone,
+      firstName: nameParts[0] || 'User',
+      lastName: nameParts.slice(1).join(' ') || 'Account',
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: role || 'user'
+    });
+    console.warn('✅ User created:', { id: newUser.id, email: newUser.email }); // Temp
+
+    // Handle pendingOrder if provided (e.g., link to order)
+    if (pendingOrder) {
+      // Example: Update order with user_id (adjust table/column as needed)
+      await client.query('UPDATE orders SET sender_id = $1, status = $2 WHERE id = $3', [newUser.id, 'paid', pendingOrder]);
+      console.warn('✅ Pending order linked:', pendingOrder); // Temp
+    }
+
+    // Generate session (immediate login)
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await client.query(
+      'INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)',
+      [sessionId, newUser.id, expiresAt]
+    );
+    console.warn('✅ Session created:', { sessionId: sessionId.slice(0, 8) + '...' }); // Temp
+
+    await client.query('COMMIT');
+    console.warn('✅ Transaction committed'); // Temp
+
+    // Set cookie (coherent with login)
+    res.cookie('sessionId', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    // Update last_login
+    await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [newUser.id]);
+
+    const duration = Date.now() - startTime;
+    console.warn('=== SIGNUP DEBUG END ===', { success: true, duration }); // Temp: Total time
+
+    res.json({ 
+      success: true, 
+      message: 'User created successfully',
+      user: { 
+        id: newUser.id, 
+        email: newUser.email, 
+        phone: newUser.phone,
+        role: newUser.role 
+      },
+      token: sessionId // For frontend localStorage fallback (use as Bearer if needed)
+    });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(400).json({ error: error.message });
+    if (client) await client.query('ROLLBACK');
+    const duration = Date.now() - startTime;
+    console.warn('=== SIGNUP ERROR ===', { error: error.message, code: error.code, duration }); // Temp: PG error details
+    res.status(500).json({ error: 'Error creating user', error: error.message });
+  } finally {
+    if (client) client.release();
   }
 });
 
