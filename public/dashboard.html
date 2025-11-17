@@ -352,7 +352,7 @@
             </div>
 
             <nav class="sidebar-menu">
-                <a href="#" class="menu-item active" onclick="showSection('pending-orders'); return false;">
+                <a href="#" class="menu-item active nav-item" onclick="showSection('pending-orders'); return false;">
                     <span class="icon">📊</span>
                     <span>Vue d'ensemble</span>
                 </a>
@@ -364,7 +364,7 @@
                     <span class="icon">👥</span>
                     <span>Utilisateurs</span>
                 </a>
-                <a href="#" class="menu-item" onclick="showSection('transactions'); return false;">
+                <a href="#" class="menu-item nav-item" onclick="showSection('transactions'); return false;">
                     <span class="icon">💰</span>
                     <span>Transactions</span>
                 </a>
@@ -418,7 +418,17 @@
                 </div>
             </div>
 
-            <!-- Add other sections if needed, e.g., <div id="transactionsSection" class="section-card dashboard-section">...</div> -->
+            <!-- Transactions Section (stub – add full table if needed) -->
+            <div id="transactionsSection" class="section-card dashboard-section" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">💰 Transactions</h2>
+                    <button class="btn btn-secondary" onclick="loadTransactions()">🔄 Actualiser</button>
+                </div>
+                <div id="transactionsList" class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Section des transactions</p>
+                </div>
+            </div>
 
             <!-- Order Details Modal -->
             <div id="orderModal" class="modal" style="display: none;">
@@ -435,20 +445,27 @@
         </main>
     </div>
 
-    <!-- Load external JS -->
-    <script src="dashboard.js"></script>
+    <!-- FIXED: Correct path for your setup (public/ HTML loads js/ relative) -->
+    <script src="js/dashboard.js"></script>
     <script>
-        // Utilities only (no DOMContentLoaded – handled in external)
-        // These are already in dashboard.js, but duplicated here if needed for inline access
+        // Temp: Spinner timeout fallback (if JS fails – shows after 10s)
+        setTimeout(() => {
+            const body = document.getElementById('pendingOrdersBody');
+            if (body && body.innerHTML.includes('Chargement des commandes')) {
+                console.log('[FALLBACK] JS load failed or auth pending – showing error');
+                body.innerHTML = '<tr><td colspan="9" class="empty-state"><div style="font-size: 48px; margin-bottom: 16px;">⚠️</div><p style="color: #dc3545;">Erreur de chargement</p><p>Vérifiez la console, token, ou API. Rechargez ou login.</p><button class="btn btn-secondary" onclick="location.reload()">🔄 Recharger</button></td></tr>';
+            }
+        }, 10000); // 10s
 
-        // Logout listener (safe, no dupe)
+        // Logout listener (safe, no dupe – fires if JS loads)
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[TRACE] INLINE: DOMContentLoaded - Only for logout listener');
+            console.log('[TRACE] INLINE: DOMContentLoaded - Logout listener ready');
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    logout();
+                    if (typeof logout === 'function') logout();
+                    else window.location.href = 'login.html';
                 });
             }
         });
