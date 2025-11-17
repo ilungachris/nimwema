@@ -356,14 +356,27 @@ app.get('/api/auth/me', async (req, res) => {
 // PendingOrder handled (update orders if exists). Token=sessionId for frontend.
 // Coherent: Matches login query (uses first_name/last_name; name set for response if needed).
 
+// REPLACEMENT: Full app.post('/api/auth/signup') – Direct pool.query INSERT exactly matching CSV schema.
+// - id: Assumes UUID auto-gen (gen_random_uuid() if not default; adjust if manual).
+// - name: Set to fullName (was NULL in CSV example).
+// - language: 'fr' default.
+// - Timestamps: CURRENT_TIMESTAMP.
+// - is_active: true.
+// - Logs: Granular, temp – ENTRY to INSERT success/error.
+// - No dbQueries (bypass); tx for atomicity.
+// - PendingOrder: Update orders if exists.
+// - Response: {success, user, token=sessionId} for frontend store/redirect.
+// Test: Signup → paste terminal (ENTRY to END/ERROR) + DB SELECT. If "INSERT success", user added.
+
 app.post('/api/auth/signup', async (req, res) => {
-  console.warn('=== SIGNUP ENTRY ===', { body: req.body, ip: req.ip }); // Temp: Data in
+  const startTime = Date.now();
+  console.warn('=== SIGNUP ENTRY ===', { body: req.body, ip: req.ip }); // Temp: Confirm fetch hits
   let client;
   try {
     const { name, email, phone, password, role, pendingOrder } = req.body;
     
     if (!name || !email || !phone || !password) {
-      console.warn('Signup: Missing fields'); // Temp
+      console.warn('Signup: Missing fields', { fields: { name, email, phone, password } }); // Temp
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
@@ -371,47 +384,48 @@ app.post('/api/auth/signup', async (req, res) => {
     await client.query('BEGIN');
     console.warn('✅ Tx begun'); // Temp
 
-    // Existing check (email/phone unique per CSV)
+    // Existing check (email/phone unique)
     const existingResult = await client.query(
       'SELECT id FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2',
       [email.toLowerCase(), phone]
     );
-    console.warn('Signup: Existing rows', { count: existingResult.rows.length }); // Temp: 0 expected
+    console.warn('Signup: Existing check', { rows: existingResult.rows.length, email, phone }); // Temp
     if (existingResult.rows.length > 0) {
       const errCode = existingResult.rows[0].email === email.toLowerCase() ? 'EMAIL_EXISTS' : 'PHONE_EXISTS';
       await client.query('ROLLBACK');
+      console.warn('Signup: Duplicate', { code: errCode }); // Temp
       return res.status(400).json({ error: 'User already exists', code: errCode });
     }
     
-    // Prep (match CSV: first_name, last_name, name=full, language='fr')
+    // Prep (match CSV)
     const nameParts = name.trim().split(/\s+/).filter(Boolean);
     const firstName = nameParts[0] || 'User';
     const lastName = nameParts.slice(1).join(' ') || 'Account';
     const fullName = `${firstName} ${lastName}`.trim();
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.warn('Signup: Prep data', { firstName, lastName, fullName, email, role: role || 'user' }); // Temp: Values
+    console.warn('Signup: Prep', { firstName, lastName, fullName, email: email.toLowerCase(), role: role || 'user', language: 'fr' }); // Temp
 
-    // Direct INSERT (exact CSV columns; id UUID auto?, timestamps CURRENT)
+    // Direct INSERT (CSV columns; id auto UUID, timestamps CURRENT)
     const userResult = await client.query(
-      `INSERT INTO users (phone, first_name, last_name, email, password, role, language, name, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+      `INSERT INTO users (phone, first_name, last_name, email, password, role, language, name, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING id, phone, first_name, last_name, email, role, language, created_at`,
       [phone, firstName, lastName, email.toLowerCase(), hashedPassword, role || 'user', 'fr', fullName]
     );
     const newUser = userResult.rows[0];
-    console.warn('✅ User INSERT success', { id: newUser.id, email: newUser.email }); // Temp: DB added!
+    console.warn('✅ User INSERT success', { id: newUser.id, email: newUser.email, phone: newUser.phone, role: newUser.role }); // Temp: Key confirm
 
-    // PendingOrder (if provided, link/update)
+    // PendingOrder
     if (pendingOrder) {
-      await client.query('UPDATE orders SET sender_id = $1, status = $2 WHERE id = $3', [newUser.id, 'paid', pendingOrder]);
-      console.warn('✅ Pending order updated'); // Temp
+      const orderUpdate = await client.query('UPDATE orders SET sender_id = $1, status = $2 WHERE id = $3 RETURNING id', [newUser.id, 'paid', pendingOrder]);
+      console.warn('Signup: Order update', { rows: orderUpdate.rows.length, pendingOrder }); // Temp
     }
 
-    // Session (immediate auth, like login)
+    // Session
     const sessionId = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await client.query('INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [sessionId, newUser.id, expiresAt]);
-    console.warn('✅ Session inserted'); // Temp
+    console.warn('✅ Session inserted', { sessionId: sessionId.slice(0, 8) + '...' }); // Temp
 
     await client.query('COMMIT');
     console.warn('✅ Tx commit'); // Temp
@@ -423,10 +437,10 @@ app.post('/api/auth/signup', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Last login
     await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [newUser.id]);
 
-    console.warn('=== SIGNUP END ===', { success: true, duration: Date.now() - Date.now() }); // Temp: Done
+    const duration = Date.now() - startTime;
+    console.warn('=== SIGNUP END ===', { success: true, duration }); // Temp
 
     res.json({ 
       success: true, 
@@ -436,13 +450,19 @@ app.post('/api/auth/signup', async (req, res) => {
         email: newUser.email, 
         phone: newUser.phone,
         role: newUser.role,
-        name: fullName // For frontend
+        name: fullName
       },
       token: sessionId
     });
   } catch (error) {
     if (client) await client.query('ROLLBACK');
-    console.warn('=== SIGNUP ERROR ===', { message: error.message, code: error.code, stack: error.stack.slice(0, 200) }); // Temp: Exact fail
+    const duration = Date.now() - startTime;
+    console.warn('=== SIGNUP ERROR ===', { 
+      message: error.message, 
+      code: error.code, 
+      stack: error.stack ? error.stack.slice(0, 200) : 'No stack', 
+      duration 
+    }); // Temp: Pinpoint (e.g., "column name does not exist" or "uuid_generate_v4 not found")
     res.status(500).json({ error: 'Error creating user' });
   } finally {
     if (client) client.release();
