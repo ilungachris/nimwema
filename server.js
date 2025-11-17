@@ -351,45 +351,101 @@ app.get('/api/auth/me', async (req, res) => {
 // - Coherent: Uses dbQueries.createUser (assumes it INSERTs to users); role default 'user'.
 // - Prod: No slow query fix (add INDEX on users(email, phone) in PG if persists: CREATE INDEX idx_users_email_phone ON users (LOWER(email), phone);).
 
+// REPLACEMENT: Full app.post('/api/auth/signup') – Direct pool.query INSERT matching CSV schema (phone, first_name, last_name, email, role, language='fr', is_active=true, password hashed, name=full name, timestamps CURRENT).
+// No dbQueries.createUser (bypasses potential arg/schema mismatch). Logs granular for confirm.
+// PendingOrder handled (update orders if exists). Token=sessionId for frontend.
+// Coherent: Matches login query (uses first_name/last_name; name set for response if needed).
+
 app.post('/api/auth/signup', async (req, res) => {
-  console.warn('=== SIGNUP ENTRY ===', { body: req.body }); // Temp: See incoming data
+  console.warn('=== SIGNUP ENTRY ===', { body: req.body, ip: req.ip }); // Temp: Data in
+  let client;
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, pendingOrder } = req.body;
     
     if (!name || !email || !phone || !password) {
-      console.warn('Signup: Validation fail - missing fields'); // Temp
+      console.warn('Signup: Missing fields'); // Temp
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
-    // Existing check (log rows)
-    const existingUser = await db.query('SELECT id FROM users WHERE email = $1 OR phone = $2', [email, phone]);
-    console.warn('Signup: Existing check', { rows: existingUser.rows.length }); // Temp: 0 = good
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists' });
+    client = await db.pool.connect();
+    await client.query('BEGIN');
+    console.warn('✅ Tx begun'); // Temp
+
+    // Existing check (email/phone unique per CSV)
+    const existingResult = await client.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2',
+      [email.toLowerCase(), phone]
+    );
+    console.warn('Signup: Existing rows', { count: existingResult.rows.length }); // Temp: 0 expected
+    if (existingResult.rows.length > 0) {
+      const errCode = existingResult.rows[0].email === email.toLowerCase() ? 'EMAIL_EXISTS' : 'PHONE_EXISTS';
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'User already exists', code: errCode });
     }
     
-    const nameParts = name.split(' ');
+    // Prep (match CSV: first_name, last_name, name=full, language='fr')
+    const nameParts = name.trim().split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || 'User';
+    const lastName = nameParts.slice(1).join(' ') || 'Account';
+    const fullName = `${firstName} ${lastName}`.trim();
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.warn('Signup: About to call createUser', { args: { phone, firstName: nameParts[0], lastName: nameParts.slice(1).join(' '), email, role: role || 'user' } }); // Temp: Verify args
-    
-    const newUser = await dbQueries.createUser({
-      phone: phone,
-      firstName: nameParts[0] || 'User',
-      lastName: nameParts.slice(1).join(' ') || 'Account',
-      email: email,
-      password: hashedPassword,
-      role: role || 'user'
+    console.warn('Signup: Prep data', { firstName, lastName, fullName, email, role: role || 'user' }); // Temp: Values
+
+    // Direct INSERT (exact CSV columns; id UUID auto?, timestamps CURRENT)
+    const userResult = await client.query(
+      `INSERT INTO users (phone, first_name, last_name, email, password, role, language, name, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+       RETURNING id, phone, first_name, last_name, email, role, language, created_at`,
+      [phone, firstName, lastName, email.toLowerCase(), hashedPassword, role || 'user', 'fr', fullName]
+    );
+    const newUser = userResult.rows[0];
+    console.warn('✅ User INSERT success', { id: newUser.id, email: newUser.email }); // Temp: DB added!
+
+    // PendingOrder (if provided, link/update)
+    if (pendingOrder) {
+      await client.query('UPDATE orders SET sender_id = $1, status = $2 WHERE id = $3', [newUser.id, 'paid', pendingOrder]);
+      console.warn('✅ Pending order updated'); // Temp
+    }
+
+    // Session (immediate auth, like login)
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await client.query('INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [sessionId, newUser.id, expiresAt]);
+    console.warn('✅ Session inserted'); // Temp
+
+    await client.query('COMMIT');
+    console.warn('✅ Tx commit'); // Temp
+
+    res.cookie('sessionId', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
-    console.warn('Signup: createUser success', { id: newUser.id }); // Temp: If here, user inserted!
-    
+
+    // Last login
+    await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [newUser.id]);
+
+    console.warn('=== SIGNUP END ===', { success: true, duration: Date.now() - Date.now() }); // Temp: Done
+
     res.json({ 
       success: true, 
       message: 'User created successfully',
-      user: { id: newUser.id, email: newUser.email, phone: newUser.phone }
+      user: { 
+        id: newUser.id, 
+        email: newUser.email, 
+        phone: newUser.phone,
+        role: newUser.role,
+        name: fullName // For frontend
+      },
+      token: sessionId
     });
   } catch (error) {
-    console.warn('Signup: CATCH ERROR', { message: error.message, stack: error.stack }); // Temp: Exact PG/JS error
+    if (client) await client.query('ROLLBACK');
+    console.warn('=== SIGNUP ERROR ===', { message: error.message, code: error.code, stack: error.stack.slice(0, 200) }); // Temp: Exact fail
     res.status(500).json({ error: 'Error creating user' });
+  } finally {
+    if (client) client.release();
   }
 });
 /////////////
