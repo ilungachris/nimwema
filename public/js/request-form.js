@@ -9,7 +9,7 @@ function initRequestForm() {
   if (!form) return;
   
   
-  
+    console.log('[RequestForm] initRequestForm: form found');
   
   
   
@@ -268,11 +268,11 @@ function clearForm() {
 async function handleFormSubmit(e) {
   e.preventDefault();
   
+    console.log('[RequestForm] submit captured');
   
   
   
-  
-  e.stopImmediatePropagation(); // ensure main.js handler doesn't also run
+  //e.stopImmediatePropagation(); // ensure main.js handler doesn't also run
   
   
   
