@@ -1,10 +1,9 @@
 // Nimwema Platform - Dashboard JavaScript (Production)
 // Integrates with server.js APIs: auth, orders, requests, senders, vouchers
 
-// Config
-// Config (Prod-only: Hardcode /api for Render proxy)
+// Config (Prod-only)
 const CONFIG = {
-    API_BASE: '/api', // Direct prod path (assumes Render static serve + backend proxy)
+    API_BASE: '/api', // Render proxy
     REFRESH_INTERVAL: 30000,
     STORAGE_KEYS: { USER: 'nimwema_user', TOKEN: 'nimwema_token' }
 };
@@ -14,78 +13,73 @@ let currentUser = null;
 let allRequests = [];
 let filteredRequests = [];
 let allSenders = [];
-let allTransactions = []; // Vouchers + orders
+let allTransactions = [];
 let filteredTransactions = [];
 let deleteTarget = null;
 let refreshInterval = null;
-let authChecked = false; // Anti-loop flag
+let authChecked = false; // Anti-loop
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log('Dashboard init – checking auth...'); // Temp: Entry point
+  console.log('Dashboard init – checking auth...'); // Temp
   if (await checkAuth()) {
     loadUserData();
-    showSection('pending-orders'); // Default – now after auth
+    showSection('pending-orders');
     startRefresh();
   }
 });
 
-// FIXED Auth Check (cookie + token fallback, no loop)
+// FIXED Auth Check (token Bearer first, cookie fallback, detailed logs, no loop)
 async function checkAuth() {
-  if (authChecked) return true; // Prevent re-check on reloads
+  if (authChecked) return true;
   authChecked = true;
 
   try {
-    // Cookie first (primary)
+    // Token first (from login localStorage)
+    const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
     const sessionId = document.cookie.split('; ').find(row => row.startsWith('sessionId='));
-    console.log('Auth: Cookie check', { hasSession: !!sessionId }); // Temp
+    console.log('Auth: Checks', { hasToken: !!token, hasSession: !!sessionId }); // Temp
 
-    let headers = { credentials: 'include' };
-    if (!sessionId) {
-      // Fallback to token (from login/signup localStorage)
-      const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
-      if (token) {
-        headers = { ...headers, Authorization: `Bearer ${token}` };
-        console.log('Auth: Token fallback'); // Temp
-      } else {
-        throw new Error('No auth');
-      }
+    let headers = { credentials: 'include' }; // Cookie always
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      console.log('Auth: Using token Bearer'); // Temp
+    } else if (!sessionId) {
+      throw new Error('No auth');
     }
 
     const response = await fetch(`${CONFIG.API_BASE}/auth/me`, headers);
-    console.log('Auth API response', { status: response.status, ok: response.ok }); // Temp
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    console.log('Auth API:', { status: response.status, ok: response.ok, url: `${CONFIG.API_BASE}/auth/me` }); // Temp: Pinpoint fail
+
+    if (!response.ok) throw new Error(`HTTP ${response.status} – ${response.statusText}`);
 
     const data = await response.json();
     if (!data.success || !data.user) throw new Error('Invalid user data');
-    
+
     currentUser = data.user;
     const userNameEl = document.getElementById('userName');
     if (userNameEl) {
       userNameEl.textContent = currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email || 'Utilisateur';
     }
-    
-    console.log('✅ Auth success:', currentUser); // Temp
+
+    console.log('✅ Auth success:', { userId: currentUser.id }); // Temp
     return true;
   } catch (error) {
-    console.error('Auth error:', error); // Temp
+    console.error('Auth error details:', { message: error.message, token: !!localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN), session: !!document.cookie.match(/sessionId=/) }); // Temp: Debug
     localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN); // Clear stale
-    window.location.href = '/login.html'; // One-way redirect
+    window.location.href = '/login.html'; // One-way
     return false;
   }
 }
 
-// FIXED Show Section (null-check, log)
+// FIXED Show Section (null-check)
 function showSection(sectionName) {
-  console.log('showSection:', sectionName); // Temp: Called?
-  // Update nav
+  console.log('showSection:', sectionName); // Temp
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   event?.currentTarget?.classList.add('active');
   
-  // Hide sections
   document.querySelectorAll('.dashboard-section').forEach(section => section.classList.remove('active'));
   
-  // FIXED: Null-safe target
   let targetSection;
   switch (sectionName) {
     case 'pending-orders':
@@ -111,35 +105,34 @@ function showSection(sectionName) {
   
   if (targetSection) {
     targetSection.classList.add('active');
-    console.log('Section shown:', sectionName); // Temp
+    console.log('Section active:', sectionName); // Temp
   } else {
-    console.error('Target section null:', sectionName); // Temp: Debug missing ID
+    console.error('Section null:', sectionName); // Temp
   }
 }
 
-// [Rest of your pasted code unchanged: loadUserData, loadPendingOrders, createPendingOrderCard, etc. – all good, no errors there]
+// [Keep all other functions unchanged: loadUserData, loadPendingOrders, etc. – they're solid]
+
 async function loadUserData() {
   if (!currentUser) return;
   
-  // Parallel load all sections
   Promise.allSettled([
     loadPendingOrders(),
     loadTransactions(),
     loadRequests(),
     loadSenders()
   ]).then(results => {
-    console.log('📊 Dashboard loaded:', results.map(r => r.status)); // Temp
+    console.log('Dashboard loaded:', results.map(r => r.status)); // Temp
   });
 }
 
-// ... (keep all other functions: confirmCancelOrder, loadTransactions, renderTransactions, etc. – paste confirms no changes needed)
+// [Rest unchanged: createPendingOrderCard, loadTransactions, etc. – no edits needed]
 
-// Refresh Handler (debounced)
+// Refresh (unchanged)
 function startRefresh() {
   if (refreshInterval) clearInterval(refreshInterval);
   refreshInterval = setInterval(() => {
     if (document.querySelector('.dashboard-section.active')) {
-      // Refresh active section only
       const activeId = document.querySelector('.dashboard-section.active').id;
       if (activeId.includes('pending')) loadPendingOrders();
       else if (activeId.includes('transactions')) loadTransactions();
@@ -149,7 +142,7 @@ function startRefresh() {
   }, CONFIG.REFRESH_INTERVAL);
 }
 
-// Export globals for onclick (unchanged)
+// Export globals (unchanged)
 window.showSection = showSection;
 window.loadPendingOrders = loadPendingOrders;
 window.confirmCancelOrder = confirmCancelOrder;
