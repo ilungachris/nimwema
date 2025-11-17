@@ -44,7 +44,6 @@
             border-radius: 8px;
             font-size: 14px;
             transition: border-color 0.3s;
-            box-sizing: border-box;
         }
         .form-group input:focus, .form-group select:focus {
             outline: none;
@@ -283,15 +282,14 @@
 
             <div class="form-group">
                 <label for="fullName" data-i18n="signup.fullName">Nom complet <span style="color: #dc3545;">*</span></label>
-                <input type="text" id="fullName" name="fullName" required aria-required="true" minlength="2">
-                <span class="error" data-i18n="signup.errors.fullNameRequired">Le nom complet est requis (au moins 2 caractères)</span>
+                <input type="text" id="fullName" name="fullName" required aria-required="true">
+                <span class="error" data-i18n="signup.errors.fullNameRequired">Le nom complet est requis</span>
             </div>
 
             <div class="form-group">
                 <label for="email" data-i18n="signup.email">Email <span style="color: #dc3545;">*</span></label>
                 <input type="email" id="email" name="email" required aria-required="true" autocomplete="email">
                 <span class="error" data-i18n="signup.errors.emailInvalid">Email invalide</span>
-                <span class="error" id="emailExistsError" data-i18n="signup.errors.emailExists">Cet email est déjà utilisé</span>
             </div>
 
             <div class="form-group">
@@ -299,7 +297,6 @@
                 <input type="tel" id="phone" name="phone" placeholder="+243XXXXXXXXX" 
                     pattern="^\+243[0-9]{9}$" required aria-required="true" autocomplete="tel">
                 <span class="error" data-i18n="signup.errors.phoneInvalid">Numéro de téléphone invalide (format: +243XXXXXXXXX)</span>
-                <span class="error" id="phoneExistsError" data-i18n="signup.errors.phoneExists">Ce numéro est déjà utilisé</span>
             </div>
 
             <div class="form-group">
@@ -337,7 +334,7 @@
                 </label>
             </div>
 
-            <button type="submit" class="submit-btn" id="submitBtn" data-i18n="signup.submit">Créer mon compte</button>
+            <button type="submit" class="submit-btn" data-i18n="signup.submit">Créer mon compte</button>
         </form>
 
         <div class="login-link">
@@ -348,17 +345,15 @@
 
     <script src="js/i18n.js"></script>
     <script>
-        // Production mode: No console.logs, secure redirects, coherent with backend auth (localStorage for token/user, as per login.html coherence)
         const CONFIG = {
-            API_BASE: window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api', // Adapt to prod (proxy or full URL)
+            API_BASE: '/api',
             STORAGE_KEYS: {
                 USER: 'nimwema_user',
                 TOKEN: 'nimwema_token',
                 PENDING_ORDER: 'nimwema_pending_order'
             }
         };
-
-        // User type selector: Redirect to merchant signup if selected (keeps logic)
+        
         document.querySelectorAll('.user-type-option').forEach(option => {
             option.addEventListener('click', function() {
                 document.querySelectorAll('.user-type-option').forEach(opt => opt.classList.remove('active'));
@@ -372,7 +367,6 @@
             });
         });
 
-        // Password strength logic (unchanged, coherent)
         const passwordInput = document.getElementById('password');
         const strengthBar = document.getElementById('passwordStrengthBar');
         const requirements = {
@@ -424,11 +418,9 @@
             }
         });
 
-        // Form handling
         const signupForm = document.getElementById('signupForm');
         const alertBox = document.getElementById('alertBox');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        const submitBtn = document.getElementById('submitBtn');
 
         function showAlert(message, type) {
             alertBox.textContent = message;
@@ -457,22 +449,11 @@
                    /[0-9]/.test(password);
         }
 
-        // Improved validation with specific error messages for backend errors (coherent with backend responses)
-        function setFieldError(fieldId, errorMessage) {
-            const group = document.getElementById(fieldId).closest('.form-group');
-            group.classList.add('has-error');
-            const errorSpan = group.querySelector('.error');
-            if (errorSpan) errorSpan.textContent = errorMessage;
-        }
-
         signupForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Reset errors
             document.querySelectorAll('.form-group').forEach(group => {
                 group.classList.remove('has-error');
-                const errorSpan = group.querySelector('.error');
-                if (errorSpan) errorSpan.style.display = 'none';
             });
             alertBox.style.display = 'none';
 
@@ -487,47 +468,60 @@
             };
 
             let isValid = true;
+            let firstError = null;
 
             if (!formData.fullName || formData.fullName.length < 2) {
-                setFieldError('fullName', 'Le nom complet est requis (au moins 2 caractères)');
+                const group = document.getElementById('fullName').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!validateEmail(formData.email)) {
-                setFieldError('email', 'Email invalide');
+                const group = document.getElementById('email').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!validatePhone(formData.phone)) {
-                setFieldError('phone', 'Numéro de téléphone invalide (format: +243XXXXXXXXX)');
+                const group = document.getElementById('phone').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!validatePassword(formData.password)) {
-                setFieldError('password', 'Mot de passe trop faible');
+                const group = document.getElementById('password').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (formData.password !== formData.confirmPassword) {
-                setFieldError('confirmPassword', 'Les mots de passe ne correspondent pas');
+                const group = document.getElementById('confirmPassword').closest('.form-group');
+                group.classList.add('has-error');
+                if (!firstError) firstError = group;
                 isValid = false;
             }
 
             if (!formData.terms) {
-                showAlert("Vous devez accepter les conditions d'utilisation", 'error');
+                showAlert('Vous devez accepter les conditions d\'utilisation', 'error');
                 isValid = false;
             }
 
             if (!isValid) {
-                document.getElementById('fullName').focus(); // Focus first field
+                if (firstError) {
+                    firstError.querySelector('input').focus();
+                }
                 return;
             }
 
-            // Show loading
             loadingSpinner.classList.add('active');
             signupForm.style.display = 'none';
+            
+            const submitBtn = signupForm.querySelector('.submit-btn');
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Création en cours...';
 
             try {
                 const pendingOrder = sessionStorage.getItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
@@ -550,45 +544,34 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Clear pending if set
-                    if (pendingOrder) {
-                        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
-                    }
+                    sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
                     
-                    // Store user and token (coherent with login.html and dashboard auth)
+                    showAlert('Compte créé avec succès ! Redirection...', 'success');
+                    
                     if (data.user && data.token) {
                         localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify(data.user));
                         localStorage.setItem(CONFIG.STORAGE_KEYS.TOKEN, data.token);
                     }
                     
-                    showAlert('Compte créé avec succès ! Redirection vers le tableau de bord...', 'success');
-                    
-                    // Fixed: Always redirect to dashboard after auto-login (removes erroneous login.html redirect for normal signup)
-                    // PendingOrder handled backend-side; dashboard can check token for auth
                     setTimeout(() => {
-                        window.location.href = '/dashboard.html';
+                        if (pendingOrder) {
+                            window.location.href = '/dashboard.html';
+                        } else {
+                            window.location.href = '/login.html';
+                        }
                     }, 2000);
                 } else {
-                    // Handle specific backend errors (improvement: coherent with backend messages)
-                    let errorMsg = data.message || data.error || 'Erreur lors de la création du compte';
-                    if (data.error === 'EMAIL_EXISTS') {
-                        setFieldError('email', 'Cet email est déjà utilisé');
-                    } else if (data.error === 'PHONE_EXISTS') {
-                        setFieldError('phone', 'Ce numéro est déjà utilisé');
-                    }
-                    throw new Error(errorMsg);
+                    throw new Error(data.message || data.error || 'Erreur lors de la création du compte');
                 }
             } catch (error) {
-                // Production: No console.error
+                console.error('Signup error:', error);
                 showAlert(error.message || 'Une erreur est survenue. Veuillez réessayer.', 'error');
                 loadingSpinner.classList.remove('active');
                 signupForm.style.display = 'block';
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Créer mon compte';
             }
         });
 
-        // i18n init (unchanged)
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof initI18n === 'function') {
                 initI18n();
