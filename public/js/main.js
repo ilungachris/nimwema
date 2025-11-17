@@ -266,10 +266,10 @@ function setupFormHandlers() {
   // Send voucher form
   
   // Request voucher form
-  const requestForm = document.getElementById('requestVoucherForm');
-  if (requestForm) {
-    requestForm.addEventListener('submit', handleRequestVoucher);
-  }
+ // const requestForm = document.getElementById('requestVoucherForm');
+//  if (requestForm) {
+ //   requestForm.addEventListener('submit', handleRequestVoucher);
+ // }
   
   // Login form
   const loginForm = document.getElementById('loginForm');
