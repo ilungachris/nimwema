@@ -313,48 +313,87 @@ app.post('/api/auth/logout', authMiddleware.requireAuth, async (req, res) => {
 // Get current user
 // Get current user (fixed: Bearer token fallback)
 // Get current user (fixed: Include phone/email)
-app.get('/api/auth/me', async (req, res) => {
-  console.log('Auth/me called'); // Temp: Confirm hit
+// ... (existing imports, app setup, middleware)
+
+// FIXED: /api/auth/me - Full user SELECT (no password leak, camelCase aliases for frontend)
+app.get('/api/auth/me', authenticateSession, async (req, res) => {  // Assumes authenticateSession middleware sets req.user_id from session
   try {
-    let sessionId = req.cookies?.sessionId;
-    if (!sessionId) {
-      // Bearer fallback
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        sessionId = authHeader.slice(7);
-      }
+    const { rows: [user] } = await pool.query(`
+      SELECT 
+        u.id,
+        u.phone,
+        u.email,
+        u.first_name AS "firstName",
+        u.last_name AS "lastName",
+        u.name,
+        u.role,
+        u.language,
+        u.is_active,
+        u.created_at
+      FROM users u 
+      WHERE u.id = $1
+    `, [req.user_id]);  // Direct on user_id (post-session join)
+
+    if (!user || !user.is_active) {
+      return res.status(401).json({ success: false, error: 'User inactive or not found' });
     }
-    if (!sessionId) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    
-    // FIXED: SELECT phone, email (CSV match)
-    const result = await db.query(
-      'SELECT id, email, phone, first_name, last_name, role FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP AND u.is_active = true',
-      [sessionId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-    
-    const user = result.rows[0];
+
     res.json({ 
       success: true, 
       user: {
         id: user.id,
+        phone: user.phone,
         email: user.email,
-        phone: user.phone, // FIXED: Return phone
-        firstName: user.first_name,
-        lastName: user.last_name,
+        firstName: user.firstname,  // Note: PostgreSQL is case-sensitive; use AS above
+        lastName: user.lastname,
+        name: user.name,
         role: user.role,
-        name: `${user.first_name} ${user.last_name}`.trim()
-      }
+        language: user.language,
+        isActive: user.is_active,
+        createdAt: user.created_at
+      },
+      token: req.sessionId  // Echo for localStorage sync
     });
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ error: 'Failed to get user' });
+  } catch (err) {
+    console.error('Auth/me error:', err);
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
+
+// FIXED: /api/orders/my-pending - Robust filter (sender_id OR sender_phone), normalize phone (+243 strip/test)
+app.get('/api/orders/my-pending', authenticateSession, async (req, res) => {
+  try {
+    const { rows: [user] } = await pool.query(
+      'SELECT phone FROM users WHERE id = $1',
+      [req.user_id]
+    );
+    if (!user) return res.status(401).json({ orders: [] });
+
+    const userPhone = user.phone ? user.phone.replace(/^\+/, '') : null;  // Normalize: strip + for match (CSV may vary)
+    const params = [req.user_id, userPhone || ''];  // Param 2 empty if no phone (avoids null bind)
+    let whereClause = 'WHERE status = $3 AND (sender_id = $1 OR (sender_phone = $2 AND $2 != \'\'))';
+    let query = `
+      SELECT id, sender_id, sender_phone, sender_name, amount, currency, quantity, total_amount, 
+             payment_method, status, created_at, metadata
+      FROM orders 
+      ${whereClause}
+      ORDER BY created_at DESC
+    `;
+    const values = [...params, 'pending'];  // $3 = status
+
+    const { rows: orders } = await pool.query(query, values);
+
+    // Temp log for debug (remove post-fix)
+    console.log(`My-pending for user_id=${req.user_id}, phone=${user.phone}: ${orders.length} rows`);
+
+    res.json({ success: true, orders });
+  } catch (err) {
+    console.error('Orders/my-pending error:', err);
+    res.status(500).json({ success: false, error: 'Server error', orders: [] });
+  }
+});
+
+// ... (rest of routes unchanged: login sets cookie/sessionId, logout DELETE sessions, etc.)
 
 // REPLACEMENT SNIPPET: Replace the entire app.post('/api/auth/signup', ...) block with this.
 // Key Fixes:
