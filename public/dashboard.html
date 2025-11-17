@@ -256,7 +256,7 @@
         }
         
         try {
-            const userData = JSON.parse(user);
+            currentUser = JSON.parse(user);
             document.getElementById('userName').textContent = userData.name || 'Utilisateur';
             return true;
         } catch (error) {
@@ -291,6 +291,15 @@
     }
     
     function showSection(sectionName) {
+        console.log('[TRACE] showSection:', sectionName);
+    if (!currentUser) {
+        console.log('[TRACE] No user – check auth (once)');
+        checkAuth(); // FIXED: Call once, no .then recurse – let it redirect if fail
+        return; // FIXED: Exit early, no load if no auth
+    }
+       
+       
+       
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
@@ -497,11 +506,12 @@
     function sortRequests() {}
     
     document.addEventListener('DOMContentLoaded', function() {
-        if (checkAuth()) {
-            loadPendingOrders();
-            refreshInterval = setInterval(loadPendingOrders, CONFIG.REFRESH_INTERVAL);
-        }
-    });
+    console.log('[TRACE] DOMLoaded – check auth once');
+    if (checkAuth()) { // FIXED: If fail, redirects – no further execution
+        loadPendingOrders();
+        refreshInterval = setInterval(loadPendingOrders, CONFIG.REFRESH_INTERVAL); // FIXED: Set interval only if auth OK
+    }
+});
     
     window.addEventListener('beforeunload', function() {
         if (refreshInterval) {
