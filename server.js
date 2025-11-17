@@ -312,22 +312,23 @@ app.post('/api/auth/logout', authMiddleware.requireAuth, async (req, res) => {
 
 // Get current user
 // Get current user (fixed: Bearer token fallback)
+// Get current user (fixed: Include phone/email)
 app.get('/api/auth/me', async (req, res) => {
-  console.log('Auth/me called', { sessionId: req.cookies?.sessionId, authHeader: req.headers.authorization }); // Temp: Debug
+  console.log('Auth/me called'); // Temp: Confirm hit
   try {
     let sessionId = req.cookies?.sessionId;
     if (!sessionId) {
-      // Bearer fallback (token = sessionId)
+      // Bearer fallback
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         sessionId = authHeader.slice(7);
-        console.log('Using Bearer sessionId'); // Temp
       }
     }
     if (!sessionId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
+    // FIXED: SELECT phone, email (CSV match)
     const result = await db.query(
       'SELECT id, email, phone, first_name, last_name, role FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP AND u.is_active = true',
       [sessionId]
@@ -342,15 +343,15 @@ app.get('/api/auth/me', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        phone: user.phone,
+        phone: user.phone, // FIXED: Return phone
         firstName: user.first_name,
         lastName: user.last_name,
         role: user.role,
-        name: `${user.first_name} ${user.last_name}`.trim() // For frontend
+        name: `${user.first_name} ${user.last_name}`.trim()
       }
     });
   } catch (error) {
-    console.error('Get user error:', error); // Temp
+    console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
   }
 });

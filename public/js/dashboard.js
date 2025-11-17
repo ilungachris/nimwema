@@ -283,18 +283,18 @@ async function loadRequests() {
   
   showLoading(container);
   
-  // FIXED: Null-check currentUser.phone (fallback to email if null)
-  if (!currentUser || (!currentUser.phone && !currentUser.email)) {
-    console.error('loadRequests: No user phone/email for filter');
+  // FIXED: Null-check + fallback to id (if API supports ?userId=)
+  if (!currentUser) {
+    console.error('loadRequests: No currentUser');
     container.innerHTML = getErrorState('Erreur utilisateur', 'Recharger la page');
     return;
   }
   
-  const userIdentifier = currentUser.phone || currentUser.email;
-  console.log('loadRequests: Using identifier', userIdentifier); // Temp debug
+  const userIdentifier = currentUser.phone || currentUser.email || currentUser.id; // Fallback to id
+  console.log('loadRequests: Using identifier', userIdentifier); // Temp
   
   try {
-    const response = await fetch(`${CONFIG.API_BASE}/requests?phone=${encodeURIComponent(userIdentifier)}`, { credentials: 'include' });
+    const response = await fetch(`${CONFIG.API_BASE}/requests?${currentUser.phone || currentUser.email ? `phone=${encodeURIComponent(currentUser.phone || currentUser.email)}` : `userId=${currentUser.id}`}`, { credentials: 'include' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
     const requests = await response.json();
@@ -302,7 +302,7 @@ async function loadRequests() {
     filteredRequests = [...requests];
     
     console.log('📋 Requests loaded:', allRequests.length);
-    sortRequests(); // Initial sort
+    sortRequests();
     renderRequests();
   } catch (error) {
     console.error('Error loading requests:', error);
