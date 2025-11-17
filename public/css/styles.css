@@ -241,7 +241,7 @@ p {
   font-weight: 600;
   margin-bottom: var(--space-xl);
 }
-
+/*
 .hero-card {
   position: relative;
   border-radius: var(--radius-card);
@@ -251,12 +251,32 @@ p {
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
-}
 
-.hero-image {
+  .hero-image {
   width: 100%;
   height: auto;
   display: block;
+  
+  filter: grayscale(100%);
+}
+} */
+
+.hero-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-xl);
+  width: 100%;
+  max-width: 100%;        /* full width of .container */
+}
+
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover; 
   filter: grayscale(100%);
 }
 
@@ -589,6 +609,7 @@ p {
   .hero-overlay {
     flex-direction: column;
     align-items: flex-start;
+    padding: var(--space-lg);
   }
   
   .support-section {
