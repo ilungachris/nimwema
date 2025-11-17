@@ -1234,24 +1234,63 @@ app.post('/api/vouchers/send', (req, res) => {
   }
 });
 
-// Request voucher
+// Request voucher (production-ready: DB + session cookie)
 app.post('/api/vouchers/request', async (req, res) => {
   try {
-    console.log('📥 Received request body:', req.body);
-    const { firstName, lastName, phone, message, requestType, senderName, senderPhone } = req.body;
-    
-    console.log('📋 Extracted fields:', { firstName, lastName, phone, message, requestType, senderName, senderPhone });
-    
-    let request;
-    
-    // DATABASE: Try PostgreSQL first
+    console.log('📥 [Request API] Body:', req.body);
+
+    const {
+      firstName,
+      lastName,
+      phone,
+      message,
+      requestType,
+      senderName,
+      senderPhone
+    } = req.body;
+
+    // Basic server-side validation
+    if (!firstName || !lastName || !phone || !requestType) {
+      console.warn('⚠️ [Request API] Missing required fields', {
+        firstName, lastName, phone, requestType
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Prénom, nom, téléphone et type de demande sont requis'
+      });
+    }
+
+    let requesterId = null;
+
+    // Try to resolve logged-in user via sessions table
     if (dbConnected) {
       try {
-        // Get current user if logged in (from session or localStorage)
-        const user = req.session?.user;
-        
+        const sessionId = req.cookies?.sessionId;
+        console.log('🔑 [Request API] sessionId from cookie:', sessionId);
+
+        if (sessionId) {
+          const { rows } = await db.query(
+            'SELECT user_id FROM sessions WHERE id = $1 AND expires_at > CURRENT_TIMESTAMP',
+            [sessionId]
+          );
+          if (rows.length > 0) {
+            requesterId = rows[0].user_id;
+            console.log('✅ [Request API] requesterId from session:', requesterId);
+          } else {
+            console.log('⚠️ [Request API] No active session for this cookie');
+          }
+        }
+      } catch (sessionErr) {
+        console.warn('⚠️ [Request API] Session lookup failed:', sessionErr.message);
+      }
+    }
+
+    let request;
+
+    if (dbConnected) {
+      try {
         const requestData = {
-          requesterId: user?.id || null,
+          requesterId,
           requesterPhone: phone,
           requesterFirstName: firstName,
           requesterLastName: lastName,
@@ -1260,18 +1299,19 @@ app.post('/api/vouchers/request', async (req, res) => {
           senderPhone: senderPhone || null,
           message: message || ''
         };
-        
-        console.log('💾 Saving to database:', requestData);
-        
+
+        console.log('💾 [Request API] Saving to database:', requestData);
+
         request = await dbQueries.createRequest(requestData);
-        
-        console.log('✅ Request saved to database:', request.id);
+
+        console.log('✅ [Request API] Saved to database, id:', request.id);
       } catch (dbError) {
-        console.error('❌ Database save failed:', dbError.message);
+        console.error('❌ [Request API] Database save failed:', dbError);
+        // Let it bubble to global catch so frontend sees 500
         throw dbError;
       }
     } else {
-      // FALLBACK: In-memory storage
+      // FALLBACK: in-memory
       request = {
         id: data.requests.length + 1,
         firstName,
@@ -1286,31 +1326,29 @@ app.post('/api/vouchers/request', async (req, res) => {
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
       };
-      
+
       data.requests.push(request);
-      console.log('⚠️ Request saved to memory (fallback)');
+      console.log('⚠️ [Request API] Saved to memory (fallback)');
     }
-    
-    // Send SMS notification
+
+    // Send SMS notification to known sender
     if (requestType === 'known_sender' && senderPhone) {
-      await sendSMSNotification(
-        senderPhone,
-        {
-          type: 'voucher_request',
-          requesterName: `${firstName} ${lastName}`,
-          requesterPhone: phone,
-          message
-        }
-      );
+      console.log('📲 [Request API] Sending SMS to sender:', senderPhone);
+      await sendSMSNotification(senderPhone, {
+        type: 'voucher_request',
+        requesterName: `${firstName} ${lastName}`,
+        requesterPhone: phone,
+        message
+      });
     }
-    
+
     res.json({
       success: true,
       message: 'Request submitted successfully',
       request
     });
   } catch (error) {
-    console.error('❌ Error submitting request:', error);
+    console.error('❌ [Request API] Error submitting request:', error);
     res.status(500).json({
       success: false,
       message: 'Error submitting request',
@@ -1319,6 +1357,7 @@ app.post('/api/vouchers/request', async (req, res) => {
   }
 });
 
+//////////////////////////
 // Get vouchers (resolved duplicate with query filters)
 app.get('/api/vouchers', (req, res) => {
   const { phone, type } = req.query;

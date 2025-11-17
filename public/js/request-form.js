@@ -354,61 +354,57 @@ async function handleFormSubmit(e) {
   form.classList.add('form-loading');
   
   try {
-    // Submit to API
+    // --- Submit to real API endpoint in production ---
+    const REQUEST_URL = '/api/vouchers/request';
 
-     const REQUEST_URL = '/dev/api/voucher/simulate'; // TEMP until /api/vouchers/request is live
-     const response = await fetch(REQUEST_URL, {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
- 
-       body: JSON.stringify({ ...formData, simulate: true })
+    console.log('[RequestForm] Submitting voucher request', {
+      url: REQUEST_URL,
+      payload: formData
     });
-    
- 
- 
- 
- 
- 
- 
+
+    const response = await fetch(REQUEST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
 
     if (!response.ok) {
-      // Try to read text for debugging, but don't crash on JSON
-      const raw = await response.text().catch(()=>'');
+      // Read raw body for debugging
+      const raw = await response.text().catch(() => '');
+      console.error('[RequestForm] Non-OK response', {
+        status: response.status,
+        rawBody: raw
+      });
+
       const msg = response.status === 404
         ? "Endpoint introuvable: /api/vouchers/request"
         : `Erreur serveur (${response.status})`;
-     throw new Error(msg);
+      throw new Error(msg);
     }
+
     const result = await response.json();
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-    
+    console.log('[RequestForm] API result', result);
+
     if (result.success) {
       // Store request data for confirmation page
       sessionStorage.setItem('requestData', JSON.stringify({
         ...formData,
         requestId: result.request.id
       }));
-      
+
       // Redirect to confirmation page
       window.location.href = '/request-confirmation.html';
     } else {
       throw new Error(result.message || 'Erreur lors de l\'envoi de la demande');
     }
   } catch (error) {
+    console.error('Error submitting request:', error);
+    window.Nimwema.showNotification(
+      error.message || 'Erreur lors de l\'envoi de la demande',
+      'error'
+    );
+    form.classList.remove('form-loading');
+  }  catch (error) {
     console.error('Error submitting request:', error);
     window.Nimwema.showNotification(error.message || 'Erreur lors de l\'envoi de la demande', 'error');
     form.classList.remove('form-loading');
