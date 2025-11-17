@@ -277,29 +277,36 @@ function redeemVoucher(code) {
   window.location.href = `/redeem.html?code=${encodeURIComponent(code)}`;
 }
 
+// FIXED loadRequests (replace entire function – robust null-check, fallback to userId if phone/email missing)
 async function loadRequests() {
   const container = document.getElementById('requestsList');
   if (!container) return;
   
   showLoading(container);
   
-  // FIXED: Null-check + fallback to id (if API supports ?userId=)
-  if (!currentUser) {
-    console.error('loadRequests: No currentUser');
+  // FIXED: Robust null-check for currentUser + fallback to userId (API ?userId= if supported)
+  if (!currentUser || (!currentUser.phone && !currentUser.email && !currentUser.id)) {
+    console.error('loadRequests: Invalid currentUser', currentUser); // Temp: Debug shape
     container.innerHTML = getErrorState('Erreur utilisateur', 'Recharger la page');
     return;
   }
   
-  const userIdentifier = currentUser.phone || currentUser.email || currentUser.id; // Fallback to id
-  console.log('loadRequests: Using identifier', userIdentifier); // Temp
+  // FIXED: Use phone/email first, fallback to id
+  const params = new URLSearchParams();
+  if (currentUser.phone) params.append('phone', currentUser.phone);
+  else if (currentUser.email) params.append('phone', currentUser.email); // API treats email as phone fallback
+  else params.append('userId', currentUser.id);
+  
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+  console.log('loadRequests: Query', queryString); // Temp
   
   try {
-    const response = await fetch(`${CONFIG.API_BASE}/requests?${currentUser.phone || currentUser.email ? `phone=${encodeURIComponent(currentUser.phone || currentUser.email)}` : `userId=${currentUser.id}`}`, { credentials: 'include' });
+    const response = await fetch(`${CONFIG.API_BASE}/requests${queryString}`, { credentials: 'include' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
     const requests = await response.json();
-    allRequests = requests;
-    filteredRequests = [...requests];
+    allRequests = requests || [];
+    filteredRequests = [...allRequests];
     
     console.log('📋 Requests loaded:', allRequests.length);
     sortRequests();
@@ -787,8 +794,11 @@ async function logout() {
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
-    sessionStorage.clear();
+    // FIXED: Clear all + expire cookie w/ domain/path for Render
     localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+    sessionStorage.clear();
+    document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.onrender.com; SameSite=Strict'; // Prod kill
     window.location.href = '/';
   }
 }
