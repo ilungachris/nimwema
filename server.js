@@ -352,65 +352,63 @@ app.get('/api/auth/me', async (req, res) => {
 // - Prod: No slow query fix (add INDEX on users(email, phone) in PG if persists: CREATE INDEX idx_users_email_phone ON users (LOWER(email), phone);).
 
 app.post('/api/auth/signup', async (req, res) => {
-  const startTime = Date.now(); // For slow query debug
-  console.warn('=== SIGNUP DEBUG START ===', { body: req.body, ip: req.ip }); // Temp: Log entry/body
-  let client; // For transaction
+  const startTime = Date.now();
+  console.warn('=== SIGNUP DEBUG START ===', { body: req.body, ip: req.ip });
+  let client;
   try {
     const { name, email, phone, password, role, pendingOrder } = req.body;
     
-    // Validate input
     if (!name || !email || !phone || !password) {
-      console.warn('Signup validation failed: Missing fields'); // Temp
+      console.warn('Signup: Missing fields');
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
-    client = await db.pool.connect(); // Temp client for tx
+    client = await db.pool.connect();
     await client.query('BEGIN');
-    console.warn('✅ Transaction begun'); // Temp
+    console.warn('✅ Tx begun');
 
-    // Check existing (slow query culprit? Log rows)
-    const existingResult = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2', [email.toLowerCase(), phone]);
-    console.warn('Existing user query:', { rows: existingResult.rows.length, email, phone }); // Temp: Debug slow/select
+    // Existing check
+    const existingResult = await client.query(
+      'SELECT id, email FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2',
+      [email.toLowerCase(), phone]
+    );
+    console.warn('Existing:', { rows: existingResult.rows.length });
     if (existingResult.rows.length > 0) {
       const errorCode = existingResult.rows[0].email === email.toLowerCase() ? 'EMAIL_EXISTS' : 'PHONE_EXISTS';
       await client.query('ROLLBACK');
-      console.warn('Signup duplicate:', errorCode); // Temp
-      return res.status(400).json({ error: 'User already exists', error: errorCode });
+      return res.status(400).json({ error: 'User already exists', code: errorCode });
     }
     
-    // Hash & create user
-    const nameParts = name.split(' ');
+    // Hash
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await dbQueries.createUser({
-      phone: phone,
-      firstName: nameParts[0] || 'User',
-      lastName: nameParts.slice(1).join(' ') || 'Account',
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      role: role || 'user'
-    });
-    console.warn('✅ User created:', { id: newUser.id, email: newUser.email }); // Temp
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || 'User';
+    const lastName = nameParts.slice(1).join(' ') || 'Account';
 
-    // Handle pendingOrder if provided (e.g., link to order)
+    // Direct INSERT (no dbQueries; assumes schema)
+    const userResult = await client.query(
+      `INSERT INTO users (phone, first_name, last_name, email, password, role, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id, email, phone, role`,
+      [phone, firstName, lastName, email.toLowerCase(), hashedPassword, role || 'user']
+    );
+    const newUser = userResult.rows[0];
+    console.warn('✅ User inserted:', newUser);
+
+    // PendingOrder link
     if (pendingOrder) {
-      // Example: Update order with user_id (adjust table/column as needed)
       await client.query('UPDATE orders SET sender_id = $1, status = $2 WHERE id = $3', [newUser.id, 'paid', pendingOrder]);
-      console.warn('✅ Pending order linked:', pendingOrder); // Temp
+      console.warn('✅ Order linked:', pendingOrder);
     }
 
-    // Generate session (immediate login)
+    // Session
     const sessionId = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    await client.query(
-      'INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)',
-      [sessionId, newUser.id, expiresAt]
-    );
-    console.warn('✅ Session created:', { sessionId: sessionId.slice(0, 8) + '...' }); // Temp
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await client.query('INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [sessionId, newUser.id, expiresAt]);
+    console.warn('✅ Session inserted');
 
     await client.query('COMMIT');
-    console.warn('✅ Transaction committed'); // Temp
+    console.warn('✅ Tx commit');
 
-    // Set cookie (coherent with login)
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -418,34 +416,28 @@ app.post('/api/auth/signup', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Update last_login
+    // Last login
     await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [newUser.id]);
 
     const duration = Date.now() - startTime;
-    console.warn('=== SIGNUP DEBUG END ===', { success: true, duration }); // Temp: Total time
+    console.warn('=== SIGNUP END ===', { duration, success: true });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'User created successfully',
-      user: { 
-        id: newUser.id, 
-        email: newUser.email, 
-        phone: newUser.phone,
-        role: newUser.role 
-      },
-      token: sessionId // For frontend localStorage fallback (use as Bearer if needed)
+      user: { id: newUser.id, email: newUser.email, phone: newUser.phone, role: newUser.role },
+      token: sessionId
     });
   } catch (error) {
     if (client) await client.query('ROLLBACK');
     const duration = Date.now() - startTime;
-    console.warn('=== SIGNUP ERROR ===', { error: error.message, code: error.code, duration }); // Temp: PG error details
-    res.status(500).json({ error: 'Error creating user', error: error.message });
+    console.error('=== SIGNUP ERROR ===', { message: error.message, code: error.code, duration });
+    res.status(500).json({ error: 'Error creating user' });
   } finally {
     if (client) client.release();
   }
 });
 
-// Login (consolidated, fixed with session DB insert and bcrypt)
 app.post('/api/auth/login', async (req, res) => {
   const startTime = Date.now();
   const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
@@ -458,14 +450,14 @@ app.post('/api/auth/login', async (req, res) => {
     const password = rawPassword?.trim();
     
     if (!email || !password) {
-      console.warn('Login failed: Missing credentials', { email, ip });
+      console.warn('Login: Missing credentials', { ip });
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    // Query: Include password for compare
+    // FIXED: Remove 'name' from SELECT (schema uses first_name/last_name)
     const userResult = await db.query(
       `SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, 
-       last_login, is_active, name, password 
+       last_login, is_active, password 
        FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true`,
       [email]
     );
@@ -473,32 +465,34 @@ app.post('/api/auth/login', async (req, res) => {
     console.log('Query result:', { rows: userResult.rows.length, email });
 
     if (userResult.rows.length === 0) {
-      console.warn('Login failed: No active user found', { email, ip, duration: Date.now() - startTime });
+      console.warn('Login: No user', { email, ip, duration: Date.now() - startTime });
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
 
     const rawUser = userResult.rows[0];
-    const user = { ...rawUser };  // Copy for response
-    delete user.password;  // Clean for JSON
+    const user = { 
+      ...rawUser,
+      name: `${rawUser.first_name} ${rawUser.last_name}`.trim() // Construct for frontend
+    };
+    delete user.password; // Clean
     
-    console.log('Password hash exists?', { hasHash: !!rawUser.password, userId: rawUser.id });
+    console.log('Hash check:', { hasHash: !!rawUser.password, userId: rawUser.id });
 
     if (!rawUser.password) {
-      console.warn('Login failed: No password hash in DB', { userId: rawUser.id, email, ip });
+      console.warn('Login: No hash', { userId: rawUser.id, email, ip });
       return res.status(401).json({ error: 'Compte corrompu - contactez l\'admin' });
     }
 
-    console.log('Reached password check for user:', rawUser.id);
     const isValid = await bcrypt.compare(password, rawUser.password);
     
     if (!isValid) {
-      console.warn('Login failed: Invalid password', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+      console.warn('Login: Invalid pw', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
       return res.status(401).json({ error: 'Le mot de passe est incorrect' });
     }
 
-    // Generate & INSERT session (PRODUCTION: Secure token)
+    // Session
     const sessionId = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);  // 7 days
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await db.query(
       'INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
@@ -506,7 +500,6 @@ app.post('/api/auth/login', async (req, res) => {
     );
     console.log('✅ Session created:', { sessionId: sessionId.slice(0, 8) + '...', userId: rawUser.id });
 
-    // Set cookie
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -514,14 +507,14 @@ app.post('/api/auth/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Update last_login
     await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [rawUser.id]);
 
-    console.info('Login successful', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+    console.info('Login success', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
 
     res.json({
       success: true,
-      user,  // Sans password
+      user,
+      token: sessionId, // Add for frontend consistency
       redirectTo: getRedirectUrl(rawUser.role)
     });
   } catch (error) {
