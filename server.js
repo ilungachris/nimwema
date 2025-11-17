@@ -352,92 +352,47 @@ app.get('/api/auth/me', async (req, res) => {
 // - Prod: No slow query fix (add INDEX on users(email, phone) in PG if persists: CREATE INDEX idx_users_email_phone ON users (LOWER(email), phone);).
 
 app.post('/api/auth/signup', async (req, res) => {
-  const startTime = Date.now();
-  console.warn('=== SIGNUP DEBUG START ===', { body: req.body, ip: req.ip });
-  let client;
+  console.warn('=== SIGNUP ENTRY ===', { body: req.body }); // Temp: See incoming data
   try {
-    const { name, email, phone, password, role, pendingOrder } = req.body;
+    const { name, email, phone, password, role } = req.body;
     
     if (!name || !email || !phone || !password) {
-      console.warn('Signup: Missing fields');
+      console.warn('Signup: Validation fail - missing fields'); // Temp
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
-    client = await db.pool.connect();
-    await client.query('BEGIN');
-    console.warn('✅ Tx begun');
-
-    // Existing check
-    const existingResult = await client.query(
-      'SELECT id, email FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2',
-      [email.toLowerCase(), phone]
-    );
-    console.warn('Existing:', { rows: existingResult.rows.length });
-    if (existingResult.rows.length > 0) {
-      const errorCode = existingResult.rows[0].email === email.toLowerCase() ? 'EMAIL_EXISTS' : 'PHONE_EXISTS';
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'User already exists', code: errorCode });
+    // Existing check (log rows)
+    const existingUser = await db.query('SELECT id FROM users WHERE email = $1 OR phone = $2', [email, phone]);
+    console.warn('Signup: Existing check', { rows: existingUser.rows.length }); // Temp: 0 = good
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'User already exists' });
     }
     
-    // Hash
+    const nameParts = name.split(' ');
     const hashedPassword = await bcrypt.hash(password, 10);
-    const nameParts = name.trim().split(/\s+/);
-    const firstName = nameParts[0] || 'User';
-    const lastName = nameParts.slice(1).join(' ') || 'Account';
-
-    // Direct INSERT (no dbQueries; assumes schema)
-    const userResult = await client.query(
-      `INSERT INTO users (phone, first_name, last_name, email, password, role, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id, email, phone, role`,
-      [phone, firstName, lastName, email.toLowerCase(), hashedPassword, role || 'user']
-    );
-    const newUser = userResult.rows[0];
-    console.warn('✅ User inserted:', newUser);
-
-    // PendingOrder link
-    if (pendingOrder) {
-      await client.query('UPDATE orders SET sender_id = $1, status = $2 WHERE id = $3', [newUser.id, 'paid', pendingOrder]);
-      console.warn('✅ Order linked:', pendingOrder);
-    }
-
-    // Session
-    const sessionId = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await client.query('INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [sessionId, newUser.id, expiresAt]);
-    console.warn('✅ Session inserted');
-
-    await client.query('COMMIT');
-    console.warn('✅ Tx commit');
-
-    res.cookie('sessionId', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+    console.warn('Signup: About to call createUser', { args: { phone, firstName: nameParts[0], lastName: nameParts.slice(1).join(' '), email, role: role || 'user' } }); // Temp: Verify args
+    
+    const newUser = await dbQueries.createUser({
+      phone: phone,
+      firstName: nameParts[0] || 'User',
+      lastName: nameParts.slice(1).join(' ') || 'Account',
+      email: email,
+      password: hashedPassword,
+      role: role || 'user'
     });
-
-    // Last login
-    await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [newUser.id]);
-
-    const duration = Date.now() - startTime;
-    console.warn('=== SIGNUP END ===', { duration, success: true });
-
-    res.json({
-      success: true,
+    console.warn('Signup: createUser success', { id: newUser.id }); // Temp: If here, user inserted!
+    
+    res.json({ 
+      success: true, 
       message: 'User created successfully',
-      user: { id: newUser.id, email: newUser.email, phone: newUser.phone, role: newUser.role },
-      token: sessionId
+      user: { id: newUser.id, email: newUser.email, phone: newUser.phone }
     });
   } catch (error) {
-    if (client) await client.query('ROLLBACK');
-    const duration = Date.now() - startTime;
-    console.error('=== SIGNUP ERROR ===', { message: error.message, code: error.code, duration });
+    console.warn('Signup: CATCH ERROR', { message: error.message, stack: error.stack }); // Temp: Exact PG/JS error
     res.status(500).json({ error: 'Error creating user' });
-  } finally {
-    if (client) client.release();
   }
 });
-
+/////////////
 app.post('/api/auth/login', async (req, res) => {
   const startTime = Date.now();
   const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
@@ -450,47 +405,43 @@ app.post('/api/auth/login', async (req, res) => {
     const password = rawPassword?.trim();
     
     if (!email || !password) {
-      console.warn('Login: Missing credentials', { ip });
+      console.warn('Login: Missing credentials', { ip }); // Temp
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    // FIXED: Remove 'name' from SELECT (schema uses first_name/last_name)
+    // REVERT: Original query (with 'name' – worked yesterday)
     const userResult = await db.query(
-      `SELECT id, phone, first_name, last_name, email, role, language, created_at, updated_at, 
+      `SELECT id, phone, name, email, role, created_at, updated_at, 
        last_login, is_active, password 
        FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true`,
       [email]
     );
     
-    console.log('Query result:', { rows: userResult.rows.length, email });
-
+    console.warn('Login: Query result', { rows: userResult.rows.length, email }); // Temp: If 0, user not in DB or is_active=false
+    
     if (userResult.rows.length === 0) {
-      console.warn('Login: No user', { email, ip, duration: Date.now() - startTime });
+      console.warn('Login: No user found', { email, ip }); // Temp
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
 
     const rawUser = userResult.rows[0];
-    const user = { 
-      ...rawUser,
-      name: `${rawUser.first_name} ${rawUser.last_name}`.trim() // Construct for frontend
-    };
-    delete user.password; // Clean
+    const user = { ...rawUser };  
+    delete user.password;  
     
-    console.log('Hash check:', { hasHash: !!rawUser.password, userId: rawUser.id });
-
+    console.warn('Login: Hash check', { hasHash: !!rawUser.password, userId: rawUser.id }); // Temp
+    
     if (!rawUser.password) {
-      console.warn('Login: No hash', { userId: rawUser.id, email, ip });
       return res.status(401).json({ error: 'Compte corrompu - contactez l\'admin' });
     }
 
     const isValid = await bcrypt.compare(password, rawUser.password);
     
     if (!isValid) {
-      console.warn('Login: Invalid pw', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+      console.warn('Login: Invalid password', { userId: rawUser.id, email, ip }); // Temp
       return res.status(401).json({ error: 'Le mot de passe est incorrect' });
     }
 
-    // Session
+    // Session (unchanged)
     const sessionId = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -509,17 +460,17 @@ app.post('/api/auth/login', async (req, res) => {
 
     await db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [rawUser.id]);
 
-    console.info('Login success', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+    console.info('Login successful', { userId: rawUser.id, email, ip, duration: Date.now() - startTime });
+    console.warn('=== LOGIN END ===', { success: true }); // Temp
 
     res.json({
       success: true,
-      user,
-      token: sessionId, // Add for frontend consistency
+      user,  
       redirectTo: getRedirectUrl(rawUser.role)
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error('Login exception:', { error: error.message, stack: error.stack, email: rawEmail, ip, duration });
+    console.warn('Login: EXCEPTION', { error: error.message, stack: error.stack, email: rawEmail, ip, duration }); // Temp: Catches query errors
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
