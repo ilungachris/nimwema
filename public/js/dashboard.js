@@ -61,15 +61,15 @@ function createPendingOrderCard(order) {
       <div class="order-details">
         <div class="detail-row">
           <span>Montant:</span>
-          <strong>${formatCurrency(order.amount, order.currency)} × ${order.quantity} = ${formatCurrency(order.total, order.currency)}</strong>
+          <strong>${formatCurrency(order.amount, order.currency)} × ${order.quantity} = ${formatCurrency(order.total_amount, order.currency)}</strong>
         </div>
         <div class="detail-row">
           <span>Méthode:</span>
-          <strong>${getPaymentMethodLabel(order.paymentMethod)}</strong>
+          <strong>${getPaymentMethodLabel(order.payment_method)}</strong>
         </div>
         <div class="detail-row">
           <span>Destinataires:</span>
-          <strong>${order.recipients?.length || order.quantity}</strong>
+          <strong>${order.quantity}</strong>
         </div>
       </div>
       <div class="order-actions">
@@ -118,11 +118,11 @@ async function loadTransactions() {
   
   try {
     // Fetch sent vouchers
-    const sentResponse = await fetch(`${CONFIG.API_BASE}/vouchers?phone=${encodeURIComponent(currentUser.phone)}&type=sent`, { credentials: 'include' });
+    const sentResponse = await fetch(`${CONFIG.API_BASE}/vouchers?phone=${encodeURIComponent(currentUser.phone || currentUser.email)}&type=sent`, { credentials: 'include' });
     const sentData = await sentResponse.json();
     
     // Fetch received vouchers
-    const receivedResponse = await fetch(`${CONFIG.API_BASE}/vouchers?phone=${encodeURIComponent(currentUser.phone)}&type=received`, { credentials: 'include' });
+    const receivedResponse = await fetch(`${CONFIG.API_BASE}/vouchers?phone=${encodeURIComponent(currentUser.phone || currentUser.email)}&type=received`, { credentials: 'include' });
     const receivedData = await receivedResponse.json();
     
     // Fetch pending orders (transactions in progress)
@@ -193,10 +193,10 @@ function createTransactionCard(tx) {
             <strong>${tx.message}</strong>
           </div>
         ` : ''}
-        ${tx.paymentMethod ? `
+        ${tx.payment_method ? `
           <div class="detail-row">
             <span>Méthode:</span>
-            <strong>${getPaymentMethodLabel(tx.paymentMethod)}</strong>
+            <strong>${getPaymentMethodLabel(tx.payment_method)}</strong>
           </div>
         ` : ''}
       </div>
@@ -252,7 +252,7 @@ function sortTransactions() {
 
 async function exportTransactions() {
   try {
-    const response = await fetch(`${CONFIG.API_BASE}/transactions/export?phone=${encodeURIComponent(currentUser.phone)}`, {
+    const response = await fetch(`${CONFIG.API_BASE}/transactions/export?phone=${encodeURIComponent(currentUser.phone || currentUser.email)}`, {
       credentials: 'include'
     });
     if (response.ok) {
@@ -283,8 +283,18 @@ async function loadRequests() {
   
   showLoading(container);
   
+  // FIXED: Null-check currentUser.phone (fallback to email if null)
+  if (!currentUser || (!currentUser.phone && !currentUser.email)) {
+    console.error('loadRequests: No user phone/email for filter');
+    container.innerHTML = getErrorState('Erreur utilisateur', 'Recharger la page');
+    return;
+  }
+  
+  const userIdentifier = currentUser.phone || currentUser.email;
+  console.log('loadRequests: Using identifier', userIdentifier); // Temp debug
+  
   try {
-    const response = await fetch(`${CONFIG.API_BASE}/requests?phone=${encodeURIComponent(currentUser.phone)}`, { credentials: 'include' });
+    const response = await fetch(`${CONFIG.API_BASE}/requests?phone=${encodeURIComponent(userIdentifier)}`, { credentials: 'include' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
     const requests = await response.json();
@@ -707,7 +717,6 @@ function getErrorState(title, action = 'Réessayer') {
 }
 
 function showNotification(message, type = 'info') {
-  // Simple toast (replace with full UI lib if needed)
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
   notification.textContent = message;
@@ -778,7 +787,6 @@ async function logout() {
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
-    // Clear any local data
     sessionStorage.clear();
     localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
     window.location.href = '/';
@@ -813,7 +821,7 @@ function startRefresh() {
   }, CONFIG.REFRESH_INTERVAL);
 }
 
-// FIXED checkAuth (token if present, no retry if token, detailed log only on fail)
+// FIXED checkAuth (no retry, token if present)
 async function checkAuth() {
   if (authChecked) return true;
   authChecked = true;
