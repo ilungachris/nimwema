@@ -4,55 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initRequestForm();
 });
 
-function initRequestForm() {
-  const form = document.getElementById('requestVoucherForm');
-  if (!form) return;
-  
-  
-    console.log('[RequestForm] initRequestForm: form found');
-  
-  
-  
-  
-  
-   // If main.js auto-wired a submit handler, remove it (prevents double-submit)
-  try {
-     if (typeof window.handleRequestVoucher === 'function') {
-       form.removeEventListener('submit', window.handleRequestVoucher);
-     }
-   } catch (e) {
-    // non-fatal; continue
-   }
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // Setup form validation
-  setupFormValidation();
-  
-  // Setup message counter
-  setupMessageCounter();
-  
-  // Setup phone formatting
-  setupPhoneFormatting();
-  
- // Attach submit handler in CAPTURE phase so we can stop others from firing
-  form.addEventListener('submit', handleFormSubmit, true);
-}
-
+function initRequestForm()
+/////
 // Toggle sender fields based on radio selection
 function toggleSenderFields() {
   const knownSenderRadio = document.querySelector('input[name="requestType"][value="known_sender"]');
