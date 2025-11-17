@@ -892,35 +892,40 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
 
 // Get user's pending orders from database
 app.get('/api/orders/my-pending', async (req, res) => {
+  console.log('Pending orders called', { sessionId: req.cookies?.sessionId?.slice(0, 8) + '...' }); // Temp: Confirm hit
   try {
     const sessionId = req.cookies?.sessionId;
     if (!sessionId) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-    
-    // Get user from session
-    const userResult = await db.query('SELECT phone FROM users WHERE id = $1 AND is_active = true', [sessionId]);
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'User not found' });
-    }
-    
-    const userPhone = userResult.rows[0].phone;
-    
-    const result = await db.query(
-      `SELECT id, amount, currency, quantity, total_amount as total, payment_method as "paymentMethod",
-       status, message, created_at as "createdAt"
-       FROM orders 
-       WHERE sender_phone = $1 AND status IN ($2, $3)
-       ORDER BY created_at DESC`,
-      [userPhone, 'pending', 'pending_payment']
-    );
-    
-    res.json({ success: true, orders: result.rows });
-  } catch (error) {
-    console.error('Get pending orders error:', error);
+    }// FIXED: Join sessions + users for userPhone (sessionId != user ID; UUID vs hex mismatch)
+const userResult = await db.query(
+  'SELECT u.phone FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP AND u.is_active = true',
+  [sessionId]
+);
+if (userResult.rows.length === 0) {
+  return res.status(401).json({ success: false, message: 'Session invalid or user inactive' });
+}
+
+const userPhone = userResult.rows[0].phone;
+console.log('User phone from session:', userPhone); // Temp: Confirm phone
+
+const result = await db.query(
+  `SELECT id, amount, currency, quantity, total_amount as total, payment_method as "paymentMethod",
+   status, message, created_at as "createdAt"
+   FROM orders 
+   WHERE sender_phone = $1 AND status IN ($2, $3)
+   ORDER BY created_at DESC`,
+  [userPhone, 'pending', 'pending_payment']
+);
+
+console.log('Pending orders result:', { rows: result.rows.length }); // Temp
+res.json({ success: true, orders: result.rows });  } catch (error) {
+    console.error('Get pending orders error:', error); // Temp: Any remaining
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+
 
 // Get order by ID (synced global/data)
 app.get('/api/orders/:id', (req, res) => {
