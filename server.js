@@ -315,6 +315,74 @@ app.post('/api/auth/logout', authMiddleware.requireAuth, async (req, res) => {
 // Get current user (fixed: Include phone/email)
 // ... (existing imports, app setup, middleware)
 
+
+
+
+
+// ... (existing imports: add if missing - const crypto = require('crypto'); but you have it for sessions)
+
+// CUSTOM MIDDLEWARE: Authenticate via DB sessions table (cookie or Bearer)
+function authenticateSession(req, res, next) {
+  let sessionId;
+  
+  // Try Bearer token first (frontend localStorage flow)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    sessionId = authHeader.substring(7);
+  } else {
+    // Fallback to cookie
+    const cookieHeader = req.headers.cookie;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [name, value] = cookie.trim().split('=');
+        acc[name] = value;
+        return acc;
+      }, {});
+      sessionId = cookies.sessionId;
+    }
+  }
+  
+  if (!sessionId) {
+    return res.status(401).json({ success: false, error: 'No session' });
+  }
+  
+  pool.query(
+    'SELECT user_id, expires FROM sessions WHERE id = $1',
+    [sessionId]
+  )
+  .then(({ rows }) => {
+    if (rows.length === 0 || new Date(rows[0].expires) < new Date()) {
+      // Expired/invalid: Clear cookie if present
+      if (req.headers.cookie && req.headers.cookie.includes('sessionId')) {
+        res.clearCookie('sessionId', { 
+          httpOnly: true, 
+          secure: process.env.NODE_ENV === 'production', 
+          sameSite: 'lax',
+          domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined 
+        });
+      }
+      return res.status(401).json({ success: false, error: 'Invalid session' });
+    }
+    
+    req.user_id = rows[0].user_id;
+    req.sessionId = sessionId;
+    next();
+  })
+  .catch(err => {
+    console.error('Session auth error:', err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  });
+}
+
+// Now your routes can use it: app.get('/api/auth/me', authenticateSession, async (req, res) => { ... }
+
+
+
+
+
+
+
+
 // FIXED: /api/auth/me - Full user SELECT (no password leak, camelCase aliases for frontend)
 app.get('/api/auth/me', authenticateSession, async (req, res) => {  // Assumes authenticateSession middleware sets req.user_id from session
   try {
