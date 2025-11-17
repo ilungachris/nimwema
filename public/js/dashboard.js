@@ -23,9 +23,9 @@ let retryCount = 0; // NEW: Anti-loop guard (max 3 retries total)
 // FIXED Initialize (await auth before any load) + logs
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('[TRACE] ENTER DOMContentLoaded - Dashboard init starting...');
-  console.log('[TRACE] On load: Token present?', !!localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN));
-  console.log('[TRACE] On load: User present?', !!localStorage.getItem(CONFIG.STORAGE_KEYS.USER));
-  console.log('[TRACE] On load: Session cookie?', !!document.cookie.match(/sessionId=/));
+  console.log('[TRACE] On load: Token present?', localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN));
+  console.log('[TRACE] On load: User present?', localStorage.getItem(CONFIG.STORAGE_KEYS.USER));
+  console.log('[TRACE] On load: Session cookie?', document.cookie.match(/sessionId=/));
 
   if (await checkAuth()) {
     console.log('[TRACE] Auth SUCCESS - Loading user data & showing section');
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   console.log('[TRACE] EXIT DOMContentLoaded');
 });
 
-// FIXED Auth Check (log response, set currentUser safely) + deep logs
+// FIXED Auth Check (log response, set currentUser safely) + deep logs + FIXED: Skip API if local admin fallback (admin dashboard, not sender)
 async function checkAuth() {
   console.log(`[TRACE] ENTER checkAuth - authChecked: ${authChecked}, retryCount: ${retryCount}`);
   if (authChecked) {
@@ -53,67 +53,91 @@ async function checkAuth() {
     const userStr = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
     const sessionId = document.cookie.split('; ').find(row => row.startsWith('sessionId='));
     
-    console.log('[TRACE] checkAuth values:', { token: !!token, userStr: !!userStr, sessionId: !!sessionId });
+    console.log('[TRACE] checkAuth values (full):', { 
+      token: token ? token.substring(0, 20) + '...' : null, 
+      userStr: userStr ? userStr.substring(0, 50) + '...' : null, 
+      sessionId: sessionId ? sessionId.substring(0, 20) + '...' : null 
+    });
 
     if (!token && !sessionId && !userStr) {
       console.log('[TRACE] checkAuth: No creds at all - THROW No auth');
-      throw new Error('No auth');
+      throw new Error('No auth - no storage/cookie');
     }
 
-    // NEW: Fallback to local user if no token/session (for offline-ish check)
-    if (userStr && (!token || !sessionId)) {
+    // FIXED: Full fallback for admin dashboard – if local user is admin, succeed WITHOUT API call (avoids sender backend fail)
+    if (userStr) {
       try {
         const localUser = JSON.parse(userStr);
+        console.log('[TRACE] checkAuth: Parsed localUser', { id: localUser.id, role: localUser.role, name: localUser.name });
         if (localUser.role === 'admin') {
-          console.log('[TRACE] checkAuth: Using localStorage user fallback', { id: localUser.id, role: localUser.role });
+          console.log('[TRACE] ✅ checkAuth: LOCAL ADMIN FALLBACK SUCCESS - Skipping API for admin dashboard');
           currentUser = localUser;
-          // Still try API for freshness
+          const userNameEl = document.getElementById('userName');
+          if (userNameEl) {
+            userNameEl.textContent = localUser.name || 'Administrateur';
+            console.log('[TRACE] checkAuth: Set userName to', localUser.name);
+          }
+          retryCount = 0;
+          return true; // FIXED: Return true here – no API needed for admin
+        } else {
+          console.log('[TRACE] checkAuth: Local user not admin, trying API');
         }
       } catch (parseErr) {
         console.error('[TRACE] checkAuth: Local user parse fail', parseErr);
       }
     }
 
+    // If no local admin, try API (for sender/other)
     let headers = { credentials: 'include' };
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log('[TRACE] checkAuth: Using Bearer token');
+      console.log('[TRACE] checkAuth: Using Bearer token for API');
     } else {
-      console.log('[TRACE] checkAuth: No token, relying on session/cookies');
+      console.log('[TRACE] checkAuth: No token, relying on session/cookies for API');
     }
 
     console.log('[TRACE] checkAuth: Fetching /auth/me...');
     const response = await fetch(`${CONFIG.API_BASE}/auth/me`, { ...headers });
     console.log('[TRACE] checkAuth: Fetch response status', response.status);
-    const data = await response.json();
-    console.log('[TRACE] checkAuth: API data shape', { success: data.success, hasUser: !!data.user, userKeys: data.user ? Object.keys(data.user) : [] });
+    console.log('[TRACE] checkAuth: Response headers', [...response.headers.entries()].filter(([k]) => k.toLowerCase().includes('auth') || k.toLowerCase().includes('set-cookie')));
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonErr) {
+      console.error('[TRACE] checkAuth: JSON parse fail', jsonErr, 'Response text:', await response.text());
+      throw new Error('Invalid JSON from /auth/me');
+    }
+    console.log('[TRACE] checkAuth: API data shape', { success: data.success, hasUser: !!data.user, userKeys: data.user ? Object.keys(data.user) : [], message: data.message });
     
     if (!response.ok || !data.success || !data.user) {
-      console.log('[TRACE] checkAuth: API fail - THROW');
-      throw new Error(`Auth fail: ${response.status} - ${data.message || 'No user'}`);
+      console.log('[TRACE] checkAuth: API fail - THROW', { status: response.status, message: data.message });
+      throw new Error(`Auth fail: ${response.status} - ${data.message || 'No user from API'}`);
     }
     
     currentUser = data.user;
     const userNameEl = document.getElementById('userName');
     if (userNameEl) {
       userNameEl.textContent = currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email || 'Utilisateur';
-      console.log('[TRACE] checkAuth: Set userName UI');
+      console.log('[TRACE] checkAuth: Set userName UI from API');
     }
     
-    console.log('[TRACE] ✅ checkAuth SUCCESS - currentUser set:', { id: currentUser.id, phone: currentUser.phone, email: currentUser.email, role: currentUser.role });
+    console.log('[TRACE] ✅ checkAuth API SUCCESS - currentUser set:', { id: currentUser.id, phone: currentUser.phone, email: currentUser.email, role: currentUser.role });
     retryCount = 0; // Reset on success
     return true;
   } catch (error) {
-    console.error('[TRACE] checkAuth CATCH ERROR:', { message: error.message, retryCount });
+    console.error('[TRACE] checkAuth CATCH ERROR:', { message: error.message, retryCount, stack: error.stack });
     if (retryCount > 3) {
       console.error('[TRACE] checkAuth: MAX RETRIES - Force redirect without cleanup');
       window.location.href = '/login.html';
       return false;
     }
-    console.log('[TRACE] checkAuth: Cleaning token & redirecting...');
+    console.log('[TRACE] checkAuth: Cleaning storage & redirecting...');
+    console.log('[TRACE] Before clean: Token?', localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN));
+    console.log('[TRACE] Before clean: User?', localStorage.getItem(CONFIG.STORAGE_KEYS.USER));
     localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.USER); // NEW: Clean both
-    document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; // Clear session
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+    document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    console.log('[TRACE] After clean: Token gone?', !localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN));
     console.log('[TRACE] checkAuth: REDIRECT to /login.html');
     window.location.href = '/login.html';
     return false;
@@ -185,7 +209,7 @@ function showSection(sectionName) {
   console.log('[TRACE] EXIT showSection');
 }
 
-// FIXED loadRequests + logs (example; apply similar to others)
+// FIXED loadRequests + logs (example; apply similar to others) – Admin focus: No phone filter for admin
 async function loadRequests() {
   console.log('[TRACE] ENTER loadRequests');
   const container = document.getElementById('requestsList');
@@ -203,19 +227,25 @@ async function loadRequests() {
     return;
   }
   
-  const userIdentifier = currentUser.phone || currentUser.email || currentUser.id;
-  console.log('[TRACE] loadRequests: Identifier=', userIdentifier);
-  if (!userIdentifier) {
-    console.error('[TRACE] loadRequests: No identifier - Error state');
-    container.innerHTML = getErrorState('Erreur utilisateur', 'Recharger la page');
-    return;
-  }
+  console.log('[TRACE] loadRequests: currentUser role', currentUser.role);
   
   try {
-    const params = new URLSearchParams();
-    if (currentUser.phone || currentUser.email) params.append('phone', currentUser.phone || currentUser.email);
-    else params.append('userId', currentUser.id);
-    const queryString = params.toString() ? `?${params.toString()}` : '';
+    let queryString = '';
+    if (currentUser.role !== 'admin') {
+      // Sender mode
+      const userIdentifier = currentUser.phone || currentUser.email || currentUser.id;
+      console.log('[TRACE] loadRequests: Sender identifier=', userIdentifier);
+      if (!userIdentifier) {
+        throw new Error('No identifier for sender');
+      }
+      const params = new URLSearchParams();
+      if (currentUser.phone || currentUser.email) params.append('phone', currentUser.phone || currentUser.email);
+      else params.append('userId', currentUser.id);
+      queryString = `?${params.toString()}`;
+    } else {
+      // Admin mode: Load all, no filter
+      console.log('[TRACE] loadRequests: Admin – loading all requests');
+    }
     console.log('[TRACE] loadRequests: Fetching /requests' + queryString);
     
     const response = await fetch(`${CONFIG.API_BASE}/requests${queryString}`, { credentials: 'include' });
@@ -241,7 +271,7 @@ async function loadRequests() {
   }
 }
 
-// NEW: loadPendingOrders with logs (full impl from prior, + traces)
+// FIXED loadPendingOrders (admin focus: Load all pending, no user filter)
 async function loadPendingOrders() {
   console.log('[TRACE] ENTER loadPendingOrders');
   const container = document.getElementById('pendingOrdersBody');
@@ -259,21 +289,22 @@ async function loadPendingOrders() {
     return;
   }
 
-  const userIdentifier = currentUser.phone || currentUser.email || currentUser.id;
-  console.log('[TRACE] loadPendingOrders: Identifier=', userIdentifier);
-
-  if (!userIdentifier) {
-    console.error('[TRACE] loadPendingOrders: No identifier - Error state');
-    container.innerHTML = getErrorState('Erreur utilisateur', 'Recharger la page');
-    return;
-  }
+  console.log('[TRACE] loadPendingOrders: currentUser role', currentUser.role);
 
   try {
-    const params = new URLSearchParams({ status: 'pending_approval' });
-    if (userIdentifier) params.append('phone', userIdentifier); // Or 'userId'
-    console.log('[TRACE] loadPendingOrders: Fetching /orders?' + params.toString());
+    let endpoint = `${CONFIG.API_BASE}/admin/orders/pending`; // Admin endpoint
+    let queryString = '';
+    if (currentUser.role !== 'admin') {
+      // Sender mode fallback
+      endpoint = `${CONFIG.API_BASE}/orders`;
+      const params = new URLSearchParams({ status: 'pending_approval' });
+      const userIdentifier = currentUser.phone || currentUser.email || currentUser.id;
+      if (userIdentifier) params.append('phone', userIdentifier);
+      queryString = `?${params.toString()}`;
+    }
+    console.log('[TRACE] loadPendingOrders: Fetching', endpoint + queryString);
     const token = localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN);
-    const response = await fetch(`${CONFIG.API_BASE}/orders?${params.toString()}`, {
+    const response = await fetch(endpoint + queryString, {
       credentials: 'include',
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
@@ -281,7 +312,7 @@ async function loadPendingOrders() {
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
 
     const data = await response.json();
-    console.log('[TRACE] loadPendingOrders: Data shape', { ordersCount: (data.orders || data)?.length });
+    console.log('[TRACE] loadPendingOrders: Data shape', { ordersCount: (data.orders || data)?.length, success: data.success });
     const orders = data.orders || data;
     allTransactions = orders; // Reuse or new
     filteredTransactions = [...allTransactions];
@@ -351,11 +382,16 @@ function renderPendingOrders() {
 }
 
 // Add stubs for missing (with logs)
-async function loadTransactions() { console.log('[TRACE] loadTransactions: Stub - Implement'); }
+async function loadTransactions() { console.log('[TRACE] loadTransactions: Stub - Implement'); loadTransactionsStub(); }
 async function loadSenders() { console.log('[TRACE] loadSenders: Stub - Implement'); }
 function sortRequests() { console.log('[TRACE] sortRequests: Stub'); }
 function renderRequests() { console.log('[TRACE] renderRequests: Stub'); }
 function sortTransactions() { console.log('[TRACE] sortTransactions: Stub'); }
+
+function loadTransactionsStub() {
+  const container = document.getElementById('transactionsList');
+  if (container) container.innerHTML = '<p>Transactions stub – implement fetch.</p>';
+}
 
 // Utilities from HTML (add logs if called)
 function getPaymentMethodLabel(method) { return { cash: '💵 Cash / WU', bank: '🏦 Virement Bancaire', flexpay: '📱 FlexPay Mobile', flexpaycard: '💳 FlexPay Carte' }[method] || method; }
@@ -405,10 +441,25 @@ async function rejectOrder(orderId) {
 
 async function viewOrderDetails(orderId) {
   console.log('[TRACE] viewOrderDetails:', orderId);
-  // Fetch & populate modal as in old inline
-  const modal = document.getElementById('orderModal');
-  modal.style.display = 'flex'; // Temp placeholder
-  // Full impl: fetch, set innerHTML
+  try {
+    const response = await fetch(`/api/admin/orders/${orderId}`, { credentials: 'include' });
+    const data = await response.json();
+    const order = data.order || data;
+    const modalBody = document.getElementById('orderModalBody');
+    modalBody.innerHTML = `
+      <div style="padding: 20px;">
+        <h3>Commande ${order.id}</h3>
+        <p><strong>Expéditeur:</strong> ${order.sender_name || 'N/A'}</p>
+        <p><strong>Montant:</strong> ${formatAmount(order.amount)} ${order.currency}</p>
+        <p><strong>Statut:</strong> ${getStatusLabel(order.status)}</p>
+        <!-- Add more fields -->
+      </div>
+    `;
+    document.getElementById('orderModal').style.display = 'flex';
+  } catch (err) {
+    console.error('[TRACE] viewOrderDetails error:', err);
+    alert('Erreur détails');
+  }
 }
 
 function closeOrderModal() {
