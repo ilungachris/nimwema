@@ -3,6 +3,40 @@ const AfricasTalking = require('africastalking');
 
 class SMSService {
   constructor() {
+
+
+
+
+constructor() {
+  this.provider = process.env.SMS_PROVIDER || 'africas_talking';
+  this.apiKey   = process.env.SMS_API_KEY;
+  this.username = process.env.SMS_USERNAME;
+  this.senderId = process.env.SMS_SENDER_ID || null;
+
+  console.log('[SMSService] Username:', this.username);
+  console.log(
+    '[SMSService] API key (first 20):',
+    this.apiKey ? this.apiKey.substring(0, 75) + '...' : 'NOT SET'
+  );
+
+  try {
+    const AfricasTalking = require('africastalking');
+    this.at = AfricasTalking({
+      apiKey: this.apiKey,
+      username: this.username
+    });
+    this.sms = this.at.SMS;
+    console.log("Africa's Talking SDK initialized successfully");
+  } catch (error) {
+    console.error("Failed to initialize Africa's Talking SDK:", error);
+    this.sms = null;
+  }
+}
+
+
+
+
+/*
     this.provider = process.env.SMS_PROVIDER || 'africas_talking';
     this.apiKey = process.env.SMS_API_KEY;
     this.username = process.env.SMS_USERNAME;
@@ -19,7 +53,7 @@ class SMSService {
       console.error("Failed to initialize Africa's Talking SDK:", error);
       this.sms = null;
     }
-  }
+  }*/
 
   async send(phone, message) {
     try {
