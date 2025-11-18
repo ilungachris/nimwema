@@ -717,6 +717,7 @@ function applyRequestFiltersAndRender() {
         const typeLabel = typeVal === 'known_sender' ? 'Expéditeur connu' : 'Liste d\'attente';
 
         const created = req.created_at || req.createdAt;
+        
         const expires = req.expires_at || req.expiresAt;
 
         const fullName = req.fullName || (
