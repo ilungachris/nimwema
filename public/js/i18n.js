@@ -9,8 +9,8 @@ const translations = {
     
     // Homepage
     tagline: "Bons d'achat simples et sécurisés.",
-    hero_line1: "Le bien circule.",
-    hero_line2: "Les bénédictions suivent.",
+    hero_line1: "Le bien donné.",
+    hero_line2: "revient couronné.",
     send_now: "Envoyer maintenant",
     support_text: "« Soutenez votre famille dans toute la RDC, remerciez votre personnel, surprenez un ami, offrez un cadeau, bénissez un frère, une sœur... »",
     good_heart: "Retrouvons notre bon Cœur",
@@ -20,8 +20,8 @@ const translations = {
     
     // About
     our_story: "Notre Histoire",
-    story_text: "Au cœur de l'Afrique, il existe une richesse plus profonde que l'or et le cuivre — celle du cœur congolais. Depuis toujours, notre peuple a su partager le peu qu'il avait, accueillir, donner, et se relever ensemble. Cette solidarité, héritée de nos villages, est notre plus grand trésor.",
-    story_text2: "Nimwema — qui signifie « bonté » — est née pour faire vivre cet esprit dans le monde moderne. C'est une plateforme congolaise d'entraide simple, rapide et sûre, où chaque geste de générosité devient un lien entre les cœurs.",
+    story_text: "Au cœur de l'Afrique, il existe une richesse plus profonde que l'or et le cuivre, celle du cœur congolais. Depuis toujours, notre peuple a su partager le peu qu'il avait, accueillir, donner, et se relever ensemble. Cette solidarité, héritée de nos villages, est notre plus grand trésor.",
+    story_text2: "Nimwema, qui signifie « bonté », est née pour faire vivre cet esprit dans le monde moderne. C'est une plateforme congolaise d'entraide simple, rapide et sûre, où chaque geste de générosité devient un lien entre les cœurs.",
     
     // Footer
     quick_links: "Liens Rapides",

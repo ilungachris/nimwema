@@ -104,25 +104,25 @@ const data = {
   merchants: [
     {
       id: 1,
-      name: 'Supermarché Central',
+      name: 'Kin Marché',
       logo: 'https://via.placeholder.com/80x80/8BC34A/111111?text=SC',
       fee_percent: 3.5
     },
     {
       id: 2,
-      name: 'Marché Moderne',
+      name: 'Swissmart',
       logo: 'https://via.placeholder.com/80x80/8BC34A/111111?text=MM',
       fee_percent: 3.5
     },
     {
       id: 3,
-      name: 'Alimentation Plus',
+      name: 'Regal',
       logo: 'https://via.placeholder.com/80x80/8BC34A/111111?text=AP',
       fee_percent: 3.5
     },
     {
       id: 4,
-      name: 'Épicerie du Coin',
+      name: 'Belissima',
       logo: 'https://via.placeholder.com/80x80/8BC34A/111111?text=EC',
       fee_percent: 3.5
     }
