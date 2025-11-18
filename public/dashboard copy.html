@@ -235,6 +235,9 @@
 <script src="/js/i18n.js"></script>
 <script src="/js/main.js"></script>
 <script>
+
+
+
 function renderOrders(orders) {
     const container = document.getElementById('pendingOrdersList');
 
@@ -286,8 +289,6 @@ function renderOrders(orders) {
     let refreshInterval = null;
     
 let currentUser = null;
-    let allRequests = [];
-
 
 function checkAuth() {
     const userStr = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
@@ -338,78 +339,47 @@ function checkAuth() {
         }
     }
     
-    
-function showSection(sectionName) {
-    console.log('[TRACE] showSection:', sectionName);
-
-    // Ensure we have a user object if possible
+    function showSection(sectionName) {
+        console.log('[TRACE] showSection:', sectionName);
     if (!currentUser) {
         console.log('[TRACE] No user – check auth (once)');
-        if (!checkAuth()) {
-            return;
-        }
+        checkAuth(); // FIXED: Call once, no .then recurse – let it redirect if fail
+        return; // FIXED: Exit early, no load if no auth
     }
-
-    // Update active item in sidebar
-    const navItems = document.querySelectorAll('.dashboard-nav .nav-item');
-    navItems.forEach(item => item.classList.remove('active'));
-
-    const map = {
-        'pending-orders': '#pending-orders',
-        'requests': '#requests',
-        'senders': '#senders'
-    };
-
-    // If called from a click, event.currentTarget will be set
-    let activeLink = null;
-    const evt = window.event;
-    if (evt && evt.currentTarget && evt.currentTarget.classList.contains('nav-item')) {
-        activeLink = evt.currentTarget;
-    } else {
-        const selector = map[sectionName];
-        if (selector) {
-            activeLink = document.querySelector(`.dashboard-nav a[href="${selector}"]`);
-        }
-    }
-    if (activeLink) {
-        activeLink.classList.add('active');
-    }
-
-    // Switch visible section
-    document.querySelectorAll('.dashboard-section').forEach(section => {
-        section.classList.remove('active');
-    });
-
-    let targetSection = null;
-    switch (sectionName) {
-        case 'pending-orders':
-            targetSection = document.getElementById('pendingOrdersSection');
-            if (typeof loadPendingOrders === 'function') {
+       
+       
+       
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+        
+        document.querySelectorAll('.dashboard-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        let targetSection;
+        switch(sectionName) {
+            case 'pending-orders':
+                targetSection = document.getElementById('pendingOrdersSection');
                 loadPendingOrders();
-            }
-            break;
-        case 'requests':
-            targetSection = document.getElementById('requestsSection');
-            if (typeof loadRequests === 'function') {
+                break;
+            case 'requests':
+                targetSection = document.getElementById('requestsSection');
                 loadRequests();
-            }
-            break;
-        case 'senders':
-            targetSection = document.getElementById('sendersSection');
-            if (typeof loadSenders === 'function') {
+                break;
+            case 'senders':
+                targetSection = document.getElementById('sendersSection');
                 loadSenders();
-            }
-            break;
-        default:
-            break;
+                break;
+        }
+        
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
     }
-
-    if (targetSection) {
-        targetSection.classList.add('active');
-    }
-}
-
-async function loadPendingOrders() {
+    
+    async function loadPendingOrders() {
         const container = document.getElementById('pendingOrdersList');
         
         try {
@@ -554,218 +524,15 @@ async function loadPendingOrders() {
         }
     }
     
-    
-function loadRequests() {
-    const container = document.getElementById('requestsList');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="loading-state">
-            <p data-i18n="loading">Chargement...</p>
-        </div>
-    `;
-
-    function loadLocalRequests() {
-        const STORAGE_KEY = 'nimwema_requests';
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return [];
-            const items = JSON.parse(raw) || [];
-            return items
-                .filter(it => it && it.id)
-                .map(it => ({
-                    id: it.id,
-                    fullName: it.name || '',
-                    firstName: null,
-                    lastName: null,
-                    phone: it.phone,
-                    message: '',
-                    requestType: 'waiting_list',
-                    senderName: null,
-                    senderPhone: null,
-                    status: it.status || 'pending',
-                    created_at: it.createdAt ? new Date(it.createdAt).toISOString() : new Date().toISOString(),
-                    expires_at: it.expiresAt ? new Date(it.expiresAt).toISOString() : null,
-                    source: 'local'
-                }));
-        } catch (e) {
-            console.warn('Error parsing local requests:', e);
-            return [];
-        }
-    }
-
-    async function loadRemoteRequests() {
-        try {
-            const params = new URLSearchParams();
-            if (currentUser) {
-                if (currentUser.id) {
-                    params.append('userId', currentUser.id);
-                }
-                if (currentUser.phone) {
-                    params.append('phone', currentUser.phone);
-                }
-            }
-            const qs = params.toString();
-            const url = qs ? `${CONFIG.API_BASE}/requests?${qs}` : `${CONFIG.API_BASE}/requests`;
-            const resp = await fetch(url, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'
-            });
-            if (!resp.ok) {
-                console.warn('loadRequests remote failed with status', resp.status);
-                return [];
-            }
-            const data = await resp.json();
-            if (!Array.isArray(data)) {
-                console.warn('loadRequests remote returned non-array', data);
-                return [];
-            }
-            // Ensure consistent shape
-            return data.map(req => ({
-                ...req,
-                source: 'remote'
-            }));
-        } catch (e) {
-            console.error('Error loading remote requests:', e);
-            return [];
-        }
-    }
-
-    (async () => {
-        const [remote, local] = await Promise.all([
-            loadRemoteRequests(),
-            loadLocalRequests()
-        ]);
-
-        const byId = new Map();
-        remote.forEach(r => {
-            if (!r || r.id == null) return;
-            byId.set(String(r.id), r);
-        });
-        local.forEach(r => {
-            if (!r || r.id == null) return;
-            const key = String(r.id);
-            if (!byId.has(key)) {
-                byId.set(key, r);
-            }
-        });
-
-        allRequests = Array.from(byId.values());
-        applyRequestFiltersAndRender();
-    })();
-}
-
-function applyRequestFiltersAndRender() {
-    const container = document.getElementById('requestsList');
-    if (!container) return;
-
-    if (!allRequests || allRequests.length === 0) {
-        container.innerHTML = `
+    function loadRequests() {
+        document.getElementById('requestsList').innerHTML = `
             <div class="empty-state">
-                <p data-i18n="no_requests">Aucune demande pour l'instant</p>
+                <p>Fonction en développement</p>
             </div>
         `;
-        return;
     }
-
-    const statusFilterEl = document.getElementById('statusFilter');
-    const typeFilterEl = document.getElementById('typeFilter');
-    const sortSelectEl = document.getElementById('sortSelect');
-
-    const status = statusFilterEl ? statusFilterEl.value : 'all';
-    const type = typeFilterEl ? typeFilterEl.value : 'all';
-    const sortMode = sortSelectEl ? sortSelectEl.value : 'date_desc';
-
-    let items = allRequests.slice();
-
-    if (status && status !== 'all') {
-        items = items.filter(r => (r.status || 'pending') === status);
-    }
-
-    if (type && type !== 'all') {
-        items = items.filter(r => (r.requestType || r.type || 'waiting_list') === type);
-    }
-
-    items.sort((a, b) => {
-        const da = new Date(a.created_at || a.createdAt || 0).getTime();
-        const db = new Date(b.created_at || b.createdAt || 0).getTime();
-        if (sortMode === 'date_asc') return da - db;
-        if (sortMode === 'date_desc') return db - da;
-        if (sortMode === 'status') {
-            return String(a.status || '').localeCompare(String(b.status || ''));
-        }
-        return db - da;
-    });
-
-    container.innerHTML = items.map(req => {
-        const statusVal = req.status || 'pending';
-        let statusClass = 'status-pending';
-        let statusLabel = 'En attente';
-        if (statusVal === 'fulfilled' || statusVal === 'received') {
-            statusClass = 'status-success';
-            statusLabel = 'Reçue';
-        } else if (statusVal === 'expired') {
-            statusClass = 'status-expired';
-            statusLabel = 'Expirée';
-        } else if (statusVal === 'cancelled' || statusVal === 'canceled') {
-            statusClass = 'status-failed';
-            statusLabel = 'Annulée';
-        }
-
-        const typeVal = req.requestType || req.type || 'waiting_list';
-        const typeLabel = typeVal === 'known_sender' ? 'Expéditeur connu' : 'Liste d\'attente';
-
-        const created = req.created_at || req.createdAt;
-        const expires = req.expires_at || req.expiresAt;
-
-        const fullName = req.fullName || (
-            req.firstName ? (req.firstName + ' ' + (req.lastName || '')) : 'Demande'
-        );
-
-        return `
-            <div class="order-card request-card">
-                <div class="order-header">
-                    <div>
-                        <h3>${escapeHTML(fullName)}</h3>
-                        <p class="text-small">${created ? formatDate(created) : ''}</p>
-                    </div>
-                    <span class="status-badge ${statusClass}">${statusLabel}</span>
-                </div>
-                <div class="order-details">
-                    <div class="detail-row">
-                        <span>Tél. bénéficiaire:</span>
-                        <strong>${escapeHTML(req.phone || '')}</strong>
-                    </div>
-                    <div class="detail-row">
-                        <span>Type:</span>
-                        <strong>${typeLabel}</strong>
-                    </div>
-                    ${expires ? `
-                    <div class="detail-row">
-                        <span>Expire le:</span>
-                        <strong>${formatDate(expires)}</strong>
-                    </div>` : ''}
-                    ${req.message ? `
-                    <div class="detail-row">
-                        <span>Message:</span>
-                        <span>${escapeHTML(req.message)}</span>
-                    </div>` : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function filterRequests() {
-    applyRequestFiltersAndRender();
-}
-
-function sortRequests() {
-    applyRequestFiltersAndRender();
-}
-
-function loadSenders() {
+    
+    function loadSenders() {
         document.getElementById('sendersList').innerHTML = `
             <div class="empty-state">
                 <p>Fonction en développement</p>
@@ -797,21 +564,11 @@ function loadSenders() {
     function filterRequests() {}
     function sortRequests() {}
     
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     console.log('[TRACE] DOMLoaded – check auth once');
-    if (checkAuth()) {
-        if (currentUser && currentUser.role === 'requester') {
-            // Requester: show their requests (including session/local ones)
-            showSection('requests');
-        } else {
-            // Sender or other: keep current behaviour on pending orders
-            showSection('pending-orders');
-            refreshInterval = setInterval(function() {
-                if (typeof loadPendingOrders === 'function') {
-                    loadPendingOrders();
-                }
-            }, CONFIG.REFRESH_INTERVAL);
-        }
+    if (checkAuth()) { // FIXED: If fail, redirects – no further execution
+        loadPendingOrders();
+        refreshInterval = setInterval(loadPendingOrders, CONFIG.REFRESH_INTERVAL); // FIXED: Set interval only if auth OK
     }
 });
     
