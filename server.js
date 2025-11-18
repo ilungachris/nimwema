@@ -2009,28 +2009,28 @@ app.get('/api/merchants/approved', async (req, res) => {
     const merchants = [
       {
         id: '1',
-        businessName: 'Supermarché Central',
+        businessName: 'Kin Marché',
         businessType: 'supermarket',
         city: 'kinshasa',
         logo: null
       },
       {
         id: '2',
-        businessName: 'Marché Moderne',
+        businessName: 'Swissmart',
         businessType: 'grocery',
         city: 'kinshasa',
         logo: null
       },
       {
         id: '3',
-        businessName: 'Alimentation Plus',
+        businessName: 'Regal',
         businessType: 'grocery',
         city: 'lubumbashi',
         logo: null
       },
       {
         id: '4',
-        businessName: 'Épicerie du Coin',
+        businessName: 'Belissima',
         businessType: 'grocery',
         city: 'kinshasa',
         logo: null
