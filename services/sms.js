@@ -29,14 +29,28 @@ class SMSService {
 
       console.log('[SMSService] send() received phone:', phone);
 
-      const options = {
+     /**   const options = {
         to: [phone],
         message: message
       };
 
       if (this.senderId) {
         options.from = this.senderId;
-      }
+      }*/
+
+
+
+
+        const options = {
+  to: [phone],
+  message: message
+};
+
+// Only use from in production; avoid custom sender in sandbox
+if (this.senderId && process.env.SMS_USERNAME !== 'sandbox') {
+  options.from = this.senderId;
+}
+
 
       console.log('📱 Sending SMS:', {
         to: phone,

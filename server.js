@@ -465,6 +465,73 @@ app.get('/api/auth/me', authenticateSession, async (req, res) => {  // Assumes a
   }
 });*/
 
+
+
+
+
+
+
+// ========== TEST SMS ENDPOINT (DIRECT) ==========
+const AfricasTalking = require('africastalking');
+
+app.post('/api/test-sms-direct', async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+
+    if (!phone || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone and message are required'
+      });
+    }
+
+    console.log('\n📱 TEST SMS DIRECT REQUEST');
+    console.log('Phone:', phone);
+    console.log('Message:', message);
+    console.log('Env Username:', process.env.SMS_USERNAME);
+    console.log('Env API key (first 10):', process.env.SMS_API_KEY ? process.env.SMS_API_KEY.substring(0, 10) + '...' : 'NOT SET');
+
+    const at = AfricasTalking({
+      apiKey: process.env.SMS_API_KEY,
+      username: process.env.SMS_USERNAME
+    });
+
+    const smsClient = at.SMS;
+
+    const options = {
+      to: [phone],
+      message
+    };
+
+    const response = await smsClient.send(options);
+    console.log('✅ DIRECT SMS Response:', JSON.stringify(response, null, 2));
+
+    res.json({ success: true, data: response });
+  } catch (error) {
+    console.error('❌ DIRECT Test SMS error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: {
+        status: error.response?.status,
+        data: error.response?.data
+      }
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ... (rest of routes unchanged: login sets cookie/sessionId, logout DELETE sessions, etc.)
 
 // REPLACEMENT SNIPPET: Replace the entire app.post('/api/auth/signup', ...) block with this.
