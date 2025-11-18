@@ -7,7 +7,7 @@ class SMSService {
 
 
 
-constructor() {
+ 
   this.provider = process.env.SMS_PROVIDER || 'africas_talking';
   this.apiKey   = process.env.SMS_API_KEY;
   this.username = process.env.SMS_USERNAME;
