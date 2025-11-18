@@ -181,8 +181,6 @@ function formatCurrency(amount) {
 
 // Instantiate services (from backup)
 const sms = new SMSService();
-
-// MERGE: Added SMS helper from backup (as-is with real service)
 async function sendSMSNotification(phone, data) {
   console.log('\n📱 SMS NOTIFICATION');
   console.log('To:', phone);
@@ -192,14 +190,15 @@ async function sendSMSNotification(phone, data) {
     let result;
     
     if (data.type === 'voucher_request') {
-      // Send request notification
+      // FIXED ARGUMENT ORDER
       result = await sms.sendRequestNotification(
-        data.requesterName,
-        data.requesterPhone,
+        phone,                // correct phone target
+        data.requesterName,   //  
         data.message
       );
+
     } else if (data.type === 'voucher_sent') {
-      // Send voucher code
+
       const amountText = data.currency === 'USD' 
         ? `${data.amount} USD` 
         : `${formatCurrency(data.amount)} CDF`;
@@ -211,22 +210,26 @@ async function sendSMSNotification(phone, data) {
         data.senderName,
         new Date(data.expiresAt)
       );
+
     } else if (data.type === 'payment_confirmation') {
-      // Send payment confirmation
+
       result = await sms.sendPaymentConfirmation(
         phone,
         data.quantity,
         data.amount,
         data.currency
       );
+
     } else if (data.type === 'redemption_confirmation') {
-      // Send redemption confirmation
+
       result = await sms.sendRedemptionConfirmation(
         phone,
         data.amount,
         data.merchantName
       );
+
     } else if (data.type === 'thank_you') {
+
       result = await sms.send(phone, data.message, 'thank_you');
     }
     
@@ -242,6 +245,7 @@ async function sendSMSNotification(phone, data) {
     return { success: false, message: error.message };
   }
 }
+
 
 // Helper to determine redirect URL based on role (from backup)
 function getRedirectUrl(role) {
