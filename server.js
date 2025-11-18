@@ -181,6 +181,8 @@ function formatCurrency(amount) {
 
 // Instantiate services (from backup)
 const sms = new SMSService();
+
+
 async function sendSMSNotification(phone, data) {
   console.log('\n📱 SMS NOTIFICATION');
   console.log('To:', phone);
@@ -190,15 +192,18 @@ async function sendSMSNotification(phone, data) {
     let result;
     
     if (data.type === 'voucher_request') {
-      // FIXED ARGUMENT ORDER
-      result = await sms.sendRequestNotification(
-        phone,                // correct phone target
-        data.requesterName,   //  
-        data.message
+      // 🔁 USE THE SAME PATH AS /api/test-sms: sms.sendSMS(...)
+      const smsMessage = `Nimwema: ${data.requesterName} vous demande un bon d'achat. ` +
+        `Message: "${data.message}". Répondez sur nimwema.com`;
+
+      // This is the *same* method your test file uses (sms.sendSMS)
+      result = await sms.sendSMS(
+        phone,          // sender phone: +2438...
+        smsMessage,     // built message
+        'voucher_request'
       );
 
     } else if (data.type === 'voucher_sent') {
-
       const amountText = data.currency === 'USD' 
         ? `${data.amount} USD` 
         : `${formatCurrency(data.amount)} CDF`;
@@ -212,7 +217,6 @@ async function sendSMSNotification(phone, data) {
       );
 
     } else if (data.type === 'payment_confirmation') {
-
       result = await sms.sendPaymentConfirmation(
         phone,
         data.quantity,
@@ -221,7 +225,6 @@ async function sendSMSNotification(phone, data) {
       );
 
     } else if (data.type === 'redemption_confirmation') {
-
       result = await sms.sendRedemptionConfirmation(
         phone,
         data.amount,
@@ -229,7 +232,6 @@ async function sendSMSNotification(phone, data) {
       );
 
     } else if (data.type === 'thank_you') {
-
       result = await sms.send(phone, data.message, 'thank_you');
     }
     
@@ -246,6 +248,7 @@ async function sendSMSNotification(phone, data) {
   }
 }
 
+/////////////////////////////
 
 // Helper to determine redirect URL based on role (from backup)
 function getRedirectUrl(role) {
