@@ -84,7 +84,7 @@ const FLEXPAY_BASE_URL = process.env.FLEXPAY_BASE_URL || 'https://cardpayment.fl
 const FLEXPAY_MERCHANT = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
 const FLEXPAY_TOKEN    = process.env.FLEXPAY_TOKEN?.trim();
 const FLEXPAY_CURRENCY = (process.env.FLEXPAY_CURRENCY || 'CDF').toUpperCase();
-const APP_BASE_URL     = process.env.APP_BASE_URL || 'https://nimwema-platform.onrender.com';
+const APP_BASE_URL     = process.env.BASE_URL || 'https://nimwema-platform.onrender.com';
 
 global.orders = global.orders || {};
 const orderByFlexpayNo = {};
@@ -2450,7 +2450,7 @@ app.post('/api/payment/flexpay/card/initiate', async (req, res) => {
     // FIXED: Call real FlexPay service for card payment
     console.log('🔐 Initiating FlexPay card payment:', { orderId, amount, currency });
 
-    const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
+    const APP_BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
     
     console.log('Calling FlexPay with env:', { FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL });
     const result = await flexpayService.initiateHostedCardPayment({
@@ -3037,7 +3037,7 @@ app.get('/api/debug/flexpay-env', (req, res) => {
     FLEXPAY_BASE_URL: !!process.env.FLEXPAY_BASE_URL,
     FLEXPAY_MERCHANT: !!process.env.FLEXPAY_MERCHANT,
     FLEXPAY_TOKEN: !!process.env.FLEXPAY_TOKEN,
-    APP_BASE_URL: !!process.env.APP_BASE_URL,
+    APP_BASE_URL: !!process.env.BASE_URL,
     node_version: process.version,
     has_fetch: typeof fetch === 'function'
   });

@@ -84,7 +84,8 @@ const FLEXPAY_BASE_URL = process.env.FLEXPAY_BASE_URL || 'https://cardpayment.fl
 const FLEXPAY_MERCHANT = process.env.FLEXPAY_MERCHANT || 'CPOSSIBLE';
 const FLEXPAY_TOKEN    = process.env.FLEXPAY_TOKEN?.trim();
 const FLEXPAY_CURRENCY = (process.env.FLEXPAY_CURRENCY || 'CDF').toUpperCase();
-const APP_BASE_URL     = process.env.APP_BASE_URL || 'https://nimwema-platform.onrender.com';
+//const APP_BASE_URL     = process.env.APP_BASE_URL || 'https://nimwema-platform.onrender.com';
+const APP_BASE_URL     = process.env.BASE_URL || 'https://nimwema-platform.onrender.com';
 
 global.orders = global.orders || {};
 const orderByFlexpayNo = {};
