@@ -363,7 +363,7 @@ function showSection(sectionName) {
     // If called from a click, event.currentTarget will be set
     let activeLink = null;
     const evt = window.event;
-    if (evt && evt.currentTarget && evt.currentTarget.classList.contains('nav-item')) {
+    if (evt && evt.currentTarget && evt.currentTarget.classList && evt.currentTarget.classList.contains('nav-item')) {
         activeLink = evt.currentTarget;
     } else {
         const selector = map[sectionName];
@@ -597,14 +597,10 @@ function loadRequests() {
     async function loadRemoteRequests() {
         try {
             const params = new URLSearchParams();
-            if (currentUser) {
-                if (currentUser.id) {
-                    params.append('userId', currentUser.id);
-                }
-                if (currentUser.phone) {
-                    params.append('phone', currentUser.phone);
-                }
-            }
+// Use phone only so requests are found if they are linked either to session or to this number
+if (currentUser && currentUser.phone) {
+    params.append('phone', currentUser.phone);
+}
             const qs = params.toString();
             const url = qs ? `${CONFIG.API_BASE}/requests?${qs}` : `${CONFIG.API_BASE}/requests`;
             const resp = await fetch(url, {
@@ -795,8 +791,6 @@ function loadSenders() {
         document.querySelector('.dashboard-sidebar').classList.toggle('mobile-open');
     }
     
-    function filterRequests() {}
-    function sortRequests() {}
     
 document.addEventListener('DOMContentLoaded', function() {
     console.log('[TRACE] DOMLoaded – check auth once');
