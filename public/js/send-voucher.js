@@ -39,7 +39,7 @@ function initializeSendForm() {
 // ============================================
 async function loadExchangeRate() {
   try {
-    const response = await fetch(`${API_BASE}/api/exchange-rate`);
+    const response = await fetch('/api/exchange-rate');
     const data = await response.json();
     
     if (data.success && data.rate) {
@@ -260,7 +260,7 @@ async function loadWaitingList() {
   try {
     container.innerHTML = '<div class="loading-state"><p>Chargement...</p></div>';
     
-    const response = await fetch(`${API_BASE}/api/requests?status=pending&requestType=waiting_list`);
+    const response = await fetch('/api/requests?status=pending&requestType=waiting_list');
     const data = await response.json();
     
     if (data.success && data.requests && data.requests.length > 0) {
@@ -563,7 +563,7 @@ async function processFlexPayMobilePayment(formData) {
     const totalCDF = calculateTotalCDF(formData);
     
     // Step 3: Initiate FlexPay payment
-    const initResponse = await fetch(`${API_BASE}/api/payment/flexpay/initiate`, {
+    const initResponse = await fetch('/api/payment/flexpay/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -616,7 +616,7 @@ async function processFlexPayCardPayment(formData) {
     const totalAmount = calculateTotalAmount(formData);
     
     // Step 3: Initiate hosted payment
-    const hostedResponse = await fetch(`${API_BASE}/api/payment/flexpay/initiate-card`, {
+    const hostedResponse = await fetch('/api/payment/flexpay/initiate-card', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -652,7 +652,7 @@ async function processManualPayment(formData) {
 console.log('🔍 Sending formData to create-pending:', formData); // Debug payload
 
     // Create pending order
-    const response = await fetch(`${API_BASE}/api/vouchers/create-pending`, {
+    const response = await fetch('/api/vouchers/create-pending', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
@@ -679,7 +679,7 @@ console.log('🔍 Sending formData to create-pending:', formData); // Debug payl
 // HELPER FUNCTIONS
 // ============================================
 async function createPendingOrder(formData) {
-  const response = await fetch(`${API_BASE}/api/vouchers/create-pending`, {
+  const response = await fetch('/api/vouchers/create-pending', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(formData)
@@ -726,7 +726,7 @@ async function pollPaymentStatus(orderNumber, orderId) {
     await new Promise(resolve => setTimeout(resolve, pollInterval));
     
     try {
-      const response = await fetch(`${API_BASE}/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}`);
+      const response = await fetch('/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}');
  
       const data = await response.json();
       
@@ -749,7 +749,7 @@ async function pollPaymentStatus(orderNumber, orderId) {
 
 async function finalizeOrder(orderId) {
   try {
-    await fetch(`${API_BASE}/api/vouchers/finalize`, {
+    await fetch('/api/vouchers/finalize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId })

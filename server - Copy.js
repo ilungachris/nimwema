@@ -332,7 +332,7 @@ app.post('/api/auth/logout', authMiddleware.requireAuth, async (req, res) => {
 
 
 // Exchange Rate (merged: advanced from backup with fallback)
-app.get(`${API_BASE}/api/exchange-rate`, async (req, res) => {
+app.get('/api/exchange-rate', async (req, res) => {
   try {
     let rate = 2200; // Default fallback
     

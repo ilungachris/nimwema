@@ -283,7 +283,7 @@ async function showFlexPayPopupAndPay(orderId, amount) {
         showLoadingSpinner();
         
         // Initiate FlexPay payment
-        const response = await fetch(`${API_BASE}/api/payment/flexpay/initiate`, {
+        const response = await fetch('/api/payment/flexpay/initiate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
