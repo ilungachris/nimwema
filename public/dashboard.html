@@ -594,40 +594,54 @@ function loadRequests() {
         }
     }
 
-    async function loadRemoteRequests() {
-        try {
-            const params = new URLSearchParams();
-// Use phone only so requests are found if they are linked either to session or to this number
-if (currentUser && currentUser.phone) {
-    params.append('phone', currentUser.phone);
-}
-            const qs = params.toString();
-            const url = qs ? `${CONFIG.API_BASE}/requests?${qs}` : `${CONFIG.API_BASE}/requests`;
-            const resp = await fetch(url, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'
-            });
-            if (!resp.ok) {
-                console.warn('loadRequests remote failed with status', resp.status);
-                return [];
-            }
-            const data = await resp.json();
-            if (!Array.isArray(data)) {
-                console.warn('loadRequests remote returned non-array', data);
-                return [];
-            }
-            // Ensure consistent shape
-            return data.map(req => ({
-                ...req,
-                source: 'remote'
-            }));
-        } catch (e) {
-            console.error('Error loading remote requests:', e);
+async function loadRemoteRequests() {
+    try {
+        const params = new URLSearchParams();
+
+        // Scope strictly to current user: prefer phone, fallback to userId
+        if (currentUser && currentUser.phone) {
+            params.append('phone', currentUser.phone);
+        } else if (currentUser && currentUser.id) {
+            params.append('userId', currentUser.id);
+        }
+
+        // Safety: never call /api/requests without a filter
+        const qs = params.toString();
+        if (!qs) {
+            console.warn('loadRemoteRequests: no phone or userId on currentUser, skipping remote load');
             return [];
         }
-    }
 
+        const url = `${CONFIG.API_BASE}/requests?${qs}`;
+        const resp = await fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+
+        if (!resp.ok) {
+            console.warn('loadRequests remote failed with status', resp.status);
+            return [];
+        }
+
+        const data = await resp.json();
+        if (!Array.isArray(data)) {
+            console.warn('loadRequests remote returned non-array', data);
+            return [];
+        }
+
+        // Ensure consistent shape
+        return data.map(req => ({
+            ...req,
+            source: 'remote'
+        }));
+    } catch (e) {
+        console.error('Error loading remote requests:', e);
+        return [];
+    }
+}
+
+//////
     (async () => {
         const [remote, local] = await Promise.all([
             loadRemoteRequests(),

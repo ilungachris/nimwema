@@ -514,6 +514,21 @@
   color: var(--grey-700);
 }
 
+
+
+/* Extra vertical spacing between each pending order card */
+#pendingOrdersList .order-card + .order-card {
+    margin-top: 1rem; /* adjust up/down to taste */
+}
+
+/* Optional: same spacing for requests cards */
+#requestsList .order-card + .order-card {
+    margin-top: 1rem;
+}
+
+
+
+
 /* ============================================
    RESPONSIVE DESIGN
    ============================================ */

@@ -1,3 +1,27 @@
+let CURRENT_USER = null;
+let currentUserPromise = null;
+
+async function fetchCurrentUser() {
+  if (CURRENT_USER) return CURRENT_USER;
+  if (currentUserPromise) return currentUserPromise;
+
+  currentUserPromise = fetch('/api/auth/me', {
+    credentials: 'include'
+  }).then(async res => {
+    if (!res.ok) {
+      throw new Error('Not authenticated');
+    }
+    const data = await res.json();
+    CURRENT_USER = data.user || data; // depending on your /api/auth/me format
+    return CURRENT_USER;
+  }).catch(err => {
+    console.error('Failed to load current user:', err);
+    CURRENT_USER = null;
+    throw err;
+  });
+
+  return currentUserPromise;
+}
 
 
 // Export globals (safe now)
