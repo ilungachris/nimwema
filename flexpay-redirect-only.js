@@ -25,7 +25,7 @@ async function processFlexPayPayment(formData) {
         document.body.appendChild(loadingDiv);
         
         // Create order
-        const orderResponse = await fetch('/api/vouchers/create-pending', {
+        const orderResponse = await fetch(`${API_BASE}/api/vouchers/create-pending`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)

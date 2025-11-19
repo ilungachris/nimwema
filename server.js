@@ -933,9 +933,12 @@ app.post('/api/auth/create-guest-account', async (req, res) => {
   }
 });
 
+app.post('/api/payment/flexpay/initiate-card', async (req, res) => {
+  return app._router.handle(req, res, 'POST', '/api/payment/flexpay/card/initiate');
+});
 
 // Exchange Rate (merged: advanced from backup with fallback)
-app.get('/api/exchange-rate', async (req, res) => {
+app.get(`${API_BASE}/api/exchange-rate`, async (req, res) => {
   try {
     let rate = 2200; // Default fallback
     

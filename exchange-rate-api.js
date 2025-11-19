@@ -1,7 +1,7 @@
 // Add this to your server.js file
 
 // EXCHANGE RATE API
-app.get('/api/exchange-rate', async (req, res) => {
+app.get(`${API_BASE}/api/exchange-rate`, async (req, res) => {
     try {
         // Try to get real exchange rate from BCC.cd
         let rate = 2200; // Default fallback rate
