@@ -13,8 +13,6 @@ const PAYMENT_SUCCESS_URL = '/payment-success.html';
 const PAYMENT_CANCEL_URL = '/payment-cancel.html';
 const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
 
-const API_BASE = process.env.API_BASE || '';
-
 // State
 let currentCurrency = 'USD';
 let exchangeRate = DEFAULT_EXCHANGE_RATE;
