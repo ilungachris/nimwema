@@ -196,6 +196,16 @@ async function sendSMSNotification(phone, data) {
       const smsMessage = `Nimwema: ${data.requesterName} vous demande un bon d'achat. ` +
         `Message: "${data.message}". Répondez sur nimwema.com`;
 
+
+  console.log('📲 [SMS DEBUG] voucher_request sending via SMSService.sendSMS', {
+    phone,
+    requesterName: data.requesterName,
+    envUsername: process.env.SMS_USERNAME,
+    apiKeyLen: process.env.SMS_API_KEY ? process.env.SMS_API_KEY.length : 0
+  });
+
+
+
       // This is the *same* method your test file uses (sms.sendSMS)
       result = await sms.sendSMS(
         phone,          // sender phone: +2438...
@@ -241,6 +251,9 @@ async function sendSMSNotification(phone, data) {
       console.log('⚠️ SMS failed:', result?.message || 'Unknown error');
     }
     
+  console.log('📲 [SMS DEBUG] voucher_request result:', JSON.stringify(result, null, 2));
+
+
     return result;
   } catch (error) {
     console.error('❌ SMS error:', error);
