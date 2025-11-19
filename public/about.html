@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nimwema - À propos</title>
+    <meta name="description" content="Découvrez l'histoire, la mission et la vision de Nimwema, la plateforme congolaise de bons d'achat simples et sécurisés.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span>Connexion</span> / <span>Bienvenue</span>
+            </button>
+        </div>
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="section" style="padding-top:2.5rem;">
+            <div class="container container-narrow">
+                <h1>À propos de Nimwema</h1>
+                <p>
+                    Nimwema est une plateforme congolaise de bons d'achat qui rend la solidarité simple, rapide et sécurisée.
+                    En quelques clics, vous pouvez envoyer un soutien concret à une personne en RDC, que ce soit pour remplir
+                    un panier, dire merci, bénir un proche ou encourager un collaborateur.
+                </p>
+                <p>
+                    Notre priorité : une expérience claire et fiable, où chaque bon d'achat est un geste d'amour qui fait
+                    circuler le bien et restaure la dignité de celui qui reçoit.
+                </p>
+            </div>
+        </section>
+
+        <section class="section" style="background:var(--paper);">
+            <div class="container container-narrow">
+                <h2>Notre histoire</h2>
+                <p>
+                    Au cœur de l’Afrique, il existe une richesse plus profonde que l’or et le cuivre : celle du cœur congolais.
+                    Depuis toujours, notre peuple a su partager le peu qu’il avait, accueillir, donner et se relever ensemble.
+                    Cette solidarité, héritée de nos villages, est notre plus grand trésor.
+                </p>
+                <p>
+                    Nimwema — qui signifie « bonté » — est née pour faire vivre cet esprit dans le monde moderne. Nous réunissons
+                    la simplicité des bons d’achat et la puissance du numérique pour que la générosité devienne un geste du
+                    quotidien : clair, traçable et sécurisé.
+                </p>
+                <p>
+                    Ici, un bon d’achat n’est pas qu’un code : c’est une bénédiction en transit, une main tendue d’un frère à
+                    un autre, d’une entreprise à une famille, d’une église à ses membres.
+                </p>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container container-narrow">
+                <h2>Notre mission</h2>
+                <p>
+                    Nous voulons rendre la bonté visible et pratique. Quand vous envoyez un bon, vous n’aidez pas seulement
+                    aujourd’hui : vous posez un acte qui peut changer une semaine, un mois, parfois une saison entière
+                    dans la vie d’une personne.
+                </p>
+                <ul>
+                    <li>Faciliter l’envoi de bons d’achat vers toute la RDC en quelques étapes simples.</li>
+                    <li>Donner aux bénéficiaires une expérience digne et sécurisée chez nos marchands partenaires.</li>
+                    <li>Permettre aux entreprises, ONG et églises de gérer leurs aides avec transparence.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section" style="background:var(--paper);">
+            <div class="container container-narrow">
+                <h2>Pour qui est Nimwema&nbsp;?</h2>
+                <div class="card">
+                    <h3>Pour les familles et la diaspora</h3>
+                    <p>
+                        Envoyez un bon d’achat alimentaire plutôt que de l’argent liquide. Vous savez à quoi il servira,
+                        et votre proche peut acheter ce dont il a réellement besoin, chez un marchand partenaire.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>Pour les employeurs et organisations</h3>
+                    <p>
+                        Offrez des bons à votre personnel, à vos équipes de terrain ou à vos bénéficiaires,
+                        de manière structurée et traçable, avec des rapports simplifiés pour vos comptes.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>Pour les marchands partenaires</h3>
+                    <p>
+                        Attirez une clientèle nouvelle, sécurisez vos encaissements et bénéficiez de rapports de
+                        réconciliation clairs, sans gérer la complexité des paiements digitaux.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container container-narrow">
+                <h2>Notre promesse</h2>
+                <p>
+                    Nimwema unit les familles, relie les générations et met la technologie au service de la bonté.
+                    Nous travaillons chaque jour à offrir une plateforme simple, transparente et humaine, qui reflète
+                    le meilleur du cœur africain.
+                </p>
+                <p style="margin-top:1.5rem; font-size:0.9rem; color:var(--grey-700);">
+                    Nimwema est un projet de GWD du groupe Cpossible.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html">Envoyer un bon</a></li>
+                        <li><a href="/request.html">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html">Comment ça marche</a></li>
+                        <li><a href="/about.html">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/terms.html">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.cd<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

@@ -37,6 +37,9 @@ const dbQueries = require('./database/queries');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const API_BASE = process.env.API_BASE || '';
+
+
 // DATABASE: Connect to PostgreSQL on startup
 let dbConnected = false;
 db.connect()

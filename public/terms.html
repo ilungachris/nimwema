@@ -3,287 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conditions d'utilisation - Nimwema</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <style>
-        .terms-container {
-            max-width: 900px;
-            margin: 50px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .terms-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #8BC34A;
-        }
-
-        .terms-header h1 {
-            color: #111111;
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .terms-header p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .terms-content h2 {
-            color: #111111;
-            font-size: 24px;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-
-        .terms-content h3 {
-            color: #111111;
-            font-size: 18px;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-
-        .terms-content p {
-            color: #333;
-            line-height: 1.8;
-            margin-bottom: 15px;
-        }
-
-        .terms-content ul, .terms-content ol {
-            margin: 15px 0;
-            padding-left: 30px;
-        }
-
-        .terms-content li {
-            color: #333;
-            line-height: 1.8;
-            margin-bottom: 10px;
-        }
-
-        .highlight-box {
-            background: #e8f5e9;
-            border-left: 4px solid #8BC34A;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-
-        .highlight-box p {
-            margin: 0;
-            color: #111111;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 12px 24px;
-            background: #8BC34A;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: background 0.3s;
-        }
-
-        .back-link:hover {
-            background: #7CB342;
-        }
-    </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+    <title>Nimwema - Termes et conditions</title>
+    <meta name="description" content="Conditions générales d'utilisation des bons d'achat Nimwema : fonctionnement, responsabilité et limites.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <a href="index.html">
-                    <span class="logo">NIMWEMA</span>
-                </a>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
             </div>
-            <div class="nav-links">
-                <a href="index.html">Accueil</a>
-                <a href="request.html">Demander</a>
-                <a href="send.html">Envoyer</a>
-                <a href="thank-you.html">Dire Merci</a>
-                <a href="terms.html" class="active">Conditions</a>
-                <div class="language-selector">
-                    <button id="languageToggle" class="language-btn">
-                        <span id="currentLanguage">FR</span>
-                    </button>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span>Connexion</span> / <span>Bienvenue</span>
+            </button>
+        </div>
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="section" style="padding-top:2.5rem;">
+            <div class="container container-narrow">
+                <h1>Termes et conditions</h1>
+                <p>
+                    Les présents termes et conditions encadrent l’utilisation de la plateforme Nimwema et des bons
+                    d’achat émis via celle-ci. En utilisant nos services, vous acceptez ces conditions.
+                </p>
+            </div>
+        </section>
+
+        <section class="section" style="background:var(--paper);">
+            <div class="container container-narrow">
+                <h2>1. Nature des bons Nimwema</h2>
+                <ul>
+                    <li>Les bons Nimwema sont des bons d’achat numériques utilisables une seule fois.</li>
+                    <li>Ils sont identifiés par un code numérique unique transmis au bénéficiaire, le plus souvent par SMS.</li>
+                    <li>Les bons sont utilisables uniquement auprès des marchands partenaires indiqués sur la plateforme.</li>
+                </ul>
+
+                <h2>2. Validité et expiration</h2>
+                <ul>
+                    <li>Chaque bon possède une date d’expiration affichée ou communiquée au moment de son émission.</li>
+                    <li>Par défaut, les bons expirent 90 jours après leur émission, sauf indication contraire dans l’application.</li>
+                    <li>Un bon expiré ne peut plus être utilisé, ni prolongé par défaut.</li>
+                </ul>
+
+                <h2>3. Exactitude des numéros de téléphone</h2>
+                <p>
+                    L’envoi de bons se fait principalement par numéro de téléphone. Il est de la responsabilité exclusive
+                    de l’expéditeur de vérifier l’exactitude du numéro renseigné avant de confirmer le paiement.
+                </p>
+                <ul>
+                    <li>Nimwema n’est pas responsable en cas d’envoi à un mauvais numéro.</li>
+                    <li>Une fois le bon envoyé au numéro indiqué, il est considéré comme délivré au bénéficiaire.</li>
+                </ul>
+
+                <h2>4. Absence de droit au remboursement</h2>
+                <p>
+                    Il n’y a pas de remboursement automatique pour les bons non utilisés, expirés ou envoyés à un mauvais numéro.
+                </p>
+                <ul>
+                    <li>Aucun échange ou recrédit n’est garanti pour un bon déjà émis.</li>
+                    <li>En cas de problème technique avéré du côté Nimwema ou d’un marchand, notre équipe pourra examiner la situation au cas par cas.</li>
+                </ul>
+
+                <h2>5. Utilisation en magasin</h2>
+                <ul>
+                    <li>Le bénéficiaire présente son code au marchand partenaire pour l’utiliser.</li>
+                    <li>Une fois le bon validé et utilisé en caisse, l’opération est définitive et ne peut pas être annulée.</li>
+                    <li>Le marchand est responsable de la qualité des biens et services fournis en échange du bon.</li>
+                </ul>
+
+                <h2>6. Frais de service</h2>
+                <ul>
+                    <li>Des frais de service peuvent s’appliquer à chaque opération (par exemple 3,5&nbsp;% du montant).</li>
+                    <li>Selon les options disponibles, l’expéditeur peut choisir de prendre ces frais à sa charge.</li>
+                    <li>Les frais applicables sont affichés de manière claire avant la confirmation du paiement.</li>
+                </ul>
+
+                <h2>7. Sécurité et fraude</h2>
+                <ul>
+                    <li>Nimwema met en place des mesures pour limiter la fraude et protéger les transactions.</li>
+                    <li>Nous pouvons suspendre ou annuler un bon en cas de suspicion de fraude, d’abus ou d’utilisation contraire à la loi.</li>
+                    <li>Tout usage de la plateforme à des fins illégales est strictement interdit.</li>
+                </ul>
+
+                <h2>8. Données personnelles</h2>
+                <p>
+                    Le traitement de vos données personnelles est décrit dans notre
+                    <a href="/privacy.html">Politique de confidentialité</a>. En utilisant Nimwema, vous acceptez que
+                    certaines informations soient traitées pour permettre la création, l’envoi et l’utilisation des bons.
+                </p>
+
+                <h2>9. Modifications des conditions</h2>
+                <p>
+                    Nimwema peut adapter ces termes et conditions pour tenir compte de l’évolution de ses services ou
+                    de la réglementation. La version en vigueur est celle publiée sur ce site. L’utilisation continue du
+                    service après mise à jour vaut acceptation des nouvelles conditions.
+                </p>
+
+                <h2>10. Contact</h2>
+                <p>
+                    Pour toute question relative à ces termes, vous pouvez nous contacter à l’adresse suivante&nbsp;:<br>
+                    <strong>info@nimwema.cd</strong>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html">Envoyer un bon</a></li>
+                        <li><a href="/request.html">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html">Comment ça marche</a></li>
+                        <li><a href="/about.html">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/terms.html">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.cd<br>
+                        Kinshasa, RDC
+                    </p>
                 </div>
             </div>
-        </div>
-    </nav>
-
-    <div class="terms-container">
-        <div class="terms-header">
-            <h1>Conditions d'utilisation</h1>
-            <p>Dernière mise à jour : 29 octobre 2024</p>
-        </div>
-
-        <div class="terms-content">
-            <div class="highlight-box">
-                <p><strong>Bienvenue sur Nimwema !</strong> En utilisant notre plateforme, vous acceptez les présentes conditions d'utilisation. Veuillez les lire attentivement.</p>
-            </div>
-
-            <h2>1. Présentation du service</h2>
-            <p>Nimwema est une plateforme de solidarité qui permet l'envoi et la réception de bons d'achat électroniques en République Démocratique du Congo. Notre mission est de faciliter l'entraide entre les membres de la communauté congolaise.</p>
-
-            <h2>2. Acceptation des conditions</h2>
-            <p>En accédant et en utilisant Nimwema, vous acceptez d'être lié par ces conditions d'utilisation, toutes les lois et réglementations applicables. Si vous n'acceptez pas l'une de ces conditions, vous n'êtes pas autorisé à utiliser ce service.</p>
-
-            <h2>3. Inscription et compte utilisateur</h2>
-            <h3>3.1 Création de compte</h3>
-            <ul>
-                <li>Vous devez fournir des informations exactes et complètes lors de l'inscription</li>
-                <li>Vous êtes responsable de la confidentialité de votre mot de passe</li>
-                <li>Vous devez avoir au moins 18 ans pour créer un compte</li>
-                <li>Un seul compte par personne est autorisé</li>
-            </ul>
-
-            <h3>3.2 Sécurité du compte</h3>
-            <ul>
-                <li>Vous êtes responsable de toutes les activités effectuées sous votre compte</li>
-                <li>Vous devez nous informer immédiatement de toute utilisation non autorisée</li>
-                <li>Nimwema ne sera pas responsable des pertes résultant d'une utilisation non autorisée</li>
-            </ul>
-
-            <h2>4. Utilisation des bons d'achat</h2>
-            <h3>4.1 Envoi de bons</h3>
-            <ul>
-                <li>Les bons peuvent être envoyés à toute personne disposant d'un numéro de téléphone valide</li>
-                <li>Le montant minimum est de 10 USD</li>
-                <li>Le montant maximum par transaction est de 5,000 USD</li>
-                <li>Les frais de service sont de 3.5% du montant total</li>
-                <li>Les bons sont valables pendant 90 jours à compter de la date d'émission</li>
-            </ul>
-
-            <h3>4.2 Réception de bons</h3>
-            <ul>
-                <li>Les bons sont envoyés par SMS au numéro de téléphone du bénéficiaire</li>
-                <li>Le code du bon doit être présenté au commerçant pour utilisation</li>
-                <li>Un bon ne peut être utilisé qu'une seule fois</li>
-                <li>Les bons expirés ne peuvent pas être utilisés ou remboursés</li>
-            </ul>
-
-            <h3>4.3 Utilisation chez les commerçants</h3>
-            <ul>
-                <li>Les bons ne peuvent être utilisés que chez les commerçants partenaires agréés</li>
-                <li>Le commerçant vérifiera le code avant d'accepter le bon</li>
-                <li>Les bons ne peuvent pas être échangés contre de l'argent liquide</li>
-            </ul>
-
-            <h2>5. Paiements et remboursements</h2>
-            <h3>5.1 Méthodes de paiement</h3>
-            <p>Nous acceptons les paiements via :</p>
-            <ul>
-                <li>FlexPay (Mobile Money : Airtel Money, Orange Money, M-Pesa, Vodacom)</li>
-                <li>Flutterwave (cartes bancaires)</li>
-                <li>Virement bancaire</li>
-                <li>Western Union / MoneyGram</li>
-            </ul>
-
-            <h3>5.2 Politique de remboursement</h3>
-            <ul>
-                <li>Les paiements sont généralement non remboursables</li>
-                <li>En cas d'erreur technique, nous procéderons à un remboursement complet</li>
-                <li>Les demandes de remboursement doivent être soumises dans les 48 heures</li>
-                <li>Les remboursements sont traités dans un délai de 5-10 jours ouvrables</li>
-            </ul>
-
-            <h2>6. Commerçants partenaires</h2>
-            <h3>6.1 Inscription des commerçants</h3>
-            <ul>
-                <li>Les commerçants doivent soumettre une demande d'inscription</li>
-                <li>Tous les documents requis doivent être fournis (RCCM, pièce d'identité)</li>
-                <li>Nimwema se réserve le droit d'approuver ou de rejeter toute demande</li>
-                <li>Les commerçants approuvés peuvent accepter les bons Nimwema</li>
-            </ul>
-
-            <h3>6.2 Obligations des commerçants</h3>
-            <ul>
-                <li>Vérifier l'authenticité de chaque bon avant acceptation</li>
-                <li>Fournir des biens ou services de qualité aux bénéficiaires</li>
-                <li>Respecter les conditions générales de vente</li>
-                <li>Maintenir des pratiques commerciales éthiques</li>
-            </ul>
-
-            <h2>7. Confidentialité et données personnelles</h2>
-            <p>Nous nous engageons à protéger vos données personnelles conformément à notre politique de confidentialité. Les informations collectées incluent :</p>
-            <ul>
-                <li>Nom et prénom</li>
-                <li>Numéro de téléphone</li>
-                <li>Adresse email</li>
-                <li>Historique des transactions</li>
-            </ul>
-            <p>Ces données sont utilisées uniquement pour fournir nos services et ne seront jamais vendues à des tiers.</p>
-
-            <h2>8. Propriété intellectuelle</h2>
-            <p>Tous les contenus présents sur Nimwema (textes, images, logos, marques) sont la propriété de Nimwema ou de ses partenaires et sont protégés par les lois sur la propriété intellectuelle.</p>
-
-            <h2>9. Limitation de responsabilité</h2>
-            <p>Nimwema ne peut être tenu responsable de :</p>
-            <ul>
-                <li>Problèmes techniques indépendants de notre volonté</li>
-                <li>Pertes résultant d'une utilisation frauduleuse de votre compte</li>
-                <li>Qualité des biens ou services fournis par les commerçants</li>
-                <li>Interruptions de service pour maintenance</li>
-            </ul>
-
-            <h2>10. Utilisation acceptable</h2>
-            <p>Vous vous engagez à ne pas :</p>
-            <ul>
-                <li>Utiliser le service à des fins illégales ou frauduleuses</li>
-                <li>Tenter de contourner les mesures de sécurité</li>
-                <li>Créer de faux comptes ou usurper l'identité d'autrui</li>
-                <li>Harceler, menacer ou nuire à d'autres utilisateurs</li>
-                <li>Utiliser des robots ou des scripts automatisés</li>
-            </ul>
-
-            <h2>11. Suspension et résiliation</h2>
-            <p>Nimwema se réserve le droit de suspendre ou de résilier votre compte en cas de :</p>
-            <ul>
-                <li>Violation des présentes conditions d'utilisation</li>
-                <li>Activité frauduleuse ou suspecte</li>
-                <li>Non-paiement des frais dus</li>
-                <li>Comportement abusif envers d'autres utilisateurs ou le personnel</li>
-            </ul>
-
-            <h2>12. Modifications des conditions</h2>
-            <p>Nimwema se réserve le droit de modifier ces conditions à tout moment. Les utilisateurs seront informés des modifications importantes par email ou notification sur la plateforme. L'utilisation continue du service après modification constitue une acceptation des nouvelles conditions.</p>
-
-            <h2>13. Loi applicable et juridiction</h2>
-            <p>Ces conditions sont régies par les lois de la République Démocratique du Congo. Tout litige sera soumis à la juridiction exclusive des tribunaux de Kinshasa.</p>
-
-            <h2>14. Contact</h2>
-            <p>Pour toute question concernant ces conditions d'utilisation, veuillez nous contacter :</p>
-            <ul>
-                <li><strong>Email :</strong> support@nimwema.cd</li>
-                <li><strong>Téléphone :</strong> +243 XX XXX XXXX</li>
-                <li><strong>Adresse :</strong> Kinshasa, République Démocratique du Congo</li>
-            </ul>
-
-            <div class="highlight-box" style="margin-top: 40px;">
-                <p><strong>En utilisant Nimwema, vous reconnaissez avoir lu, compris et accepté ces conditions d'utilisation.</strong></p>
-            </div>
-
-            <div style="text-align: center;">
-                <a href="index.html" class="back-link">Retour à l'accueil</a>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
             </div>
         </div>
-    </div>
+    </footer>
 
-    <script src="js/i18n.js"></script>
-    <script>
-        // Initialize i18n
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof initI18n === 'function') {
-                initI18n();
-            }
-        });
-    </script>
+    <script src="/js/main.js"></script>
 </body>
 </html>

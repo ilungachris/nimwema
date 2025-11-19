@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nimwema - Comment ça marche</title>
+    <meta name="description" content="Comprenez en quelques étapes simples comment demander, envoyer et utiliser un bon d'achat Nimwema en RDC.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span>Connexion</span> / <span>Bienvenue</span>
+            </button>
+        </div>
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="section" style="padding-top:2.5rem;">
+            <div class="container container-narrow">
+                <h1>Comment ça marche&nbsp;?</h1>
+                <p>
+                    Nimwema permet d'envoyer, de demander et d'utiliser des bons d'achat alimentaires en RDC.
+                    Voici une vue d’ensemble, étape par étape, pour chaque type d’utilisateur.
+                </p>
+            </div>
+        </section>
+
+        <!-- Workflow 1: Demander un bon -->
+        <section class="section" style="background:var(--paper);">
+            <div class="container container-narrow">
+                <h2>1. Demander un bon d'achat</h2>
+                <p>
+                    Si vous avez besoin d’un soutien, vous pouvez créer une demande de bon depuis la page
+                    <a href="/request.html">«&nbsp;Demander un bon d'achat&nbsp;»</a>.
+                </p>
+                <div class="card">
+                    <ol>
+                        <li><strong>Remplissez vos informations</strong><br>
+                            Indiquez votre nom et votre numéro de téléphone au format +243.</li>
+                        <li><strong>Choisissez le type de demande</strong><br>
+                            <em>Demander à un numéro connu</em> (à une personne précise) ou
+                            <em>Liste d'attente (48h)</em> pour apparaître dans la file d’attente des donateurs.</li>
+                        <li><strong>Validez votre demande</strong><br>
+                            Votre demande reste visible pendant 48 heures. Passé ce délai, elle expire automatiquement.</li>
+                        <li><strong>Suivez vos demandes</strong><br>
+                            Vous pouvez consulter, mettre à jour ou supprimer vos demandes encore actives.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow 2: Envoyer un bon -->
+        <section class="section">
+            <div class="container container-narrow">
+                <h2>2. Envoyer un bon d'achat</h2>
+                <p>
+                    En tant que donateur (particulier, entreprise, église…), vous pouvez envoyer un bon d’achat
+                    à un ou plusieurs bénéficiaires.
+                </p>
+                <div class="card">
+                    <ol>
+                        <li><strong>Choisissez le montant et la quantité</strong><br>
+                            Sélectionnez un montant prédéfini ou saisissez un montant personnalisé, puis indiquez
+                            le nombre de bons à envoyer.</li>
+                        <li><strong>Sélectionnez les bénéficiaires</strong><br>
+                            Vous pouvez&nbsp;:
+                            <ul>
+                                <li>Entrer un numéro unique.</li>
+                                <li>Coller plusieurs numéros (jusqu’à une limite définie).</li>
+                                <li>Choisir dans la liste d’attente des demandes reçues.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Complétez vos informations</strong><br>
+                            Saisissez votre nom et votre numéro (optionnels) et choisissez si vous voulez rester
+                            anonyme auprès du bénéficiaire.</li>
+                        <li><strong>Validez le paiement</strong><br>
+                            Un récapitulatif affiche le montant total, les frais de service (3,5&nbsp;%) et l’option
+                            de prendre les frais à votre charge. Vous confirmez le paiement via les moyens disponibles.</li>
+                        <li><strong>Réception du code</strong><br>
+                            Chaque bénéficiaire reçoit par SMS un code numérique unique, valable pour un usage
+                            chez les marchands partenaires, pendant une durée définie (par exemple 90 jours).</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow 3: Utiliser un bon en magasin -->
+        <section class="section" style="background:var(--paper);">
+            <div class="container container-narrow">
+                <h2>3. Utiliser un bon chez un marchand partenaire</h2>
+                <p>
+                    Les bons Nimwema sont utilisables uniquement chez les marchands partenaires affichés sur le site.
+                </p>
+                <div class="card">
+                    <ol>
+                        <li><strong>Présentez votre code</strong><br>
+                            Au moment du passage en caisse, donnez le code reçu par SMS au caissier.</li>
+                        <li><strong>Validation du bon</strong><br>
+                            Le caissier saisit le code dans l’interface marchande Nimwema, qui vérifie si le bon
+                            est valide, non expiré et non utilisé.</li>
+                        <li><strong>Utilisation unique</strong><br>
+                            Une fois validé, le bon est marqué comme utilisé. Il ne peut plus être réutilisé ou
+                            re-généré avec le même code.</li>
+                        <li><strong>Transparence</strong><br>
+                            Le marchand et Nimwema disposent d’un historique des bons utilisés pour faciliter le
+                            règlement et le suivi des flux.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow 4: Pour les entreprises et organisations -->
+        <section class="section">
+            <div class="container container-narrow">
+                <h2>4. Pour les entreprises, ONG et églises</h2>
+                <p>
+                    Nimwema simplifie la gestion des aides et avantages en nature.
+                </p>
+                <div class="card">
+                    <ul>
+                        <li>Distribution de bons à des équipes, bénéficiaires ou membres de communauté.</li>
+                        <li>Suivi des bons émis, utilisés ou expirés via un tableau de bord dédié.</li>
+                        <li>Rapports exportables pour la comptabilité et la réconciliation.</li>
+                    </ul>
+                    <p style="margin-top:0.75rem;">
+                        Pour en savoir plus sur les solutions entreprises, contactez-nous via la page
+                        <a href="/contact.html">Contact</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html">Envoyer un bon</a></li>
+                        <li><a href="/request.html">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html">Comment ça marche</a></li>
+                        <li><a href="/about.html">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/terms.html">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.cd<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>
