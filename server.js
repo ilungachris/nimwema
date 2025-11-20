@@ -1075,7 +1075,7 @@ app.post('/api/auth/signup', async (req, res) => {
 res.cookie('sessionId', sessionId, {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: 'none',
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
 
@@ -1186,7 +1186,7 @@ req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
