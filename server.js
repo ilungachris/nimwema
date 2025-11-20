@@ -1221,6 +1221,7 @@ app.post('/api/auth/merchant-signup', async (req, res) => {
 
 
 // Helper: simple +243 phone normalisation and validation
+// Helper — DRC phone normalization
 function normalizeDRCPhone(raw) {
   if (!raw) return null;
   let v = String(raw).trim().replace(/[^\d+]/g, '');
@@ -1228,11 +1229,11 @@ function normalizeDRCPhone(raw) {
     v = '+243' + v.replace(/^0+/, '').replace(/^243/, '');
   }
   const digits = v.replace('+243', '').replace(/\D/g, '');
-  if (digits.length !== 9) return null;
+  if (digits.length !== 9) return null; // +243 + 9 digits
   return '+243' + digits;
 }
 
-// POST /api/auth/merchant-signup
+// Merchant signup
 app.post(
   '/api/auth/merchant-signup',
   uploadMerchantDocs.fields([
@@ -1249,6 +1250,7 @@ app.post(
     });
 
     let client;
+
     try {
       const {
         firstName,
@@ -1265,30 +1267,53 @@ app.post(
         businessDescription
       } = req.body || {};
 
-      // Basic validation (adjust messages to your i18n later)
-      if (!firstName || !lastName || !email || !phone || !password || !confirmPassword || !businessName) {
-        return res.status(400).json({ error: 'MISSING_FIELDS', message: 'Tous les champs obligatoires doivent être remplis.' });
+      // --- Basic validation ---
+      if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !phone ||
+        !password ||
+        !confirmPassword ||
+        !businessName
+      ) {
+        return res.status(400).json({
+          error: 'MISSING_FIELDS',
+          message: 'Tous les champs obligatoires doivent être remplis.'
+        });
       }
 
       if (password !== confirmPassword) {
-        return res.status(400).json({ error: 'PASSWORD_MISMATCH', message: 'Les mots de passe ne correspondent pas.' });
+        return res.status(400).json({
+          error: 'PASSWORD_MISMATCH',
+          message: 'Les mots de passe ne correspondent pas.'
+        });
       }
 
       if (password.length < 8) {
-        return res.status(400).json({ error: 'PASSWORD_WEAK', message: 'Mot de passe trop faible (min. 8 caractères).' });
+        return res.status(400).json({
+          error: 'PASSWORD_WEAK',
+          message: 'Mot de passe trop faible (min. 8 caractères).'
+        });
       }
 
       const normalizedPhone = normalizeDRCPhone(phone);
       if (!normalizedPhone) {
-        return res.status(400).json({ error: 'PHONE_INVALID', message: 'Numéro de téléphone invalide (+243XXXXXXXXX).' });
+        return res.status(400).json({
+          error: 'PHONE_INVALID',
+          message: 'Numéro de téléphone invalide (+243XXXXXXXXX).'
+        });
       }
 
-      const licenseFile  = (req.files?.businessLicense || [])[0];
-      const idFile       = (req.files?.idDocument || [])[0];
-      const photoFile    = (req.files?.businessPhoto || [])[0];
+      const licenseFile = (req.files?.businessLicense || [])[0];
+      const idFile      = (req.files?.idDocument || [])[0];
+      const photoFile   = (req.files?.businessPhoto || [])[0];
 
       if (!licenseFile || !idFile) {
-        return res.status(400).json({ error: 'DOCUMENTS_REQUIRED', message: 'Les documents requis doivent être fournis.' });
+        return res.status(400).json({
+          error: 'DOCUMENTS_REQUIRED',
+          message: 'Les documents requis doivent être fournis.'
+        });
       }
 
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim().slice(0, 160);
@@ -1296,9 +1321,13 @@ app.post(
       client = await db.pool.connect();
       await client.query('BEGIN');
 
-      // Check existing email/phone
+      // --- Check existing email/phone ---
       const existing = await client.query(
-        `SELECT id, email, phone, role FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2 LIMIT 1`,
+        `SELECT id, email, phone
+           FROM users
+          WHERE LOWER(email) = LOWER($1)
+             OR phone = $2
+          LIMIT 1`,
         [email.toLowerCase(), normalizedPhone]
       );
 
@@ -1306,83 +1335,97 @@ app.post(
         const hit = existing.rows[0];
         if (hit.email?.toLowerCase() === email.toLowerCase()) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'EMAIL_EXISTS', message: 'Cet email est déjà utilisé.' });
+          return res.status(409).json({
+            error: 'EMAIL_EXISTS',
+            message: 'Cet email est déjà utilisé.'
+          });
         }
         if (hit.phone === normalizedPhone) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'PHONE_EXISTS', message: 'Ce numéro est déjà utilisé.' });
+          return res.status(409).json({
+            error: 'PHONE_EXISTS',
+            message: 'Ce numéro est déjà utilisé.'
+          });
         }
       }
 
+      // --- Create user (let DB generate id, use "password" column) ---
       const passwordHash = await bcrypt.hash(password, 10);
-      //const userId = uuidv4();
 
-      // 1) Create user with role=merchant
-const userInsert = `
-  INSERT INTO users (name, email, phone, password, role, is_active, created_at, updated_at)
-  VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
-  RETURNING id, name, email, phone, role, created_at
-`;
-const userRes = await client.query(userInsert, [
-  fullName,
-  email.toLowerCase(),
-  normalizedPhone,
-  passwordHash,   // bcrypt hash stored in "password"
-  'merchant'
+      const userInsert = `
+        INSERT INTO users (name, email, phone, password, role, is_active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+        RETURNING id, name, email, phone, role, created_at
+      `;
+
+      const userRes = await client.query(userInsert, [
+        fullName,
+        email.toLowerCase(),
+        normalizedPhone,
+        passwordHash,      // hash stored in "password"
+        'merchant'
       ]);
 
+      const dbUserId = userRes.rows[0].id;
 
-const dbUserId = userRes.rows[0].id;
+      // --- Create merchant (use dbUserId as FK) ---
+      const merchInsert = `
+        INSERT INTO merchants (
+          user_id,
+          business_name,
+          business_type,
+          address,
+          city,
+          commune,
+          description,
+          phone,
+          email,
+          status,
+          license_path,
+          id_document_path,
+          photo_path,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9, $10,
+          $11, $12, $13,
+          NOW(), NOW()
+        )
+        RETURNING id
+      `;
 
-
-
-      // 2) Create merchant row
-    const merchRes = await client.query(merchInsert, [
-  dbUserId,                      // ✅ the real user.id from DB
-  businessName.trim(),
-  businessType || null,
-  businessAddress || null,
-  city || null,
-  commune || null,
-  businessDescription || null,
-  normalizedPhone,
-  email.toLowerCase(),
-  'pending',
-  licenseFile.path,
-  idFile.path,
-  photoFile ? photoFile.path : null
-]);
-
+      const merchRes = await client.query(merchInsert, [
+        dbUserId,                      // ✅ real user.id, satisfies merchants_user_id_fkey
+        businessName.trim(),
+        businessType || null,
+        businessAddress || null,
+        city || null,
+        commune || null,
+        businessDescription || null,
+        normalizedPhone,
+        email.toLowerCase(),
+        'pending',                     // or 'active' if you want immediate access
+        licenseFile.path,
+        idFile.path,
+        photoFile ? photoFile.path : null
+      ]);
 
       const merchantId = merchRes.rows[0].id;
 
-      // Optional: audit log
-      await client.query(
-        `INSERT INTO audit_logs (actor_user_id, action, entity, entity_id, meta_json, created_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [
-          userId,
-          'MERCHANT_SIGNUP',
-          'merchant',
-          merchantId,
-          JSON.stringify({ email, phone: normalizedPhone, businessName })
-        ]
-      );
-
       await client.query('COMMIT');
 
-      // Option: send notification to admin (for now, just log)
-console.info('📥 [MerchantSignup] New merchant pending approval', {
-  merchantId,
-  userId: dbUserId,
-  email,
-  normalizedPhone,
-  businessName
-});
+      console.info('📥 [MerchantSignup] New merchant pending approval', {
+        merchantId,
+        userId: dbUserId,
+        email,
+        phone: normalizedPhone,
+        businessName
+      });
 
-
-      // You can auto-login merchant here if you want:
-      // req.session.userId = userId;
+      // Optional: auto-login
+      // req.session.userId = dbUserId;
       // req.session.role   = 'merchant';
 
       return res.status(201).json({
@@ -1399,15 +1442,30 @@ console.info('📥 [MerchantSignup] New merchant pending approval', {
     } catch (err) {
       console.error('❌ [MerchantSignup] Error', err);
       if (client) {
-        try { await client.query('ROLLBACK'); } catch (e) { console.error('Rollback failed', e); }
+        try { await client.query('ROLLBACK'); } catch (e) {
+          console.error('Rollback failed', e);
+        }
       }
-      return res.status(500).json({ error: 'SERVER_ERROR', message: 'Erreur serveur lors de la création du commerçant.' });
+      return res.status(500).json({
+        error: 'SERVER_ERROR',
+        message: 'Erreur serveur lors de la création du commerçant.'
+      });
     } finally {
       if (client) client.release();
       console.warn('🏪 [MerchantSignup] Done in %d ms', Date.now() - startTime);
     }
   }
 );
+
+
+
+
+
+//////////////////////////////////////////////////////
+
+
+
+
 
 
 // Create guest account from payment instructions page
