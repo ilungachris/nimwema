@@ -784,7 +784,7 @@ const redeemResult = await db.query(
   [
     voucher.id,
     req.user.merchant_id || null, // adapt if your user object stores merchant differently
-    req.user.id || null           // or null if you have no cashier concept yet
+   // req.user.id || null           // or null if you have no cashier concept yet
   ]
 );
 
