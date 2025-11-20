@@ -1155,23 +1155,17 @@ app.post('/api/auth/login', async (req, res) => {
 
     const isValid = await bcrypt.compare(password, rawUser.password);
 
+    // VALID PASSWORD → Continue to create session
+// Defer session creation and final response until password validation below.
+// (Removed duplicate session creation/return here to avoid redeclaring `sessionId`
+// and to ensure we only create a session after verifying the password.)
+
+
     // After bcrypt.compare(...) === true
 req.session.userId = user.id;
 req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin' ...
 
-console.log('[Login] Success', { userId: user.id, role: user.role });
 
-// FIXED RESPONSE – required by login.html
-return res.json({
-  success: true,
-  user: {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    phone: user.phone
-  }
-});
 
     
     if (!isValid) {
