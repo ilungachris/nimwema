@@ -369,18 +369,12 @@ const authMiddleware = {
 };
 
 
-function requireMerchant(req, res, next) {
-  const userId = req.session && req.session.userId;
-  const role   = req.session && req.session.role;
 
-  if (!userId || role !== 'merchant') {
-    return res.status(401).json({
-      error: 'UNAUTHENTICATED',
-      message: 'Connexion commerçant requise.'
-    });
-  }
-  next();
-}
+
+const requireMerchant = [
+  authMiddleware.requireAuth,
+  authMiddleware.requireRole('merchant')
+];
 
 
 
