@@ -774,19 +774,17 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
     // 3) Marquer comme utilisé + créer la rédemption (transaction)
     await db.query('BEGIN');
 
-    const redeemResult = await db.query(
-      `INSERT INTO redemptions (voucher_id, merchant_id, merchant_name, merchant_phone, location, notes, redeemed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
-       RETURNING *`,
-      [
-        voucher.id,
-        req.user.merchant_id || null, // adapte si tu stockes le merchant autrement
-        merchant_name,
-        merchant_phone,
-        location || null,
-        notes || null
-      ]
-    );
+const redeemResult = await db.query(
+  `INSERT INTO redemptions (voucher_id, merchant_id, cashier_id, redeemed_at)
+   VALUES ($1, $2, $3, NOW())
+   RETURNING *`,
+  [
+    voucher.id,
+    req.user.merchant_id || null, // adapt if your user object stores merchant differently
+    req.user.id || null           // or null if you have no cashier concept yet
+  ]
+);
+
 
     await db.query(
       'UPDATE vouchers SET status = $1 WHERE id = $2',
@@ -805,13 +803,13 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
       redemption
     });
   } catch (err) {
-    console.error('Redeem error:', err);
-    await db.query('ROLLBACK').catch(() => {});
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur serveur lors de la validation du bon'
-    });
-  }
+  console.error('Redeem error:', err);
+  await db.query('ROLLBACK').catch(() => {});
+  return res.status(500).json({
+    success: false,
+    message: err.message || 'Erreur serveur lors de la validation du bon'
+  });
+}
 });
 
 
