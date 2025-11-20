@@ -235,6 +235,25 @@
 <script src="/js/i18n.js"></script>
 <script src="/js/main.js"></script>
 <script>
+    
+window.addEventListener('DOMContentLoaded', function () {
+    const user = localStorage.getItem('nimwema_user');
+
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    const userData = JSON.parse(user);
+
+    if (userData.role !== 'merchant') {
+        alert('Accès non autorisé');
+        window.location.href = '/';
+        return;
+    }
+});
+ 
+
 function renderOrders(orders) {
     const container = document.getElementById('pendingOrdersList');
 
