@@ -700,6 +700,25 @@
 
     <script src="js/i18n.js"></script>
     <script>
+
+        window.addEventListener('DOMContentLoaded', function() {
+    const user = localStorage.getItem('nimwema_user');
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    const userData = JSON.parse(user);
+    if (userData.role !== 'merchant') {
+        alert('Accès non autorisé');
+        window.location.href = '/';
+        return;
+    }
+
+    // safe to load data
+    loadMerchantProfile();
+    loadOverviewData();
+});
         // Navigation
         document.querySelectorAll('.menu-item[data-section]').forEach(item => {
             item.addEventListener('click', function() {
@@ -931,16 +950,16 @@ async function loadMerchantProfile() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+/* document.addEventListener('DOMContentLoaded', () => {
     loadMerchantProfile();
     loadOverviewData();
-});
+}); */
 
 
 
 
-  loadMerchantProfile();
-        loadOverviewData();
+  //loadMerchantProfile();
+    //    loadOverviewData();
     </script>
 </body>
 </html>
