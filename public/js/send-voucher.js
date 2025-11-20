@@ -726,7 +726,7 @@ async function pollPaymentStatus(orderNumber, orderId) {
     await new Promise(resolve => setTimeout(resolve, pollInterval));
     
     try {
-      const response = await fetch('/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}');
+      const response = await fetch(`/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}`);
  
       const data = await response.json();
       
