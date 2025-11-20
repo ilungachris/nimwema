@@ -154,7 +154,7 @@ async function redeemVoucher() {
     showLoading(true);
     hideAlerts();
 
-    try {
+      try {
         const response = await fetch('/api/merchant/vouchers/redeem', {
             method: 'POST',
             headers: {
@@ -169,6 +169,15 @@ async function redeemVoucher() {
             })
         });
 
+        if (!response.ok) {
+            // 404 or other server error → show “code invalide / erreur”
+            const text = await response.text();
+            console.error('Redeem API error', response.status, text);
+            showLoading(false);
+            showAlert('error', "Erreur lors de l'utilisation du bon");
+            return;
+        }
+
         const data = await response.json();
 
         showLoading(false);
@@ -181,13 +190,14 @@ async function redeemVoucher() {
             // Show success state
             showSuccessState(data.voucher, data.redemption);
         } else {
-            showAlert('error', data.message || 'Erreur lors de l\'utilisation du bon');
+            showAlert('error', data.message || "Erreur lors de l'utilisation du bon");
         }
     } catch (error) {
         showLoading(false);
-        showAlert('error', 'Erreur lors de l\'utilisation du bon');
+        showAlert('error', "Erreur lors de l'utilisation du bon");
         console.error('Error:', error);
     }
+
 }
 
 // Show success state

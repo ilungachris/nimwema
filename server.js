@@ -740,92 +740,79 @@ app.post('/api/merchant/settings', requireMerchant, async (req, res) => {
 
 
 
-app.post('/api/merchant/redeem', requireMerchant, async (req, res) => {
-  const { code } = req.body || {};
-  if (!code || !String(code).trim()) {
-    return res.status(400).json({ error: 'CODE_REQUIRED', message: 'Code du bon requis.' });
+app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
+  const { code, merchant_name, merchant_phone, location, notes } = req.body;
+
+  if (!code || !merchant_name || !merchant_phone) {
+    return res.status(400).json({
+      success: false,
+      message: 'Code, nom marchand et téléphone obligatoires'
+    });
   }
 
-  const trimmedCode = String(code).trim();
-
-  let client;
   try {
-    client = await db.pool.connect();
-    await client.query('BEGIN');
-
-    const merchant = await loadMerchantForUser(client, req.session.userId);
-    if (!merchant) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
-    }
-
-    // Lock the voucher row so we can safely redeem once
-    const vRes = await client.query(
-      `SELECT id, code, amount, status, expires_at
-         FROM vouchers
-        WHERE code = $1
-        FOR UPDATE`,
-      [trimmedCode]
+    // 1) Charger le bon
+    const voucherResult = await db.query(
+      'SELECT * FROM vouchers WHERE code = $1 LIMIT 1',
+      [code]
     );
 
-    if (!vRes.rowCount) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'VOUCHER_NOT_FOUND', message: 'Bon introuvable.' });
+    if (voucherResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Bon introuvable' });
     }
 
-    const voucher = vRes.rows[0];
+    const voucher = voucherResult.rows[0];
 
+    // 2) Vérifier statut / expiration
     if (voucher.status === 'redeemed') {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'ALREADY_REDEEMED', message: 'Bon déjà utilisé.' });
+      return res.status(400).json({ success: false, message: 'Bon déjà utilisé' });
+    }
+    if (voucher.status === 'expired') {
+      return res.status(400).json({ success: false, message: 'Bon expiré' });
     }
 
-    if (voucher.expires_at && new Date(voucher.expires_at) < new Date()) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'EXPIRED', message: 'Bon expiré.' });
-    }
+    // 3) Marquer comme utilisé + créer la rédemption (transaction)
+    await db.query('BEGIN');
 
-    // Mark redeemed
-    await client.query(
-      `UPDATE vouchers
-          SET status = 'redeemed'
-        WHERE id = $1`,
-      [voucher.id]
+    const redeemResult = await db.query(
+      `INSERT INTO redemptions (voucher_id, merchant_id, merchant_name, merchant_phone, location, notes, redeemed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       RETURNING *`,
+      [
+        voucher.id,
+        req.user.merchant_id || null, // adapte si tu stockes le merchant autrement
+        merchant_name,
+        merchant_phone,
+        location || null,
+        notes || null
+      ]
     );
 
-    // Create redemption row
-    const redRes = await client.query(
-      `INSERT INTO redemptions (voucher_id, merchant_id, cashier_id, redeemed_at)
-       VALUES ($1, $2, NULL, NOW())
-       RETURNING id, redeemed_at`,
-      [voucher.id, merchant.id]
+    await db.query(
+      'UPDATE vouchers SET status = $1 WHERE id = $2',
+      ['redeemed', voucher.id]
     );
 
-    await client.query('COMMIT');
+    await db.query('COMMIT');
 
-    // TODO: plug your SMS/email notification service here
-    console.info('✅ [Redeem] Voucher redeemed', {
-      voucherCode: voucher.code,
-      amount: voucher.amount,
-      merchantId: merchant.id
-    });
+    const redemption = redeemResult.rows[0];
+
+    // TODO: envoyer SMS au bénéficiaire / expéditeur ici, avec ton service SMS existant
 
     return res.json({
       success: true,
-      redemptionId: redRes.rows[0].id,
-      voucherCode: voucher.code,
-      amount: voucher.amount,
-      redeemedAt: redRes.rows[0].redeemed_at
+      voucher: { ...voucher, status: 'redeemed' },
+      redemption
     });
   } catch (err) {
-    console.error('❌ [Redeem] Error', err);
-    try { await client?.query('ROLLBACK'); } catch (e) { console.error('Rollback failed', e); }
-    return res.status(500).json({ error: 'SERVER_ERROR', message: 'Erreur lors du rachat du bon.' });
-  } finally {
-    if (client) client.release();
+    console.error('Redeem error:', err);
+    await db.query('ROLLBACK').catch(() => {});
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de la validation du bon'
+    });
   }
 });
-
 
 
 
