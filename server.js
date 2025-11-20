@@ -48,7 +48,7 @@ const PORT = process.env.PORT || 3000;
 const fs = require('fs');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');  // already used elsewhere in your app
-const db = require('./db');              // same db helper you use for other routes
+ 
 
 // --- Upload storage for merchant documents ---
 const merchantUploadDir = path.join(__dirname, 'uploads', 'merchant_docs');
