@@ -777,13 +777,14 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
 const redeemResult = await db.query(
  // `INSERT INTO redemptions (voucher_id, merchant_id, cashier_id, redeemed_at)
  // VALUES ($1, $2, $3, NOW())
- `INSERT INTO redemptions (voucher_id, voucher_code, merchant_id, created_at)
+ `INSERT INTO redemptions (voucher_id, voucher_code, amount, merchant_id, created_at)
   
-   VALUES ($1, $2, $3, NOW())
+   VALUES ($1, $2, $3, $4,NOW())
    RETURNING *`,
   [
     voucher.id,
     voucher.code,
+    voucher.amount,
     req.user.merchant_id || null, // adapt if your user object stores merchant differently
    // req.user.id || null           // or null if you have no cashier concept yet
   ]
