@@ -1318,18 +1318,17 @@ app.post(
       const userId = uuidv4();
 
       // 1) Create user with role=merchant
-      const userInsert = `
-        INSERT INTO users (id, name, email, phone, password_hash, role, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
-        RETURNING id, name, email, phone, role, created_at
-      `;
-      const userRes = await client.query(userInsert, [
-        userId,
-        fullName,
-        email.toLowerCase(),
-        normalizedPhone,
-        passwordHash,
-        'merchant'
+const userInsert = `
+  INSERT INTO users (name, email, phone, password, role, is_active, created_at, updated_at)
+  VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+  RETURNING id, name, email, phone, role, created_at
+`;
+const userRes = await client.query(userInsert, [
+  fullName,
+  email.toLowerCase(),
+  normalizedPhone,
+  passwordHash,   // bcrypt hash stored in "password"
+  'merchant'
       ]);
 
       // 2) Create merchant row
