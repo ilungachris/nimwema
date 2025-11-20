@@ -155,7 +155,7 @@ async function redeemVoucher() {
     hideAlerts();
 
     try {
-        const response = await fetch('/api/vouchers/redeem', {
+        const response = await fetch('/api/merchant/vouchers/redeem', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

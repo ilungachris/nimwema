@@ -2378,7 +2378,7 @@ app.delete('/api/senders/:id', (req, res) => {
 });
 
 // Redeem voucher (consolidated duplicates, enhanced with SMS)
-app.post('/api/vouchers/redeem', async (req, res) => {
+app.post('/api/merchantvouchers/redeem', async (req, res) => {
   try {
     const { code, merchant_id, merchant_name, merchant_phone, location, notes } = req.body;
     
