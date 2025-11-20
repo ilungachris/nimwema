@@ -2328,6 +2328,123 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
         // Note: In prod, use res to trigger or webhook; here console
         console.log('Payment success - creating vouchers:', voucherReq);
         // await internal voucher create logic if needed
+
+        console.log('Payment success - creating vouchers:', voucherReq);
+
+        // 🔐 NEW: créer les bons dans la base + SMS, de façon idempotente
+        try {
+          // 1) Ne pas recréer si les bons existent déjà pour cette commande
+          const existing = await db.query(
+            'SELECT COUNT(*) AS count FROM vouchers WHERE order_id = $1',
+            [orderId]
+          );
+          const existingCount = parseInt(existing.rows[0].count, 10) || 0;
+
+          if (existingCount > 0) {
+            console.log('Vouchers already exist for order, skipping auto-create from callback', {
+              orderId,
+              existingCount
+            });
+          } else {
+            // 2) Charger la commande depuis la DB (montant, devise, metadata)
+            const orderResult = await db.query(
+              'SELECT id, amount, currency, quantity, sender_name, sender_phone, message, metadata FROM orders WHERE id = $1',
+              [orderId]
+            );
+
+            if (orderResult.rows.length === 0) {
+              console.warn('Order not found in DB for voucher creation from callback', { orderId });
+            } else {
+              const dbOrder = orderResult.rows[0];
+
+              // 3) Récupérer les destinataires depuis metadata, sinon fallback sur global.orders
+              let recipients = [];
+              try {
+                if (dbOrder.metadata) {
+                  const meta = typeof dbOrder.metadata === 'string'
+                    ? JSON.parse(dbOrder.metadata)
+                    : dbOrder.metadata;
+                  if (meta && Array.isArray(meta.recipients)) {
+                    recipients = meta.recipients;
+                  }
+                }
+              } catch (parseErr) {
+                console.warn('Failed to parse order metadata for voucher creation', {
+                  orderId,
+                  error: parseErr.message
+                });
+              }
+
+              if ((!recipients || !recipients.length) && Array.isArray(order.recipients)) {
+                recipients = order.recipients;
+              }
+
+              if (!Array.isArray(recipients) || recipients.length === 0) {
+                console.warn('No recipients found for voucher creation from callback', { orderId });
+              } else {
+                const numVouchers = Math.min(dbOrder.quantity || recipients.length, recipients.length);
+                const vouchers = [];
+
+                for (let i = 0; i < numVouchers; i++) {
+                  const r = recipients[i] || {};
+                  const voucherCode = generateVoucherCode();
+                  const createdAt = new Date().toISOString();
+                  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 jours
+
+                  const insertResult = await db.query(
+                    `INSERT INTO vouchers
+                       (code, order_id, amount, currency, recipient_name, recipient_phone, sender_name, message, status, created_at, expires_at)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+                     RETURNING id`,
+                    [
+                      voucherCode,
+                      dbOrder.id,
+                      dbOrder.amount,
+                      dbOrder.currency,
+                      r.name || 'Anonyme',
+                      r.phone,
+                      dbOrder.sender_name,
+                      dbOrder.message || '',
+                      'pending',
+                      createdAt,
+                      expiresAt
+                    ]
+                  );
+
+                  const voucherId = insertResult.rows[0] && insertResult.rows[0].id;
+                  vouchers.push({ id: voucherId, code: voucherCode, recipient: r });
+
+                  // 4) SMS au destinataire (non bloquant pour le callback)
+                  try {
+                    if (r.phone) {
+                      await sendSMSNotification(r.phone, {
+                        type: 'voucher_sent',
+                        code: voucherCode,
+                        amount: dbOrder.amount,
+                        currency: dbOrder.currency,
+                        senderName: dbOrder.sender_name,
+                        expiresAt
+                      });
+                    }
+                  } catch (smsErr) {
+                    console.warn('Voucher SMS failed for', r.phone, smsErr.message);
+                  }
+                }
+
+                console.log('Auto vouchers created from FlexPay callback', {
+                  orderId,
+                  count: vouchers.length
+                });
+              }
+            }
+          }
+        } catch (createErr) {
+          console.error('Error auto-creating vouchers from FlexPay callback', createErr);
+        }
+
+
+
+
       }
       // Send confirmation SMS if sender phone
       if (order.sender_phone) {
@@ -2346,6 +2463,11 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
     return res.json({ ok: true }); // still 200 to avoid retry storms
   }
 });
+
+
+//////////////////////////////////////
+
+
 
 // CHECK (kept from current)
 app.get('/api/payment/flexpay/check/:orderNumber', async (req, res) => {
