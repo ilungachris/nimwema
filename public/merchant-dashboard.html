@@ -898,6 +898,38 @@
         });
 
         // Initialize
+
+
+async function loadMerchantProfile() {
+    try {
+        const res = await fetch('/api/merchant/me', { credentials: 'include' });
+        if (!res.ok) {
+            if (res.status === 401) {
+                window.location.href = 'login.html';
+                return;
+            }
+            return;
+        }
+        const data = await res.json();
+        document.getElementById('merchantName').textContent = data.businessName || 'Mon Commerce';
+        document.getElementById('businessNameInput').value = data.businessName || '';
+        document.getElementById('businessAddress').value   = data.address || '';
+        document.getElementById('businessPhone').value     = data.phone || '';
+        document.getElementById('businessEmail').value     = data.email || '';
+    } catch (e) {
+        console.error('Error loading merchant profile', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadMerchantProfile();
+    loadOverviewData();
+});
+
+
+
+
+
         loadOverviewData();
     </script>
 </body>

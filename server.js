@@ -37,6 +37,60 @@ const dbQueries = require('./database/queries');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+
+
+
+
+
+
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const bcrypt = require('bcrypt');        // already used in your signup route
+const { v4: uuidv4 } = require('uuid');  // already used elsewhere in your app
+const db = require('./db');              // same db helper you use for other routes
+
+// --- Upload storage for merchant documents ---
+const merchantUploadDir = path.join(__dirname, 'uploads', 'merchant_docs');
+
+if (!fs.existsSync(merchantUploadDir)) {
+  fs.mkdirSync(merchantUploadDir, { recursive: true });
+}
+
+const merchantStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, merchantUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '');
+    cb(null, `merchant-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  }
+});
+
+const uploadMerchantDocs = multer({
+  storage: merchantStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024  // 5 MB per file
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // DATABASE: Connect to PostgreSQL on startup
 let dbConnected = false;
 db.connect()
@@ -316,6 +370,31 @@ const authMiddleware = {
 };
 
 
+function requireMerchant(req, res, next) {
+  const userId = req.session && req.session.userId;
+  const role   = req.session && req.session.role;
+
+  if (!userId || role !== 'merchant') {
+    return res.status(401).json({ error: 'UNAUTHENTICATED', message: 'Connexion commerçant requise.' });
+  }
+  next();
+}
+
+
+
+
+async function loadMerchantForUser(client, userId) {
+  const res = await client.query(
+    `SELECT m.* 
+       FROM merchants m
+      WHERE m.user_id = $1
+      LIMIT 1`,
+    [userId]
+  );
+  return res.rowCount ? res.rows[0] : null;
+}
+
+
 // ========== API ENDPOINTS ==========
 
 // Logout (consolidated)
@@ -398,6 +477,347 @@ function authenticateSession(req, res, next) {
 
 
 
+app.get('/api/merchant/me', requireMerchant, async (req, res) => {
+  let client;
+  try {
+    client = await db.pool.connect();
+    const merchant = await loadMerchantForUser(client, req.session.userId);
+    if (!merchant) {
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    return res.json({
+      id: merchant.id,
+      businessName: merchant.business_name,
+      address: merchant.address,
+      city: merchant.city,
+      commune: merchant.commune,
+      phone: merchant.phone,
+      email: merchant.email,
+      status: merchant.status
+    });
+  } catch (err) {
+    console.error('❌ [MerchantMe] Error', err);
+    return res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+
+
+
+
+
+app.get('/api/merchant/overview', requireMerchant, async (req, res) => {
+  let client;
+  try {
+    client = await db.pool.connect();
+    const merchant = await loadMerchantForUser(client, req.session.userId);
+    if (!merchant) {
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    const merchantId = merchant.id;
+
+    // Today’s redemptions
+    const today = await client.query(
+      `SELECT COUNT(*) AS count, COALESCE(SUM(v.amount), 0) AS total
+         FROM redemptions r
+         JOIN vouchers v ON v.id = r.voucher_id
+        WHERE r.merchant_id = $1
+          AND r.redeemed_at::date = NOW()::date`,
+      [merchantId]
+    );
+
+    // This month’s total
+    const month = await client.query(
+      `SELECT COALESCE(SUM(v.amount), 0) AS total
+         FROM redemptions r
+         JOIN vouchers v ON v.id = r.voucher_id
+        WHERE r.merchant_id = $1
+          AND date_trunc('month', r.redeemed_at) = date_trunc('month', NOW())`,
+      [merchantId]
+    );
+
+    // Active vs redeemed vouchers for this merchant
+    const statusCounts = await client.query(
+      `SELECT v.status, COUNT(*) 
+         FROM vouchers v
+    LEFT JOIN redemptions r ON r.voucher_id = v.id
+        WHERE r.merchant_id = $1
+        GROUP BY v.status`,
+      [merchantId]
+    );
+
+    const stats = {
+      todayRedemptions: Number(today.rows[0]?.count || 0),
+      todayAmount: Number(today.rows[0]?.total || 0),
+      monthAmount: Number(month.rows[0]?.total || 0),
+      statusCounts: statusCounts.rows
+    };
+
+    return res.json(stats);
+  } catch (err) {
+    console.error('❌ [MerchantOverview] Error', err);
+    return res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+
+app.get('/api/merchant/redemptions', requireMerchant, async (req, res) => {
+  const period = req.query.period || 'month';   // today|week|month|all
+  const limit  = Math.min(parseInt(req.query.limit || '50', 10), 500);
+
+  let client;
+  try {
+    client = await db.pool.connect();
+    const merchant = await loadMerchantForUser(client, req.session.userId);
+    if (!merchant) {
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    const params = [merchant.id];
+    let dateFilter = '';
+    if (period === 'today') {
+      dateFilter = 'AND r.redeemed_at::date = NOW()::date';
+    } else if (period === 'week') {
+      dateFilter = 'AND r.redeemed_at >= NOW() - INTERVAL \'7 days\'';
+    } else if (period === 'month') {
+      dateFilter = 'AND date_trunc(\'month\', r.redeemed_at) = date_trunc(\'month\', NOW())';
+    }
+
+    const sql = `
+      SELECT
+        r.id,
+        v.code,
+        v.amount,
+        r.redeemed_at,
+        COALESCE(c.name, 'N/A')       AS cashier_name,
+        COALESCE(rec.recipient_phone, '') AS recipient_phone
+      FROM redemptions r
+      JOIN vouchers v
+        ON v.id = r.voucher_id
+  LEFT JOIN cashiers c
+        ON c.id = r.cashier_id
+  LEFT JOIN voucher_recipients rec
+        ON rec.voucher_id = v.id
+     WHERE r.merchant_id = $1
+       ${dateFilter}
+     ORDER BY r.redeemed_at DESC
+     LIMIT ${limit}
+    `;
+
+    const out = await client.query(sql, params);
+
+    return res.json(out.rows.map(row => ({
+      id: row.id,
+      code: row.code,
+      amount: row.amount,
+      redeemedAt: row.redeemed_at,
+      cashierName: row.cashier_name,
+      recipientPhone: row.recipient_phone
+    })));
+  } catch (err) {
+    console.error('❌ [MerchantRedemptions] Error', err);
+    return res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+
+
+
+app.get('/api/merchant/cashiers', requireMerchant, async (req, res) => {
+  let client;
+  try {
+    client = await db.pool.connect();
+    const merchant = await loadMerchantForUser(client, req.session.userId);
+    if (!merchant) {
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    const sql = `
+      SELECT
+        c.id,
+        c.name,
+        c.phone,
+        c.email,
+        c.status,
+        COALESCE(r.cnt, 0) AS redemptions
+      FROM cashiers c
+      LEFT JOIN (
+        SELECT cashier_id, COUNT(*) AS cnt
+          FROM redemptions
+         WHERE merchant_id = $1
+      GROUP BY cashier_id
+      ) r ON r.cashier_id = c.id
+     WHERE c.merchant_id = $1
+     ORDER BY c.name
+    `;
+    const out = await client.query(sql, [merchant.id]);
+
+    return res.json(out.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      email: row.email,
+      redemptions: Number(row.redemptions || 0),
+      active: row.status === 'active'
+    })));
+  } catch (err) {
+    console.error('❌ [MerchantCashiers] Error', err);
+    return res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+
+
+
+app.post('/api/merchant/settings', requireMerchant, async (req, res) => {
+  const { businessName, address, city, commune, phone, email } = req.body || {};
+
+  let client;
+  try {
+    client = await db.pool.connect();
+    const merchant = await loadMerchantForUser(client, req.session.userId);
+    if (!merchant) {
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    const normalizedPhone = phone ? normalizeDRCPhone(phone) : null;
+    if (phone && !normalizedPhone) {
+      return res.status(400).json({ error: 'PHONE_INVALID', message: 'Numéro de téléphone invalide.' });
+    }
+
+    const upd = `
+      UPDATE merchants
+         SET business_name = COALESCE($2, business_name),
+             address       = COALESCE($3, address),
+             city          = COALESCE($4, city),
+             commune       = COALESCE($5, commune),
+             phone         = COALESCE($6, phone),
+             email         = COALESCE($7, email),
+             updated_at    = NOW()
+       WHERE id = $1
+       RETURNING *
+    `;
+    const out = await client.query(upd, [
+      merchant.id,
+      businessName || null,
+      address || null,
+      city || null,
+      commune || null,
+      normalizedPhone || null,
+      email || null
+    ]);
+
+    console.info('⚙️ [MerchantSettings] Updated', {
+      merchantId: merchant.id,
+      userId: req.session.userId
+    });
+
+    return res.json({ success: true, merchant: out.rows[0] });
+  } catch (err) {
+    console.error('❌ [MerchantSettings] Error', err);
+    return res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+
+
+app.post('/api/merchant/redeem', requireMerchant, async (req, res) => {
+  const { code } = req.body || {};
+  if (!code || !String(code).trim()) {
+    return res.status(400).json({ error: 'CODE_REQUIRED', message: 'Code du bon requis.' });
+  }
+
+  const trimmedCode = String(code).trim();
+
+  let client;
+  try {
+    client = await db.pool.connect();
+    await client.query('BEGIN');
+
+    const merchant = await loadMerchantForUser(client, req.session.userId);
+    if (!merchant) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    // Lock the voucher row so we can safely redeem once
+    const vRes = await client.query(
+      `SELECT id, code, amount, status, expires_at
+         FROM vouchers
+        WHERE code = $1
+        FOR UPDATE`,
+      [trimmedCode]
+    );
+
+    if (!vRes.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'VOUCHER_NOT_FOUND', message: 'Bon introuvable.' });
+    }
+
+    const voucher = vRes.rows[0];
+
+    if (voucher.status === 'redeemed') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'ALREADY_REDEEMED', message: 'Bon déjà utilisé.' });
+    }
+
+    if (voucher.expires_at && new Date(voucher.expires_at) < new Date()) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'EXPIRED', message: 'Bon expiré.' });
+    }
+
+    // Mark redeemed
+    await client.query(
+      `UPDATE vouchers
+          SET status = 'redeemed'
+        WHERE id = $1`,
+      [voucher.id]
+    );
+
+    // Create redemption row
+    const redRes = await client.query(
+      `INSERT INTO redemptions (voucher_id, merchant_id, cashier_id, redeemed_at)
+       VALUES ($1, $2, NULL, NOW())
+       RETURNING id, redeemed_at`,
+      [voucher.id, merchant.id]
+    );
+
+    await client.query('COMMIT');
+
+    // TODO: plug your SMS/email notification service here
+    console.info('✅ [Redeem] Voucher redeemed', {
+      voucherCode: voucher.code,
+      amount: voucher.amount,
+      merchantId: merchant.id
+    });
+
+    return res.json({
+      success: true,
+      redemptionId: redRes.rows[0].id,
+      voucherCode: voucher.code,
+      amount: voucher.amount,
+      redeemedAt: redRes.rows[0].redeemed_at
+    });
+  } catch (err) {
+    console.error('❌ [Redeem] Error', err);
+    try { await client?.query('ROLLBACK'); } catch (e) { console.error('Rollback failed', e); }
+    return res.status(500).json({ error: 'SERVER_ERROR', message: 'Erreur lors du rachat du bon.' });
+  } finally {
+    if (client) client.release();
+  }
+});
 
 
 
@@ -782,6 +1202,8 @@ app.put('/api/auth/profile', authMiddleware.requireAuth, async (req, res) => {
   }
 });
 
+
+/*
 // Merchant signup endpoint
 app.post('/api/auth/merchant-signup', async (req, res) => {
   try {
@@ -795,7 +1217,208 @@ app.post('/api/auth/merchant-signup', async (req, res) => {
     console.error('Merchant signup error:', error);
     res.status(400).json({ error: error.message });
   }
-});
+}); */
+
+
+
+// Helper: simple +243 phone normalisation and validation
+function normalizeDRCPhone(raw) {
+  if (!raw) return null;
+  let v = String(raw).trim().replace(/[^\d+]/g, '');
+  if (!v.startsWith('+243')) {
+    v = '+243' + v.replace(/^0+/, '').replace(/^243/, '');
+  }
+  const digits = v.replace('+243', '').replace(/\D/g, '');
+  if (digits.length !== 9) return null;
+  return '+243' + digits;
+}
+
+// POST /api/auth/merchant-signup
+app.post(
+  '/api/auth/merchant-signup',
+  uploadMerchantDocs.fields([
+    { name: 'businessLicense', maxCount: 1 },
+    { name: 'idDocument',      maxCount: 1 },
+    { name: 'businessPhoto',   maxCount: 1 }
+  ]),
+  async (req, res) => {
+    const startTime = Date.now();
+    console.warn('🏪 [MerchantSignup] Incoming', {
+      body: { ...req.body, password: '***', confirmPassword: '***' },
+      files: Object.keys(req.files || {}),
+      ip: req.ip
+    });
+
+    let client;
+    try {
+      const {
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        confirmPassword,
+        businessName,
+        businessType,
+        businessAddress,
+        city,
+        commune,
+        businessDescription
+      } = req.body || {};
+
+      // Basic validation (adjust messages to your i18n later)
+      if (!firstName || !lastName || !email || !phone || !password || !confirmPassword || !businessName) {
+        return res.status(400).json({ error: 'MISSING_FIELDS', message: 'Tous les champs obligatoires doivent être remplis.' });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({ error: 'PASSWORD_MISMATCH', message: 'Les mots de passe ne correspondent pas.' });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'PASSWORD_WEAK', message: 'Mot de passe trop faible (min. 8 caractères).' });
+      }
+
+      const normalizedPhone = normalizeDRCPhone(phone);
+      if (!normalizedPhone) {
+        return res.status(400).json({ error: 'PHONE_INVALID', message: 'Numéro de téléphone invalide (+243XXXXXXXXX).' });
+      }
+
+      const licenseFile  = (req.files?.businessLicense || [])[0];
+      const idFile       = (req.files?.idDocument || [])[0];
+      const photoFile    = (req.files?.businessPhoto || [])[0];
+
+      if (!licenseFile || !idFile) {
+        return res.status(400).json({ error: 'DOCUMENTS_REQUIRED', message: 'Les documents requis doivent être fournis.' });
+      }
+
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim().slice(0, 160);
+
+      client = await db.pool.connect();
+      await client.query('BEGIN');
+
+      // Check existing email/phone
+      const existing = await client.query(
+        `SELECT id, email, phone, role FROM users WHERE LOWER(email) = LOWER($1) OR phone = $2 LIMIT 1`,
+        [email.toLowerCase(), normalizedPhone]
+      );
+
+      if (existing.rowCount > 0) {
+        const hit = existing.rows[0];
+        if (hit.email?.toLowerCase() === email.toLowerCase()) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'EMAIL_EXISTS', message: 'Cet email est déjà utilisé.' });
+        }
+        if (hit.phone === normalizedPhone) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'PHONE_EXISTS', message: 'Ce numéro est déjà utilisé.' });
+        }
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const userId = uuidv4();
+
+      // 1) Create user with role=merchant
+      const userInsert = `
+        INSERT INTO users (id, name, email, phone, password_hash, role, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING id, name, email, phone, role, created_at
+      `;
+      const userRes = await client.query(userInsert, [
+        userId,
+        fullName,
+        email.toLowerCase(),
+        normalizedPhone,
+        passwordHash,
+        'merchant'
+      ]);
+
+      // 2) Create merchant row
+      const merchInsert = `
+        INSERT INTO merchants (
+          user_id, business_name, business_type, address, city, commune,
+          description, phone, email, status,
+          license_path, id_document_path, photo_path,
+          created_at, updated_at
+        )
+        VALUES (
+          $1,$2,$3,$4,$5,$6,
+          $7,$8,$9,$10,
+          $11,$12,$13,
+          NOW(), NOW()
+        )
+        RETURNING id
+      `;
+      const merchRes = await client.query(merchInsert, [
+        userId,
+        businessName.trim(),
+        businessType || null,
+        businessAddress || null,
+        city || null,
+        commune || null,
+        businessDescription || null,
+        normalizedPhone,
+        email.toLowerCase(),
+        'pending',  // admin must approve
+        licenseFile.path,
+        idFile.path,
+        photoFile ? photoFile.path : null
+      ]);
+
+      const merchantId = merchRes.rows[0].id;
+
+      // Optional: audit log
+      await client.query(
+        `INSERT INTO audit_logs (actor_user_id, action, entity, entity_id, meta_json, created_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [
+          userId,
+          'MERCHANT_SIGNUP',
+          'merchant',
+          merchantId,
+          JSON.stringify({ email, phone: normalizedPhone, businessName })
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      // Option: send notification to admin (for now, just log)
+      console.info('📥 [MerchantSignup] New merchant pending approval', {
+        merchantId,
+        userId,
+        email,
+        normalizedPhone,
+        businessName
+      });
+
+      // You can auto-login merchant here if you want:
+      // req.session.userId = userId;
+      // req.session.role   = 'merchant';
+
+      return res.status(201).json({
+        success: true,
+        message: 'Demande commerçant créée. Nous vous contacterons après validation.',
+        user: {
+          id: userRes.rows[0].id,
+          name: userRes.rows[0].name,
+          email: userRes.rows[0].email,
+          phone: userRes.rows[0].phone,
+          role: userRes.rows[0].role
+        }
+      });
+    } catch (err) {
+      console.error('❌ [MerchantSignup] Error', err);
+      if (client) {
+        try { await client.query('ROLLBACK'); } catch (e) { console.error('Rollback failed', e); }
+      }
+      return res.status(500).json({ error: 'SERVER_ERROR', message: 'Erreur serveur lors de la création du commerçant.' });
+    } finally {
+      if (client) client.release();
+      console.warn('🏪 [MerchantSignup] Done in %d ms', Date.now() - startTime);
+    }
+  }
+);
+
 
 // Create guest account from payment instructions page
 app.post('/api/auth/create-guest-account', async (req, res) => {
