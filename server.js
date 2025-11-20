@@ -1162,8 +1162,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 
     // After bcrypt.compare(...) === true
-req.session.userId = user.id;
-req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin' ...
 
 
 
@@ -1172,6 +1170,19 @@ req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin
       console.warn('Login: Invalid password', { userId: rawUser.id, email, ip }); // Temp
       return res.status(401).json({ error: 'Le mot de passe est incorrect' });
     }
+
+
+
+
+
+
+req.session.userId = user.id;
+req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin' ...
+
+
+
+
+
 
     // Session (unchanged)
     const sessionId = crypto.randomBytes(32).toString('hex');
