@@ -1315,7 +1315,7 @@ app.post(
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
-      const userId = uuidv4();
+      //const userId = uuidv4();
 
       // 1) Create user with role=merchant
 const userInsert = `
@@ -1331,37 +1331,28 @@ const userRes = await client.query(userInsert, [
   'merchant'
       ]);
 
+
+const dbUserId = userRes.rows[0].id;
+
+
+
       // 2) Create merchant row
-      const merchInsert = `
-        INSERT INTO merchants (
-          user_id, business_name, business_type, address, city, commune,
-          description, phone, email, status,
-          license_path, id_document_path, photo_path,
-          created_at, updated_at
-        )
-        VALUES (
-          $1,$2,$3,$4,$5,$6,
-          $7,$8,$9,$10,
-          $11,$12,$13,
-          NOW(), NOW()
-        )
-        RETURNING id
-      `;
-      const merchRes = await client.query(merchInsert, [
-        userId,
-        businessName.trim(),
-        businessType || null,
-        businessAddress || null,
-        city || null,
-        commune || null,
-        businessDescription || null,
-        normalizedPhone,
-        email.toLowerCase(),
-        'pending',  // admin must approve
-        licenseFile.path,
-        idFile.path,
-        photoFile ? photoFile.path : null
-      ]);
+    const merchRes = await client.query(merchInsert, [
+  dbUserId,                      // ✅ the real user.id from DB
+  businessName.trim(),
+  businessType || null,
+  businessAddress || null,
+  city || null,
+  commune || null,
+  businessDescription || null,
+  normalizedPhone,
+  email.toLowerCase(),
+  'pending',
+  licenseFile.path,
+  idFile.path,
+  photoFile ? photoFile.path : null
+]);
+
 
       const merchantId = merchRes.rows[0].id;
 
@@ -1381,13 +1372,14 @@ const userRes = await client.query(userInsert, [
       await client.query('COMMIT');
 
       // Option: send notification to admin (for now, just log)
-      console.info('📥 [MerchantSignup] New merchant pending approval', {
-        merchantId,
-        userId,
-        email,
-        normalizedPhone,
-        businessName
-      });
+console.info('📥 [MerchantSignup] New merchant pending approval', {
+  merchantId,
+  userId: dbUserId,
+  email,
+  normalizedPhone,
+  businessName
+});
+
 
       // You can auto-login merchant here if you want:
       // req.session.userId = userId;
