@@ -281,4 +281,3 @@ function formatDateTime(dateString) {
         minute: '2-digit'
     });
 }
-</script>

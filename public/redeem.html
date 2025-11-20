@@ -3,76 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Utiliser un Bon - Nimwema</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/forms.css">
+    <title>Utiliser un bon d'achat - Nimwema</title>
+    <meta name="description" content="Validez et utilisez un bon d'achat Nimwema de façon simple et sécurisée.">
+
+    <!-- Fonts (same as index) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+
     <style>
+        /* Redeem-specific tweaks, aligned to Nimwema styles */
         .redeem-container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
+            max-width: 700px;
+            margin: 0 auto;
         }
 
         .redeem-card {
-            background: white;
-            border-radius: 8px;
-            padding: 40px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border: 1px solid #E6E6E6;
         }
 
         .redeem-icon {
             text-align: center;
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin-bottom: 16px;
         }
 
         .redeem-title {
             text-align: center;
             font-size: 1.75rem;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             color: #111111;
         }
 
         .redeem-subtitle {
             text-align: center;
-            color: #666;
-            margin-bottom: 30px;
+            color: #6B6B6B;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
         }
 
         .code-input-group {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .code-input {
             width: 100%;
-            padding: 15px;
-            font-size: 1.5rem;
+            padding: 14px 16px;
+            font-size: 1.2rem;
             text-align: center;
             font-family: 'Courier New', monospace;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
             border: 2px solid #8BC34A;
-            border-radius: 8px;
-            transition: all 0.3s;
+            border-radius: 12px;
+            transition: all 0.2s;
+            background: #F7F7F7;
         }
 
         .code-input:focus {
             outline: none;
-            border-color: #7CB342;
-            box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.1);
+            border-color: #6FA838;
+            box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.12);
+            background: #ffffff;
         }
 
         .code-input::placeholder {
-            color: #ccc;
+            color: #B5B5B5;
             letter-spacing: normal;
         }
 
         .voucher-details {
-            background: #f5f5f5;
+            background: #F7F7F7;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin: 20px 0;
             display: none;
         }
@@ -84,8 +97,9 @@
         .detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 8px 0;
+            border-bottom: 1px solid #E0E0E0;
+            font-size: 0.95rem;
         }
 
         .detail-row:last-child {
@@ -94,38 +108,41 @@
 
         .detail-label {
             font-weight: 600;
-            color: #666;
+            color: #6B6B6B;
         }
 
         .detail-value {
             color: #111111;
             font-weight: 500;
+            text-align: right;
         }
 
         .voucher-amount {
             text-align: center;
-            font-size: 2.5rem;
-            font-weight: 700;
+            font-size: 2.2rem;
+            font-weight: 800;
             color: #8BC34A;
-            margin: 20px 0;
+            margin: 10px 0 18px;
         }
 
         .merchant-info {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 2px solid #f0f0f0;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid #E6E6E6;
         }
 
         .merchant-info h3 {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: #111111;
+            font-size: 1rem;
         }
 
         .alert {
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
             display: none;
+            font-size: 0.9rem;
         }
 
         .alert.active {
@@ -152,8 +169,10 @@
 
         .loading-spinner {
             text-align: center;
-            padding: 20px;
+            padding: 10px;
             display: none;
+            font-size: 0.9rem;
+            color: #6B6B6B;
         }
 
         .loading-spinner.active {
@@ -164,10 +183,10 @@
             border: 4px solid #f3f3f3;
             border-top: 4px solid #8BC34A;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
         }
 
         @keyframes spin {
@@ -177,7 +196,7 @@
 
         .success-animation {
             text-align: center;
-            padding: 40px;
+            padding: 30px 10px;
             display: none;
         }
 
@@ -186,14 +205,14 @@
         }
 
         .success-icon {
-            font-size: 5rem;
+            font-size: 4rem;
             color: #4CAF50;
             animation: scaleIn 0.5s ease-out;
         }
 
         @keyframes scaleIn {
             0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
+            50% { transform: scale(1.15); }
             100% { transform: scale(1); }
         }
 
@@ -201,171 +220,230 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .action-buttons button {
             flex: 1;
         }
+
+        @media (max-width: 600px) {
+            .redeem-card {
+                padding: 24px 16px;
+            }
+        }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header (same structure as index.html) -->
     <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <h1>Nimwema</h1>
-                    <p class="tagline" data-i18n="tagline">La solidarité africaine, rendue simple</p>
-                </div>
-                <nav class="nav">
-                    <a href="index.html" data-i18n="nav_home">Accueil</a>
-                    <a href="request.html" data-i18n="nav_request">Demander</a>
-                    <a href="send.html" data-i18n="nav_send">Envoyer</a>
-                    <a href="redeem.html" class="active" data-i18n="nav_redeem">Utiliser</a>
-                    <button id="languageToggle" class="language-toggle">EN</button>
-                </nav>
+        <!-- Top Bar: Language Selector + Login -->
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
             </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="container">
-        <div class="redeem-container">
-            <div class="redeem-card">
-                <!-- Initial State -->
-                <div id="initialState">
-                    <div class="redeem-icon">🎫</div>
-                    <h1 class="redeem-title" data-i18n="redeem_voucher">Utiliser un Bon d'Achat</h1>
-                    <p class="redeem-subtitle" data-i18n="enter_code">Entrez le code de votre bon pour l'utiliser</p>
+    <main>
+        <section class="section">
+            <div class="container">
+                <div class="redeem-container">
+                    <div class="redeem-card">
+                        <!-- Initial State -->
+                        <div id="initialState">
+                            <div class="redeem-icon">🎫</div>
+                            <h1 class="redeem-title" data-i18n="redeem_voucher">Utiliser un bon d'achat</h1>
+                            <p class="redeem-subtitle" data-i18n="enter_code">
+                                Entrez le code de votre bon pour afficher les détails et le valider.
+                            </p>
 
-                    <!-- Alert Messages -->
-                    <div id="alertSuccess" class="alert alert-success"></div>
-                    <div id="alertError" class="alert alert-error"></div>
-                    <div id="alertWarning" class="alert alert-warning"></div>
+                            <!-- Alert Messages -->
+                            <div id="alertSuccess" class="alert alert-success"></div>
+                            <div id="alertError" class="alert alert-error"></div>
+                            <div id="alertWarning" class="alert alert-warning"></div>
 
-                    <!-- Code Input -->
-                    <div class="code-input-group">
-                        <input 
-                            type="text" 
-                            id="voucherCode" 
-                            class="code-input" 
-                            placeholder="NMW-XXXXXX"
-                            maxlength="20"
-                            autocomplete="off"
-                            data-i18n-placeholder="code_placeholder">
-                    </div>
-
-                    <!-- Loading Spinner -->
-                    <div id="loadingSpinner" class="loading-spinner">
-                        <div class="spinner"></div>
-                        <p data-i18n="checking_code">Vérification du code...</p>
-                    </div>
-
-                    <!-- Voucher Details -->
-                    <div id="voucherDetails" class="voucher-details">
-                        <div class="voucher-amount" id="voucherAmount">$50 USD</div>
-                        
-                        <div class="detail-row">
-                            <span class="detail-label" data-i18n="voucher_code">Code:</span>
-                            <span class="detail-value" id="detailCode">NMW-ABC123</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label" data-i18n="status">Statut:</span>
-                            <span class="detail-value" id="detailStatus">Valide</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label" data-i18n="expires_on">Expire le:</span>
-                            <span class="detail-value" id="detailExpiry">31/03/2024</span>
-                        </div>
-                        <div class="detail-row" id="senderRow">
-                            <span class="detail-label" data-i18n="from">De:</span>
-                            <span class="detail-value" id="detailSender">Jean Mukendi</span>
-                        </div>
-                        <div class="detail-row" id="messageRow" style="display: none;">
-                            <span class="detail-label" data-i18n="message">Message:</span>
-                            <span class="detail-value" id="detailMessage"></span>
-                        </div>
-
-                        <!-- Merchant Information -->
-                        <div class="merchant-info">
-                            <h3 data-i18n="merchant_info">Informations du Marchand</h3>
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="merchant_name">Nom du marchand:</label>
-                                <input type="text" id="merchantName" class="form-input" required>
+                            <!-- Code Input -->
+                            <div class="code-input-group">
+                                <input 
+                                    type="text" 
+                                    id="voucherCode" 
+                                    class="code-input" 
+                                    placeholder="NMW-XXXXXX"
+                                    maxlength="20"
+                                    autocomplete="off"
+                                    data-i18n-placeholder="code_placeholder">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="merchant_phone">Téléphone du marchand:</label>
-                                <input type="tel" id="merchantPhone" class="form-input" placeholder="+243 XXX XXX XXX" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="location">Lieu (optionnel):</label>
-                                <input type="text" id="location" class="form-input" placeholder="Ex: Kinshasa, Gombe">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="notes">Notes (optionnel):</label>
-                                <textarea id="notes" class="form-input" rows="2"></textarea>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <button class="btn-secondary" onclick="resetForm()" id="cancelBtn" style="display: none;">
-                            <span data-i18n="cancel">Annuler</span>
-                        </button>
-                        <button class="btn-primary" onclick="checkVoucher()" id="checkBtn">
-                            <span data-i18n="check_code">Vérifier le Code</span>
-                        </button>
-                        <button class="btn-primary" onclick="redeemVoucher()" id="redeemBtn" style="display: none;">
-                            <span data-i18n="redeem_now">Utiliser Maintenant</span>
-                        </button>
-                    </div>
-                </div>
+                            <!-- Loading Spinner -->
+                            <div id="loadingSpinner" class="loading-spinner">
+                                <div class="spinner"></div>
+                                <p data-i18n="checking_code">Vérification du code...</p>
+                            </div>
 
-                <!-- Success State -->
-                <div id="successState" class="success-animation">
-                    <div class="success-icon">✅</div>
-                    <h2 class="redeem-title" data-i18n="redemption_success">Bon Utilisé avec Succès!</h2>
-                    <p class="redeem-subtitle" data-i18n="redemption_message">Le bon a été utilisé et le destinataire a été notifié.</p>
-                    
-                    <div class="voucher-details active">
-                        <div class="voucher-amount" id="successAmount">$50 USD</div>
-                        <div class="detail-row">
-                            <span class="detail-label" data-i18n="voucher_code">Code:</span>
-                            <span class="detail-value" id="successCode">NMW-ABC123</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label" data-i18n="merchant">Marchand:</span>
-                            <span class="detail-value" id="successMerchant">Shop ABC</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label" data-i18n="redeemed_at">Utilisé le:</span>
-                            <span class="detail-value" id="successDate">29/12/2024 15:30</span>
-                        </div>
-                    </div>
+                            <!-- Voucher Details -->
+                            <div id="voucherDetails" class="voucher-details">
+                                <div class="voucher-amount" id="voucherAmount">—</div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label" data-i18n="voucher_code">Code :</span>
+                                    <span class="detail-value" id="detailCode">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label" data-i18n="status">Statut :</span>
+                                    <span class="detail-value" id="detailStatus">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label" data-i18n="expires_on">Expire le :</span>
+                                    <span class="detail-value" id="detailExpiry">—</span>
+                                </div>
+                                <div class="detail-row" id="senderRow">
+                                    <span class="detail-label" data-i18n="from">De :</span>
+                                    <span class="detail-value" id="detailSender">—</span>
+                                </div>
+                                <div class="detail-row" id="messageRow" style="display:none;">
+                                    <span class="detail-label" data-i18n="message">Message :</span>
+                                    <span class="detail-value" id="detailMessage"></span>
+                                </div>
 
-                    <div class="action-buttons">
-                        <button class="btn-secondary" onclick="resetForm()">
-                            <span data-i18n="redeem_another">Utiliser un Autre Bon</span>
-                        </button>
-                        <button class="btn-primary" onclick="window.location.href='index.html'">
-                            <span data-i18n="back_home">Retour à l'Accueil</span>
-                        </button>
+                                <!-- Merchant Information -->
+                                <div class="merchant-info">
+                                    <h3 data-i18n="merchant_info">Informations du marchand / caisse</h3>
+                                    <div class="form-group">
+                                        <label class="form-label" for="merchantName" data-i18n="merchant_name">Nom du marchand / magasin<span class="required">*</span></label>
+                                        <input type="text" id="merchantName" class="form-input" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="merchantPhone" data-i18n="merchant_phone">Téléphone du marchand<span class="required">*</span></label>
+                                        <input type="tel" id="merchantPhone" class="form-input" placeholder="+243 XXX XXX XXX" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="location" data-i18n="location">Lieu (optionnel)</label>
+                                        <input type="text" id="location" class="form-input" placeholder="Ex: Kinshasa, Gombe">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="notes" data-i18n="notes">Notes (optionnel)</label>
+                                        <textarea id="notes" class="form-input" rows="2" style="height:auto;"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <button class="btn-secondary" type="button" onclick="resetForm()" id="cancelBtn" style="display:none;">
+                                    <span data-i18n="cancel">Annuler</span>
+                                </button>
+                                <button class="btn-primary" type="button" onclick="checkVoucher()" id="checkBtn">
+                                    <span data-i18n="check_code">Vérifier le code</span>
+                                </button>
+                                <button class="btn-primary" type="button" onclick="redeemVoucher()" id="redeemBtn" style="display:none;">
+                                    <span data-i18n="redeem_now">Utiliser maintenant</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Success State -->
+                        <div id="successState" class="success-animation">
+                            <div class="success-icon">✅</div>
+                            <h2 class="redeem-title" data-i18n="redemption_success">Bon utilisé avec succès</h2>
+                            <p class="redeem-subtitle" data-i18n="redemption_message">
+                                Le bon a été validé. Le bénéficiaire et le marchand recevront une confirmation.
+                            </p>
+                            
+                            <div class="voucher-details active">
+                                <div class="voucher-amount" id="successAmount">—</div>
+                                <div class="detail-row">
+                                    <span class="detail-label" data-i18n="voucher_code">Code :</span>
+                                    <span class="detail-value" id="successCode">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label" data-i18n="merchant">Marchand :</span>
+                                    <span class="detail-value" id="successMerchant">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label" data-i18n="redeemed_at">Utilisé le :</span>
+                                    <span class="detail-value" id="successDate">—</span>
+                                </div>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button class="btn-secondary" type="button" onclick="resetForm()">
+                                    <span data-i18n="redeem_another">Utiliser un autre bon</span>
+                                </button>
+                                <button class="btn-primary" type="button" onclick="window.location.href='/'">
+                                    <span data-i18n="back_home">Retour à l'accueil</span>
+                                </button>
+                            </div>
+                            <p class="text-small" style="margin-top:16px;color:#6B6B6B;">
+                                Cette page se réinitialisera automatiquement pour le prochain client.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer (same as index.html) -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Nimwema. <span data-i18n="footer_rights">Tous droits réservés.</span></p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="quick_links">Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html" data-i18n="send_voucher">Envoyer un bon</a></li>
+                        <li><a href="/request.html" data-i18n="request_voucher">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html" data-i18n="how_it_works">Comment ça marche</a></li>
+                        <li><a href="/about.html" data-i18n="about">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="support">Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html" data-i18n="contact">Contact</a></li>
+                        <li><a href="/terms.html" data-i18n="terms">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html" data-i18n="privacy">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="contact">Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.cd<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
         </div>
     </footer>
 
-    <script src="js/i18n.js"></script>
-    <script src="js/redeem.js"></script>
+    <!-- Scripts -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/redeem.js"></script>
 </body>
 </html>
