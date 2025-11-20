@@ -44,10 +44,9 @@ const PORT = process.env.PORT || 3000;
 
 
 
-const path = require('path');
+
 const fs = require('fs');
 const multer = require('multer');
-const bcrypt = require('bcrypt');        // already used in your signup route
 const { v4: uuidv4 } = require('uuid');  // already used elsewhere in your app
 const db = require('./db');              // same db helper you use for other routes
 
