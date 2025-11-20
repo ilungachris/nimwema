@@ -115,7 +115,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: true
         httpOnly: true, // MERGE: Added from backup
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
@@ -458,8 +458,8 @@ function authenticateSession(req, res, next) {
       if (req.headers.cookie && req.headers.cookie.includes('sessionId')) {
         res.clearCookie('sessionId', { 
           httpOnly: true, 
-          secure: process.env.NODE_ENV === 'production', 
-          sameSite: 'lax',
+          secure: true, 
+          sameSite: 'none',
           domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined 
         });
       }
@@ -1074,7 +1074,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
 res.cookie('sessionId', sessionId, {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: true,
   sameSite: 'none',
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
@@ -1185,7 +1185,7 @@ req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin
 
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
