@@ -48,8 +48,9 @@ async function checkVoucher() {
     hideAlerts();
 
     try {
-        const response = await fetch(`/api/vouchers/check/${code}`);
-        const data = await response.json();
+        const res = await fetch(`/api/merchant/vouchers/check?code=${encodeURIComponent(code)}`);
+
+        const data = await res.json();
 
         showLoading(false);
 
