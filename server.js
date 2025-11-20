@@ -777,7 +777,7 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
 const redeemResult = await db.query(
  // `INSERT INTO redemptions (voucher_id, merchant_id, cashier_id, redeemed_at)
  // VALUES ($1, $2, $3, NOW())
- `INSERT INTO redemptions (voucher_id, merchant_id, redeemed_at)
+ `INSERT INTO redemptions (voucher_id, merchant_id, created_at)
   
    VALUES ($1, $2, NOW())
    RETURNING *`,
