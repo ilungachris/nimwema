@@ -1161,9 +1161,16 @@ req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin
 
 console.log('[Login] Success', { userId: user.id, role: user.role });
 
+// FIXED RESPONSE – required by login.html
 return res.json({
   success: true,
-  role: user.role
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone
+  }
 });
 
     
