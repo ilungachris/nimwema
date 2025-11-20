@@ -2556,7 +2556,8 @@ app.post('/api/vouchers/create', async (req, res) => {
   }
 });
 
-// Check voucher validity
+// Check voucher validity 
+/*
 app.get('/api/vouchers/check/:code', async (req, res) => {
   try {
     const { code } = req.params;
@@ -2626,7 +2627,33 @@ app.get('/api/vouchers/check/:code', async (req, res) => {
       error: error.message
     });
   }
+});*/
+
+// MUST exist and return JSON
+app.get('/api/merchant/vouchers/check', requireMerchant, async (req, res) => {
+    const { code } = req.query;
+    if (!code) {
+        return res.status(400).json({ success: false, message: 'Code manquant' });
+    }
+
+    try {
+        const result = await db.query(
+            'SELECT * FROM vouchers WHERE code = $1',
+            [code]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Bon introuvable' });
+        }
+
+        const voucher = result.rows[0];
+        return res.json({ success: true, voucher });
+    } catch (err) {
+        console.error('Voucher check error:', err);
+        return res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
 });
+
 
 // Get voucher by code (detailed info)
 app.get('/api/vouchers/:code', async (req, res) => {

@@ -47,25 +47,38 @@ async function checkVoucher() {
     showLoading(true);
     hideAlerts();
 
-    try {
-        const res = await fetch(`/api/merchant/vouchers/check?code=${encodeURIComponent(code)}`);
+  try {
+    const res = await fetch(`/api/merchant/vouchers/check?code=${encodeURIComponent(code)}`, {
+        credentials: 'include'
+    });
 
-        const data = await res.json();
-
+    // If route not found or not JSON, stop here
+    if (!res.ok) {
+        const text = await res.text();           // 👈 helps you debug in console
+        console.error('Voucher check failed:', res.status, text);
         showLoading(false);
-
-        if (data.success && data.voucher) {
-            currentVoucher = data.voucher;
-            displayVoucherDetails(data.voucher);
-        } else {
-            showAlert('error', data.message || 'Code invalide ou bon déjà utilisé');
-            currentVoucher = null;
-        }
-    } catch (error) {
-        showLoading(false);
-        showAlert('error', 'Erreur lors de la vérification du code');
-        console.error('Error:', error);
+        showAlert('error', 'Code invalide ou bon introuvable');
+        currentVoucher = null;
+        return;
     }
+
+    const data = await res.json();               // now safe
+
+    showLoading(false);
+
+    if (data.success && data.voucher) {
+        currentVoucher = data.voucher;
+        displayVoucherDetails(data.voucher);
+    } else {
+        showAlert('error', data.message || 'Code invalide ou bon déjà utilisé');
+        currentVoucher = null;
+    }
+} catch (error) {
+    showLoading(false);
+    showAlert('error', 'Erreur lors de la vérification du code');
+    console.error('Error:', error);
+}
+
 }
 
 // Display voucher details
