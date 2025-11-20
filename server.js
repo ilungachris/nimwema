@@ -374,10 +374,14 @@ function requireMerchant(req, res, next) {
   const role   = req.session && req.session.role;
 
   if (!userId || role !== 'merchant') {
-    return res.status(401).json({ error: 'UNAUTHENTICATED', message: 'Connexion commerçant requise.' });
+    return res.status(401).json({
+      error: 'UNAUTHENTICATED',
+      message: 'Connexion commerçant requise.'
+    });
   }
   next();
 }
+
 
 
 
@@ -480,20 +484,29 @@ app.get('/api/merchant/me', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
-    const merchant = await loadMerchantForUser(client, req.session.userId);
-    if (!merchant) {
+    const merchant = await client.query(
+      `SELECT m.*
+         FROM merchants m
+         JOIN users u ON u.id = m.user_id
+        WHERE u.id = $1
+        LIMIT 1`,
+      [req.session.userId]
+    );
+
+    if (!merchant.rowCount) {
       return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
     }
 
+    const m = merchant.rows[0];
     return res.json({
-      id: merchant.id,
-      businessName: merchant.business_name,
-      address: merchant.address,
-      city: merchant.city,
-      commune: merchant.commune,
-      phone: merchant.phone,
-      email: merchant.email,
-      status: merchant.status
+      id: m.id,
+      businessName: m.business_name,
+      address: m.address,
+      city: m.city,
+      commune: m.commune,
+      phone: m.phone,
+      email: m.email,
+      status: m.status
     });
   } catch (err) {
     console.error('❌ [MerchantMe] Error', err);
@@ -502,6 +515,7 @@ app.get('/api/merchant/me', requireMerchant, async (req, res) => {
     if (client) client.release();
   }
 });
+
 
 
 
@@ -1140,6 +1154,18 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const isValid = await bcrypt.compare(password, rawUser.password);
+
+    // After bcrypt.compare(...) === true
+req.session.userId = user.id;
+req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin' ...
+
+console.log('[Login] Success', { userId: user.id, role: user.role });
+
+return res.json({
+  success: true,
+  role: user.role
+});
+
     
     if (!isValid) {
       console.warn('Login: Invalid password', { userId: rawUser.id, email, ip }); // Temp
