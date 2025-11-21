@@ -109,20 +109,21 @@ function selectCurrency(currency) {
   updateTotalAmount();
 }
 
-function selectPresetAmount(amount) {
-  selectedAmount = amount;
-  
+function selectPresetAmount(usdAmount) {
+  // Convert to the currently selected currency before storing
+  selectedAmount = currentCurrency === 'USD' 
+    ? usdAmount 
+    : convertToCDF(usdAmount);
+
+  // Rest of your existing code (highlight selected button, clear custom input, etc.)
   document.querySelectorAll('.amount-preset-btn').forEach(btn => {
     btn.classList.remove('selected');
   });
-  
   event.target.closest('.amount-preset-btn').classList.add('selected');
-  
+
   const customAmountInput = document.getElementById('customAmount');
-  if (customAmountInput) {
-    customAmountInput.value = '';
-  }
-  
+  if (customAmountInput) customAmountInput.value = '';
+
   updateTotalAmount();
 }
 
