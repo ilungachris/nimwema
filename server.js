@@ -246,10 +246,10 @@ async function sendSMSNotification(phone, data) {
     
     if (data.type === 'voucher_request') {
 
-      const linkUrl = `https://nimwema.com/send.html?recipientPhone[]=${data.phonehone}`;
+      const linkUrl = `https://nimwema.com/send.html?recipientPhone[]=${data.phone}`;
       // 🔁 USE THE SAME PATH AS /api/test-sms: sms.sendSMS(...)
       const smsMessage = `${data.requesterName} vous demande un bon d'achat: ` +
-        `"${data.message}". Envoyez par Envoyez via ${linkUrl}`;
+        `"${data.message}". Envoyez par ${linkUrl}`;
 
 
   console.log('📲 [SMS DEBUG] voucher_request sending via SMSService.sendSMS', {
