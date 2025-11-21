@@ -331,5 +331,24 @@
 
     <!-- Scripts -->
     <script src="/js/send-voucher.js"></script>
+    <script>
+// Auto-fill phone number if ?recipientPhone[]=12345 is in the URL
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const phone = params.get('recipientPhone[]');
+
+  if (phone) {
+    // Fill the first (and only) phone input
+    const phoneInput = document.querySelector('input[name="recipientPhone[]"]');
+    if (phoneInput) {
+      phoneInput.value = decodeURIComponent(phone);
+    }
+
+    // Optional: also focus the amount field so user can type immediately
+    const amountInput = document.querySelector('input[name="amount"], input[name="montant"]');
+    if (amountInput) amountInput.focus();
+  }
+});
+</script>
 </body>
 </html>
