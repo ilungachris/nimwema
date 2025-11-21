@@ -2566,7 +2566,7 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
       
       // Send SMS to recipient
       try {
-        const message = `Vous avez reçu un bon d'achat Nimwema de ${order.amount} ${order.currency}. Code: ${voucherCode}. Valide 90 jours. Utilisez sur www.nimwema.cd`;
+        const message = `Vous avez reçu un bon d'achat Nimwema de ${order.amount} ${order.currency}. Code: ${voucherCode}. Valide 90 jours. Utilisez sur www.nimwema.com`;
         await SMSService.sendSMS(recipient.phone, message);
       } catch (smsError) {
         console.error('SMS sending error:', smsError);

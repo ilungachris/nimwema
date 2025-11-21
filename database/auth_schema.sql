@@ -149,7 +149,7 @@ CREATE TRIGGER trigger_cashiers_updated_at
 -- Hash generated with bcrypt cost factor 10
 INSERT INTO users (email, password_hash, full_name, phone, role, status, email_verified)
 VALUES (
-    'admin@nimwema.cd',
+    'admin@nimwema.com',
     '$2b$10$rKJ5YvH8qF.xQxPxQxPxQeN8vH8qF.xQxPxQxPxQeN8vH8qF.xQxP',
     'System Administrator',
     '+243999999999',

@@ -194,7 +194,7 @@ function getBankInstructions(order) {
         <li>Effectuez le virement bancaire de <strong>${totalText}</strong></li>
         <li>Dans la référence, indiquez : <strong>${orderId}</strong></li>
         <li>Prenez une photo de la preuve de virement</li>
-        <li>Envoyez la preuve à : <strong>paiements@nimwema.cd</strong></li>
+        <li>Envoyez la preuve à : <strong>paiements@nimwema.com</strong></li>
         <li>Les bons seront envoyés après validation</li>
       </ol>
     </div>

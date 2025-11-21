@@ -28,9 +28,9 @@ class AuthService {
     try {
       // Default admin user
       const adminHash = await bcrypt.hash('Admin@2024', SALT_ROUNDS);
-      this.users.set('admin@nimwema.cd', {
+      this.users.set('admin@nimwema.com', {
         id: 1,
-        email: 'admin@nimwema.cd',
+        email: 'admin@nimwema.com',
         passwordHash: adminHash,
         fullName: 'System Administrator',
         phone: '+243999999999',
@@ -97,7 +97,7 @@ class AuthService {
       });
 
       console.log('✅ Default users initialized');
-      console.log('📧 Admin: admin@nimwema.cd / Admin@2024');
+      console.log('📧 Admin: admin@nimwema.com / Admin@2024');
       console.log('📧 Merchant: merchant@test.cd / Merchant@2024');
       console.log('📧 Cashier: cashier@test.cd / Cashier@2024');
     } catch (error) {

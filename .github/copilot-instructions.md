@@ -24,7 +24,7 @@ These instructions summarize the architecture, conventions and concrete examples
 
 4) Authentication & sessions (project-specific patterns)
 - `services/auth.js` currently implements an in-memory auth system (maps for users, sessions, merchants, cashiers) and seeds default credentials for local/dev testing:
-  - `admin@nimwema.cd` / `Admin@2024`
+  - `admin@nimwema.com` / `Admin@2024`
   - `merchant@test.cd` / `Merchant@2024`
   - `cashier@test.cd` / `Cashier@2024`
 - `middleware/auth.js` expects session tokens in `req.cookies.sessionToken` or header `x-session-token` and validates via `authService.validateSession()`.
