@@ -233,24 +233,31 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <a href="index.html">
-                    <span class="logo">NIMWEMA</span>
-                </a>
+ <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
             </div>
-            <div class="nav-links">
-                <a href="index.html" data-i18n="nav.home">Accueil</a>
-                <a href="login.html" data-i18n="nav.login">Connexion</a>
-                <div class="language-selector">
-                    <button id="languageToggle" class="language-btn">
-                        <span id="currentLanguage">FR</span>
-                    </button>
-                </div>
-            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                Connexion
+            </button>
         </div>
-    </nav>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
 
     <div class="signup-container">
         <div class="signup-header">
@@ -595,5 +602,6 @@
             }
         });
     </script>
+    <script src="/js/main.js"></script
 </body>
 </html>
