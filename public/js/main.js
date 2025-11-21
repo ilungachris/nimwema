@@ -371,10 +371,25 @@ function getCurrentUser() {
 }
 
 // Logout
-function logout() {
+/*function logout() {
   localStorage.removeItem('nimwema_user');
   window.location.href = '/';
-}
+}*/
+    async function logout() {
+        try {
+            await fetch(`${CONFIG.API_BASE}/auth/logout`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
+            window.location.href = '/login.html';
+        }
+    }
 
 // Export functions for use in other scripts
 window.Nimwema = {
