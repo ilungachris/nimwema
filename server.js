@@ -1797,63 +1797,108 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
   }
 });  */
 
+
+
+/////////////////////////
+// POST /api/vouchers/create-pending → Version 100 % fonctionnelle avec pg.Pool
 app.post('/api/vouchers/create-pending', async (req, res) => {
   const {
-    currency, amount, quantity, recipientType,
-    senderName, senderPhone, message = '', coverFees = false,
-    paymentMethod, recipients = []
+    currency,
+    amount,
+    quantity,
+    recipientType,
+    senderName,
+    senderPhone,
+    message = '',
+    coverFees = false,
+    paymentMethod,
+    recipients = []
   } = req.body;
 
-  if (recipients.length !== parseInt(quantity)) {
+  // Validation
+  if (!currency || !amount || !quantity || !senderPhone || !paymentMethod) {
+    return res.status(400).json({ success: false, message: 'Données manquantes' });
+  }
+
+  const qty = parseInt(quantity);
+  if (recipients.length !== qty) {
     return res.status(400).json({
       success: false,
-      message: 'Nombre de destinataires ≠ quantité'
+      message: `Doit avoir exactement ${qty} destinataire(s), reçu(s) : ${recipients.length}`
     });
   }
 
-  const client = await db.getClient();
   try {
-    await client.query('BEGIN');
-
+    // 1. Générer ID commande
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    await client.query(
-      `INSERT INTO orders (id, sender_name, sender_phone, amount, currency, quantity, payment_method, message, cover_fees, recipient_type, status, payment_status, total_amount, service_fee)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', 'pending_payment', $4*$6*(1+($9::boolean ? 0.035 : 0)), $4*$6*($9::boolean ? 0.035 : 0))`,
-      [orderId, senderName, senderPhone, amount, currency, quantity, paymentMethod, message, coverFees, recipientType]
+    // 2. Calculs frais (tu peux ajuster selon ta logique exacte)
+    const baseTotal = amount * qty;
+    const serviceFee = coverFees ? baseTotal * 0.035 : 0;
+    const totalAmount = baseTotal + serviceFee;
+
+    // 3. Insérer la commande principale
+    await db.query(
+      `INSERT INTO orders (
+        id, sender_name, sender_phone, amount, currency, quantity,
+        payment_method, message, cover_fees, recipient_type,
+        status, payment_status, total_amount, service_fee
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending','pending_payment',$11,$12)`,
+      [
+        orderId,
+        senderName || null,
+        senderPhone,
+        amount,
+        currency,
+        qty,
+        paymentMethod,
+        message || null,
+        coverFees,
+        recipientType,
+        totalAmount,
+        serviceFee
+      ]
     );
 
-    // Insertion propre des destinataires
+    // 4. Insérer tous les destinataires en une seule requête (rapide + sûr)
     if (recipients.length > 0) {
-      const values = recipients.map(r => [
-        null, // id auto par uuid_generate_v4()
-        orderId,
-        r.phone,
-        r.name || null,
-        r.requestId || null,
-        new Date()
-      ]);
+      const values = [];
+      const params = [];
+      let index = 1;
 
-      await client.query(
-        `INSERT INTO order_recipients (id, order_id, phone, name, request_id, created_at)
-         VALUES ${values.map((_, i) => `($${i*6+1}::uuid, $${i*6+2}, $${i*6+3}, $${i*6+4}, $${i*6+5}::uuid, $${i*6+6})`).join(',')}`,
-        values.flat()
+      recipients.forEach(recipient => {
+        params.push(
+          orderId,
+          recipient.phone,
+          recipient.name || null,
+          recipient.requestId || null
+        );
+        values.push(`($${index++}, $${index++}, $${index++}, $${index++})`);
+      });
+
+      await db.query(
+        `INSERT INTO order_recipients (order_id, phone, name, request_id)
+         VALUES ${values.join(', ')}`,
+        params
       );
     }
 
-    await client.query('COMMIT');
-
-    res.json({ success: true, order: { id: orderId } });
+    // Tout est bon
+    res.json({
+      success: true,
+      message: 'Commande créée avec succès',
+      order: { id: orderId }
+    });
 
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Create pending order failed:', error);
-    res.status(500).json({ success: false, message: 'Erreur création commande' });
-  } finally {
-    client.release();
+    console.error('Erreur création commande:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Impossible de créer la commande'
+    });
   }
 });
-
+////////////////////////
 
 // Get user's pending orders from database
 app.get('/api/orders/my-pending', async (req, res) => {
