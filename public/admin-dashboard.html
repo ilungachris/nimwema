@@ -432,6 +432,10 @@
                 
                 const data = await response.json();
                 
+console.log('Raw orders from API:', data.orders);
+
+
+
                 const tbody = document.getElementById('pendingOrdersBody');
                 
                 if (!data.success || !data.orders || data.orders.length === 0) {
