@@ -73,37 +73,38 @@ function generatePresetButtons() {
   if (!container) return;
   
   container.innerHTML = '';
-  
-  PRESET_AMOUNTS_USD.forEach(amount => {
+
+  PRESET_AMOUNTS_USD.forEach(usdAmount => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'amount-preset-btn';
-    button.onclick = () => selectPresetAmount(amount);
-    
-    const primaryAmount = currentCurrency === 'USD' ? amount : convertToCDF(amount);
-    const secondaryAmount = currentCurrency === 'USD' ? convertToCDF(amount) : amount;
-    
+    button.onclick = () => selectPresetAmount(usdAmount); // ← always pass USD base
+
+    // Always show correct values based on currentCurrency
+    const primary = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
+    const secondary = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
+
     button.innerHTML = `
-      <span class="amount-primary">${formatCurrency(primaryAmount, currentCurrency)}</span>
-      <span class="amount-secondary">${formatCurrency(secondaryAmount, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
+      <span class="amount-primary">${formatCurrency(primary, currentCurrency)}</span>
+      <span class="amount-secondary">${formatCurrency(secondary, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
     `;
-    
+
     container.appendChild(button);
   });
 }
 
 function selectCurrency(currency) {
-  currentCurrency = currency;
-  
+  currentCurrency = currency;  // ← THIS MUST UPDATE THE GLOBAL
+
+  // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
   });
-  
-  const currencySymbol = document.getElementById('amountCurrencySymbol');
-  if (currencySymbol) {
-    currencySymbol.textContent = currency === 'USD' ? '$' : 'FC';
-  }
-  
+
+  // Update symbol
+  document.getElementById('amountCurrencySymbol').textContent = currency === 'USD' ? '$' : 'FC';
+
+  // REBUILD BUTTONS WITH CORRECT CURRENCY
   generatePresetButtons();
   updateCustomAmountEquivalent();
   updateTotalAmount();

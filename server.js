@@ -210,10 +210,15 @@ const data = {
 
 // MERGE: Kept FlexPay helpers from current
 function buildReference() {
-  const ts = Date.now();
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `NM-${ts}-${rand}`;
+  const ts = Date.now().toString().slice(-8);  // Last 8 digits of timestamp
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();  // 4 random chars
+  return `ORDER_${ts}_${rand}`;  // Total: 8 + 1 + 4 = 13 chars max
 }
+
+
+
+
+
 function assertFlexpayEnv() {
   if (!FLEXPAY_MERCHANT || !FLEXPAY_TOKEN || !APP_BASE_URL) {
     const missing = [
