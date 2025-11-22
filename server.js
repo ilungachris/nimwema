@@ -50,6 +50,27 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');  // already used elsewhere in your app
  
 
+
+
+
+
+
+// Prevent infinite redirect loop on Render
+app.use((req, res, next) => {
+  if (req.get('host')?.includes('onrender.com') && !req.get('host')?.includes('nimwema.com')) {
+    return res.redirect(301, 'https://nimwema.com' + req.originalUrl);
+  }
+  next();
+});
+
+
+
+
+
+
+
+
+
 // --- Upload storage for merchant documents ---
 const merchantUploadDir = path.join(__dirname, 'uploads', 'merchant_docs');
 
@@ -1641,9 +1662,48 @@ app.post('/api/auth/create-guest-account', async (req, res) => {
   }
 });
 
-app.post('/api/payment/flexpay/initiate-card', async (req, res) => {
+/* app.post('/api/payment/flexpay/initiate-card', async (req, res) => {
   return app._router.handle(req, res, 'POST', '/api/payment/flexpay/card/initiate');
+}); */
+
+
+
+app.post('/api/payment/flexpay/initiate-card', async (req, res) => {
+  try {
+    const { orderId, amount, currency = 'USD' } = req.body;
+
+    const payload = {
+      authorization: `Bearer ${process.env.FLEXPAY_TOKEN.trim()}`,
+      merchant: process.env.FLEXPAY_MERCHANT,
+      reference: orderId,
+      amount: Math.round(amount),
+      currency: currency,
+      callback_url: 'https://nimwema.com/api/payment/flexpay/callback',
+      approve_url: 'https://nimwema.com/payment-success.html',
+      cancel_url:  'https://nimwema.com/payment-cancel.html',
+      decline_url: 'https://nimwema.com/payment-cancel.html',
+      description: 'Nimwema Voucher'
+    };
+
+    console.log('CARD PAYMENT → FlexPay:', payload);
+
+    const response = await axios.post('https://cardpayment.flexpay.cd/v1.1/pay', payload);
+
+    console.log('CARD PAYMENT ← FlexPay:', response.data);
+
+    if (response.data.code === '0' || response.data.code === 0) {
+      res.json({ success: true, redirectUrl: response.data.url });
+    } else {
+      res.json({ success: false, message: response.data.message || 'FlexPay refused' });
+    }
+  } catch (err) {
+    console.error('CARD PAYMENT ERROR:', err.response?.data || err.message);
+    res.status(500).json({ success: false, message: 'FlexPay Card indisponible' });
+  }
 });
+
+
+
 
 // Exchange Rate (merged: advanced from backup with fallback)
 app.get('/api/exchange-rate', async (req, res) => {
