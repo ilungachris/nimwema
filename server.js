@@ -3383,7 +3383,7 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
 
 
 
-        app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+   /*     app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   console.log('Admin fetching pending orders for user:', req.user.user_id);
 
   try {
@@ -3454,10 +3454,10 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
       message: 'Erreur lors du chargement des commandes'
     });
   }
-});
+}); */
 
 
-
+/*
 
 
         async function loadPendingOrders() {
@@ -3583,6 +3583,80 @@ console.log('Raw orders from API:', data.orders);
     res.status(500).json({ success: false, message: 'Erreur lors du chargement des commandes' });
   }
 }); */
+
+
+app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  console.log('Admin fetching pending orders for user:', req.user.user_id);
+
+  try {
+    // Nouvelle requête : on récupère les vraies données + les vrais destinataires depuis order_recipients
+    const result = await db.query(`
+      SELECT 
+        o.id,
+        o.sender_name,
+        o.sender_phone,
+        o.amount,
+        o.currency,
+        o.quantity,
+        o.payment_method,
+        o.status,
+        o.payment_status,
+        o.message,
+        o.total_amount,
+        o.service_fee,
+        o.created_at,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', r.id,
+              'name', COALESCE(r.name, 'Anonyme'),
+              'phone', r.phone,
+              'request_id', r.request_id
+            )
+          ) FILTER (WHERE r.id IS NOT NULL),
+          '[]'::json
+        ) AS recipients
+      FROM orders o
+      LEFT JOIN order_recipients r ON r.order_id = o.id
+      WHERE o.status IN ('pending', 'pending_payment', 'pending_approval')
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
+    `);
+
+    // On garde exactement la même structure que ton frontend attend
+    const pendingOrders = result.rows.map(order => {
+      return {
+        id: order.id,
+        sender_name: order.sender_name || 'N/A',
+        sender_phone: order.sender_phone || '',
+        amount: order.amount,
+        currency: order.currency,
+        quantity: order.quantity,
+        recipients: order.recipients || [],                    // <-- maintenant c’est le vrai tableau
+        payment_method: order.payment_method,
+        status: order.status,
+        payment_status: order.payment_status || order.status,
+        created_at: order.created_at,
+        message: order.message || '',
+        total_amount: order.total_amount || 0
+      };
+    });
+
+    console.log(`Found ${pendingOrders.length} pending orders`);
+
+    res.json({
+      success: true,
+      orders: pendingOrders
+    });
+
+  } catch (error) {
+    console.error('Error loading pending orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors du chargement des commandes'
+    });
+  }
+});
 
 
 /////
