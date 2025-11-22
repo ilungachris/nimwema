@@ -3369,7 +3369,7 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
 
     // Map to frontend format (sanitize, parse recipients from metadata if JSON)
     const pendingOrders = result.rows.map(order => {
-      let recipients = [];
+      /*let recipients = [];
       try {
         if (order.metadata && typeof order.metadata === 'string') {
           const parsed = JSON.parse(order.metadata);
@@ -3377,7 +3377,105 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
         }
       } catch (parseErr) {
         console.warn('Failed to parse metadata for order:', order.id, parseErr);
-      }
+      }*/
+
+
+
+        async function loadPendingOrders() {
+            try {
+                const response = await fetch('/api/admin/orders/pending', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Expected JSON but got:', contentType);
+                    throw new Error('Le serveur a renvoyé une réponse non-JSON. Vérifiez que l\'API est configurée correctement.');
+                }
+                
+                const data = await response.json();
+                
+console.log('Raw orders from API:', data.orders);
+
+
+
+                const tbody = document.getElementById('pendingOrdersBody');
+                
+                if (!data.success || !data.orders || data.orders.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                <div class="empty-state-icon">✅</div>
+                                <p>Aucune commande en attente</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = data.orders.map(order => {
+                    const recipientsCount = order.recipients ? order.recipients.length : order.quantity;
+                    const paymentMethodLabel = getPaymentMethodLabel(order.payment_method);
+                    const statusLabel = getStatusLabel(order.status, order.payment_status);
+                    
+                    return `
+                        <tr>
+                            <td><strong>${order.id}</strong></td>
+                            <td>
+                                ${order.sender_name || 'N/A'}<br>
+                                <small style="color: #666;">${order.sender_phone || ''}</small>
+                            </td>
+                            <td><strong>${formatAmount(order.amount)} ${order.currency}</strong></td>
+                            <td>${order.quantity} bon(s)</td>
+                            <td>${recipientsCount} personne(s)</td>
+                            <td><span class="status-badge status-pending">${paymentMethodLabel}</span></td>
+                            <td><span class="status-badge ${getStatusClass(order.status)}">${statusLabel}</span></td>
+                            <td>${formatDate(order.created_at)}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-success btn-sm" onclick="approveOrder('${order.id}')">
+                                        ✅ Approuver
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">
+                                        ❌ Rejeter
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails('${order.id}')">
+                                        👁️ Voir
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading pending orders:', error);
+                const tbody = document.getElementById('pendingOrdersBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <div class="empty-state-icon">⚠️</div>
+                            <p style="color: #dc3545; font-weight: 600;">Erreur lors du chargement des commandes</p>
+                            <p style="font-size: 14px; color: #666; margin: 10px 0;">${error.message}</p>
+                            <p style="font-size: 13px; color: #999; margin-bottom: 15px;">
+                                Vérifiez que:<br>
+                                • L'API backend est démarrée<br>
+                                • L'endpoint /api/admin/orders/pending existe<br>
+                                • Vous êtes authentifié en tant qu'administrateur
+                            </p>
+                            <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Réessayer</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+
+
 
       return {
         id: order.id,
