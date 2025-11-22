@@ -1705,6 +1705,7 @@ app.post('/api/orders/create', async (req, res) => {
 
 // Vouchers: create pending (kept from current, enhanced with backup totals)
 // Vouchers: create pending - FIXED: Require/validate recipients + INSERT metadata
+/*
 app.post('/api/vouchers/create-pending', async (req, res) => {
   try {
     const orderData = req.body;
@@ -1794,7 +1795,65 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
     console.error('Create pending order error:', error);
     res.status(500).json({ success: false, message: 'Failed to create pending order' });
   }
+});  */
+
+app.post('/api/vouchers/create-pending', async (req, res) => {
+  const {
+    currency, amount, quantity, recipientType,
+    senderName, senderPhone, message = '', coverFees = false,
+    paymentMethod, recipients = []
+  } = req.body;
+
+  if (recipients.length !== parseInt(quantity)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Nombre de destinataires ≠ quantité'
+    });
+  }
+
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+
+    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    await client.query(
+      `INSERT INTO orders (id, sender_name, sender_phone, amount, currency, quantity, payment_method, message, cover_fees, recipient_type, status, payment_status, total_amount, service_fee)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', 'pending_payment', $4*$6*(1+($9::boolean ? 0.035 : 0)), $4*$6*($9::boolean ? 0.035 : 0))`,
+      [orderId, senderName, senderPhone, amount, currency, quantity, paymentMethod, message, coverFees, recipientType]
+    );
+
+    // Insertion propre des destinataires
+    if (recipients.length > 0) {
+      const values = recipients.map(r => [
+        null, // id auto par uuid_generate_v4()
+        orderId,
+        r.phone,
+        r.name || null,
+        r.requestId || null,
+        new Date()
+      ]);
+
+      await client.query(
+        `INSERT INTO order_recipients (id, order_id, phone, name, request_id, created_at)
+         VALUES ${values.map((_, i) => `($${i*6+1}::uuid, $${i*6+2}, $${i*6+3}, $${i*6+4}, $${i*6+5}::uuid, $${i*6+6})`).join(',')}`,
+        values.flat()
+      );
+    }
+
+    await client.query('COMMIT');
+
+    res.json({ success: true, order: { id: orderId } });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Create pending order failed:', error);
+    res.status(500).json({ success: false, message: 'Erreur création commande' });
+  } finally {
+    client.release();
+  }
 });
+
 
 // Get user's pending orders from database
 app.get('/api/orders/my-pending', async (req, res) => {
