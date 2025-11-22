@@ -3954,6 +3954,7 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
 
 
 // Reject an order - Fixed with DB update and SMS
+// Reject an order - Fixed with DB update and SMS
 app.post('/api/admin/orders/:orderId/reject', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -3962,7 +3963,7 @@ app.post('/api/admin/orders/:orderId/reject', authMiddleware.requireAuth, authMi
     // Update order status in DB
     const result = await db.query(
       'UPDATE orders SET status = $1, rejection_reason = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING sender_phone',
-      ['rejected', reason, orderId]
+      ['failed', reason, orderId]
     );
     
     if (result.rows.length === 0) {
@@ -3982,7 +3983,7 @@ app.post('/api/admin/orders/:orderId/reject', authMiddleware.requireAuth, authMi
     
     // Update global memory
     if (global.orders[orderId]) {
-      global.orders[orderId].status = 'rejected';
+      global.orders[orderId].status = 'failed';
       global.orders[orderId].rejectionReason = reason;
     }
     
