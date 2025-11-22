@@ -4322,6 +4322,38 @@ app.post('/api/test-sms', async (req, res) => {
   }
 });
 
+
+
+
+
+// Global error handler (must be last middleware)
+app.use((err, req, res, next) => {
+  console.error('❌ Global error handler:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+  res.status(500).json({
+    success: false,
+    message: 'Erreur serveur interne',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined  // Hide details in prod
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ========== START SERVER ==========
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
