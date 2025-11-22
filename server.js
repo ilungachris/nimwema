@@ -1801,6 +1801,7 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
 
 /////////////////////////
 // POST /api/vouchers/create-pending → Version 100 % fonctionnelle avec pg.Pool
+// POST /api/vouchers/create-pending → Version FINALE qui marche partout
 app.post('/api/vouchers/create-pending', async (req, res) => {
   const {
     currency,
@@ -1824,26 +1825,25 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
   if (recipients.length !== qty) {
     return res.status(400).json({
       success: false,
-      message: `Doit avoir exactement ${qty} destinataire(s), reçu(s) : ${recipients.length}`
+      message: `Nombre de destinataires (${recipients.length}) ≠ quantité (${qty})`
     });
   }
 
   try {
-    // 1. Générer ID commande
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // 2. Calculs frais (tu peux ajuster selon ta logique exacte)
-    const baseTotal = amount * qty;
-    const serviceFee = coverFees ? baseTotal * 0.035 : 0;
-    const totalAmount = baseTotal + serviceFee;
+    // Calculs exacts
+    const subtotal = amount * qty;
+    const serviceFee = coverFees ? Math.round(subtotal * 0.035 * 100) / 100 : 0;
+    const totalAmount = subtotal + serviceFee;
 
-    // 3. Insérer la commande principale
+    // 1. Créer la commande
     await db.query(
       `INSERT INTO orders (
         id, sender_name, sender_phone, amount, currency, quantity,
         payment_method, message, cover_fees, recipient_type,
         status, payment_status, total_amount, service_fee
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending','pending_payment',$11,$12)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', 'pending_payment', $11, $12)`,
       [
         orderId,
         senderName || null,
@@ -1860,42 +1860,50 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
       ]
     );
 
-    // 4. Insérer tous les destinataires en une seule requête (rapide + sûr)
+    // 2. Insérer tous les destinataires (même 50 en une fois)
     if (recipients.length > 0) {
       const values = [];
       const params = [];
-      let index = 1;
 
-      recipients.forEach(recipient => {
-        params.push(
-          orderId,
-          recipient.phone,
-          recipient.name || null,
-          recipient.requestId || null
-        );
-        values.push(`($${index++}, $${index++}, $${index++}, $${index++})`);
+      recipients.forEach(r => {
+        params.push(orderId, r.phone, r.name || null, r.requestId || null);
+        values.push(`($${params.length-3}, $${params.length-2}, $${params.length-1}, $${params.length})`);
       });
 
       await db.query(
-        `INSERT INTO order_recipients (order_id, phone, name, request_id)
-         VALUES ${values.join(', ')}`,
+        `INSERT INTO order_recipients (order_id, phone, name, request_id) VALUES ${values.join(', ')}`,
         params
       );
     }
 
-    // Tout est bon
+    // 3. Réponse complète pour payment-instructions.html
+    const fullOrderData = {
+      id: orderId,
+      orderId: orderId, // au cas où
+      amount: parseFloat(amount),
+      currency,
+      quantity: qty,
+      recipients: recipients,
+      subtotal: subtotal,
+      feeAmount: serviceFee,
+      total: totalAmount,
+      totalAmount: totalAmount,
+      paymentMethod,
+      senderName: senderName || 'Anonyme',
+      senderPhone
+    };
+
+    // Sauvegarde pour la page de confirmation (cash/bank)
+    // (le frontend fait déjà sessionStorage.setItem('pendingOrder', ...))
     res.json({
       success: true,
       message: 'Commande créée avec succès',
-      order: { id: orderId }
+      order: fullOrderData
     });
 
   } catch (error) {
     console.error('Erreur création commande:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Impossible de créer la commande'
-    });
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
   }
 });
 ////////////////////////
