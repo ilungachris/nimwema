@@ -1,4 +1,274 @@
-public/js/send-voucher.js
+// Nimwema Platform - Send Voucher JavaScript (Production)
+// Version: 2.0 - Database-focused, guest-friendly
+
+// Configuration
+const PRESET_AMOUNTS_USD = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
+const DEFAULT_EXCHANGE_RATE = 2200;
+const FEE_PERCENTAGE = 3.5;
+const MAX_RECIPIENTS_PER_BATCH = 50;
+const MAX_TOTAL_QUANTITY = 50;
+
+// Payment result pages
+const PAYMENT_SUCCESS_URL = '/payment-success.html';
+const PAYMENT_CANCEL_URL = '/payment-cancel.html';
+const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
+
+// State
+let currentCurrency = 'USD';
+let exchangeRate = DEFAULT_EXCHANGE_RATE;
+let selectedAmount = 0;
+let recipientCount = 0;
+let waitingListRequests = [];
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  initializeSendForm();
+  loadExchangeRate();
+  //generatePresetButtons();
+  addRecipientField();
+  setupEventListeners();
+  checkForPrefilledData();
+});
+
+function initializeSendForm() {
+  console.log('✅ Send voucher form initialized');
+    currentCurrency = 'USD';
+  
+    
+
+      // Set correct symbol
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = '$';
+
+  // Activate USD button
+  document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.currency === 'USD');
+  });
+
+  // NOW generate buttons with correct currency
+  //console.log('line 49 ZEROOO BEFORE culprit Currency:', currentCurrency   ); 
+
+ // generatePresetButtons();
+//console.log('line 52 ZEROOO BEFORE culprit Currency:', currency   ); 
+
+}
+
+// ============================================
+// EXCHANGE RATE MANAGEMENT
+// ============================================
+async function loadExchangeRate() {
+  try {
+    const response = await fetch('/api/exchange-rate');
+    const data = await response.json();
+    
+    if (data.success && data.rate) {
+      exchangeRate = data.rate;
+      updateExchangeRateDisplay();
+      console.log('✅ Exchange rate loaded:', exchangeRate);
+    } else {
+      exchangeRate = DEFAULT_EXCHANGE_RATE;
+      updateExchangeRateDisplay();
+    }
+  } catch (error) {
+    console.error('⚠️ Exchange rate fetch failed, using default:', error);
+    exchangeRate = DEFAULT_EXCHANGE_RATE;
+    updateExchangeRateDisplay();
+  }
+}
+
+function updateExchangeRateDisplay() {
+  const displayText = `1 USD = ${formatNumber(exchangeRate)} CDF`;
+  const rateElement = document.getElementById('exchangeRateText');
+  if (rateElement) {
+    rateElement.textContent = displayText;
+  }
+}
+
+// ============================================
+// AMOUNT SELECTION
+// ============================================
+function generatePresetButtons() {
+  //console.log('✅ value of currentCurrency 1:', currentCurrency);
+  const container = document.getElementById('amountPresetGrid');
+  if (!container) return;
+  
+  container.innerHTML = '';
+
+  PRESET_AMOUNTS_USD.forEach(usdAmount => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'amount-preset-btn';
+    button.onclick = () => selectPresetAmount(usdAmount); // ← always pass USD base
+
+    // Determine the primary and secondary amounts
+    const primaryAmount = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
+    const secondaryAmount = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
+
+    // Determine the explicit currency *codes* for formatting
+    const primaryCurrencyCode = currentCurrency;
+    const secondaryCurrencyCode = currentCurrency === 'USD' ? 'CDF' : 'USD'; 
+
+    //console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
+
+    button.innerHTML = `
+      <!-- Use the correct variable names here -->
+      <span class="amount-primary">${formatCurrency(primaryAmount, primaryCurrencyCode)}</span>
+      <span class="amount-secondary">${formatCurrency(secondaryAmount, secondaryCurrencyCode)}</span>
+    `;
+        console.log('VRAI PROLEM secondary code', secondaryCurrencyCode, 'primary code:', primaryCurrencyCode); // ← now you WILL see this
+
+    container.appendChild(button);
+  });
+}
+
+
+function selectCurrency(currency) {
+  currentCurrency = currency; // THIS WAS BROKEN BEFORE
+
+  // Update active class on buttons
+  document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.currency === currency);
+  });
+  // Update $ / FC symbol
+const symbolEl = document.getElementById('amountCurrencySymbol');
+console.log('ZEROOO BEFORE culprit Currency:', currency, 'Symbol:', symbolEl.textContent); 
+
+if (symbolEl) {
+  symbolEl.textContent = currency === 'USD' ? '$' : 'FC';
+}
+console.log('culprit Currency:', currency, 'Symbol:', symbolEl.textContent); 
+
+  // Rebuild preset buttons with correct currency
+  generatePresetButtons();
+  updateCustomAmountEquivalent();
+  updateTotalAmount();
+}
+
+function selectPresetAmount(usdAmount) {
+  // Convert to the currently selected currency before storing
+  selectedAmount = currentCurrency === 'USD' 
+    ? usdAmount 
+    : convertToCDF(usdAmount);
+
+  // Rest of your existing code (highlight selected button, clear custom input, etc.)
+  document.querySelectorAll('.amount-preset-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  event.target.closest('.amount-preset-btn').classList.add('selected');
+
+  const customAmountInput = document.getElementById('customAmount');
+  if (customAmountInput) customAmountInput.value = '';
+
+  updateTotalAmount();
+}
+
+function convertToCDF(usdAmount) {
+  const cdfAmount = usdAmount * exchangeRate;
+  return Math.ceil(cdfAmount / 1000) * 1000;
+}
+
+function convertToUSD(cdfAmount) {
+  return cdfAmount / exchangeRate;
+}
+
+/*function formatCurrency(amount, currentCurrency) {
+
+  console.log('✅ value of currentCurrency before formatting:', currentCurrency);
+  return currentCurrency === 'USD' // I changed this
+    ? `${formatNumber(amount)} $`
+    : `${formatNumber(amount)} FC`;
+    console.log('✅ value of currentCurrency after formatting:', currentCurrency);
+}*/
+
+
+function formatCurrency(amount, currency) {
+  const curr = currency || currentCurrency; // fallback safety
+  //console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
+
+  if (curr === 'USD') {
+    console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
+
+    return `${formatNumber(amount)} $`;
+  } else {
+        console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
+
+    return `${formatNumber(amount)} FC`;
+  }
+
+  //const curr = currency || currentCurrency; 
+         console.log('Formatting IN : FC', amount, 'Currency à la sortie:', curr); // ← now you WILL see this
+
+}
+
+
+
+
+function formatNumber(num) {
+              console.log('Formatting after in num num is:', num); // ← now you WILL see this
+
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+              console.log('Formatting after in num: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
+
+}
+
+function updateCustomAmountEquivalent() {
+  const customAmountInput = document.getElementById('customAmount');
+  const customAmount = parseFloat(customAmountInput?.value) || 0;
+  const equivalentElement = document.getElementById('amountEquivalent');
+  
+  if (!equivalentElement) return;
+  
+  if (customAmount > 0) {
+    document.querySelectorAll('.amount-preset-btn').forEach(btn => btn.classList.remove('selected'));
+    selectedAmount = customAmount;
+    
+    const equivalent = currentCurrency === 'USD' 
+      ? convertToCDF(customAmount) 
+      : convertToUSD(customAmount);
+    const equivalentCurrency = currentCurrency === 'USD' ? 'CDF' : 'USD';
+    
+    equivalentElement.textContent = formatCurrency(equivalent, equivalentCurrency);
+  } else {
+    equivalentElement.textContent = '';
+  }
+  
+  updateTotalAmount();
+}
+
+function updateTotalAmount() {
+  const quantityInput = document.getElementById('quantity');
+  const quantity = parseInt(quantityInput?.value) || 1;
+  const amount = selectedAmount || 0;
+  const subtotal = amount * quantity;
+  
+console.log('TOTAL AMOUNT culprit Currency:', currentCurrency); 
+
+
+
+
+  const totalDisplay = document.getElementById('totalAmountDisplay');
+  if (totalDisplay) {
+    totalDisplay.textContent = formatCurrency(subtotal, currentCurrency);
+  }
+  
+  updateFees();
+  updateBatchInfo(quantity);
+
+
+
+  // Auto-add recipient fields based on quantity (for specific type)
+const recipientType = document.querySelector('input[name="recipientType"]:checked')?.value;
+if (recipientType === 'specific') {
+  const currentFields = document.querySelectorAll('.recipient-field').length;
+  const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
+  if (quantity > currentFields) {
+    for (let i = currentFields; i < quantity; i++) {
+      addRecipientField();
+    }
+    console.log('✅ Auto-added fields to match quantity:', quantity);
+  }
+}
+}
 
 function updateFees() {
   const quantityInput = document.getElementById('quantity');

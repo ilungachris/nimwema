@@ -210,12 +210,8 @@ const data = {
 
 // FINAL FIXED REFERENCE — ALWAYS ≤ 25 chars
 function buildReference() {
-  const now = Date.now();                     // e.g. 1763975809442
-  const shortTs = now.toString().slice(-10);  // last 10 digits → max 10 chars
-  const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // 0000-9999
-  const ref = `NM${shortTs}${rand}`;
-  return ref.length > 25 ? ref.substring(0, 25) : ref;
-  // → Example: NM7658058094428371 → 20 chars max
+  const rand = Math.random().toString(36).slice(2, 12).toUpperCase(); // 10 random chars
+  return `NM-${rand}`; // e.g., NM-ABCDEF1234 (13 chars max)
 }
 
 
