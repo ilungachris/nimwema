@@ -96,12 +96,11 @@ function generatePresetButtons() {
 }
 
 function selectCurrency(currency) {
-  currency = currentCurrency ;  // ← THIS MUST UPDATE THE GLOBAL
+  currentCurrency = currency;  // ← FIXED: Update the global!
 
   // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
-    
   });
 
   // Update symbol
@@ -815,7 +814,7 @@ function checkForPrefilledData() {
     }
   }
 }
-
+selectCurrency('USD');  // ← Set default on load (active class + symbol)
 // ============================================
 // GLOBAL EXPORTS
 // ============================================
