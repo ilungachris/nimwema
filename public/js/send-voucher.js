@@ -137,7 +137,7 @@ function convertToUSD(cdfAmount) {
   return cdfAmount / exchangeRate;
 }
 
-function formatCurrency(amount, currency) {
+function formatCurrency(amount, currentCurrency) {
   return currency === 'USD'
     ? `${formatNumber(amount)} $`
     : `${formatNumber(amount)} FC`;
