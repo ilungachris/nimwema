@@ -241,6 +241,11 @@ function updateTotalAmount() {
   const amount = selectedAmount || 0;
   const subtotal = amount * quantity;
   
+console.log('TOTAL AMOUNT culprit Currency:', currentCurrency); 
+
+
+
+
   const totalDisplay = document.getElementById('totalAmountDisplay');
   if (totalDisplay) {
     totalDisplay.textContent = formatCurrency(subtotal, currentCurrency);
