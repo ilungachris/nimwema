@@ -46,7 +46,11 @@ function initializeSendForm() {
   });
 
   // NOW generate buttons with correct currency
+  console.log('line 49 ZEROOO BEFORE culprit Currency:', currentCurrency   ); 
+
   generatePresetButtons();
+console.log('line 52 ZEROOO BEFORE culprit Currency:', currency   ); 
+
 }
 
 // ============================================
