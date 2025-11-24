@@ -100,6 +100,14 @@ function generatePresetButtons() {
     const primary = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
     const secondary = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
 
+
+
+
+    console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
+
+
+
+
     button.innerHTML = `
       <span class="amount-primary">${formatCurrency(primary, currentCurrency)}</span>
       <span class="amount-secondary">${formatCurrency(secondary, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
