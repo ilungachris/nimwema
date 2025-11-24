@@ -69,6 +69,7 @@ function updateExchangeRateDisplay() {
 // AMOUNT SELECTION
 // ============================================
 function generatePresetButtons() {
+  console.log('✅ value of currentCurrency 1:', currentCurrency);
   const container = document.getElementById('amountPresetGrid');
   if (!container) return;
   
@@ -90,6 +91,7 @@ function generatePresetButtons() {
     `;
 
     container.appendChild(button);
+    console.log('✅ value of currentCurrency 2:', currentCurrency);
   });
 }
 
@@ -99,6 +101,7 @@ function selectCurrency(currency) {
   // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
+    console.log('✅ value of currentCurrency 3:', currentCurrency);
   });
 
   // Update symbol
