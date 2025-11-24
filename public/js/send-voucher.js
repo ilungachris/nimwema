@@ -16,7 +16,7 @@ const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
 // State
 let currentCurrency = 'USD';
 let exchangeRate = DEFAULT_EXCHANGE_RATE;
-let selectedAmount = 0;
+let selectedAmount = 0; // Always store in USD internally now
 let recipientCount = 0;
 let waitingListRequests = [];
 
@@ -27,10 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
   addRecipientField();
   setupEventListeners();
   checkForPrefilledData();
-
-  // FORCE USD on load AFTER all init (fixes load display)
-  currentCurrency = 'USD'.toUpperCase(); // Safeguard case
-  selectCurrency('USD'); // Calls generatePresetButtons() with correct state
+  selectCurrency('USD'); // Moved here – ensures DOM ready, fixes load FC
 });
 
 function initializeSendForm() {
@@ -102,13 +99,22 @@ function generatePresetButtons() {
 }
 
 function selectCurrency(currency) {
-  currentCurrency = currency.toUpperCase(); // FIXED: Normalize case to prevent mismatches
+  const previousCurrency = currentCurrency;
+  currentCurrency = currency.toUpperCase(); // Normalize case
+
+  // Convert selectedAmount to new currency if needed (fixes override on switch)
+  if (selectedAmount > 0 && previousCurrency !== currentCurrency) {
+    if (previousCurrency === 'CDF') {
+      selectedAmount = convertToUSD(selectedAmount); // Store internally as USD
+    } else if (currentCurrency === 'CDF') {
+      selectedAmount = convertToCDF(selectedAmount);
+    }
+  }
 
   // Update active class on buttons
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency.toUpperCase() === currentCurrency);
   });
-
   // Update $ / FC symbol
   const symbolEl = document.getElementById('amountCurrencySymbol');
   console.log('ZEROOO BEFORE culprit Currency:', currentCurrency, 'Symbol:', symbolEl?.textContent); 
@@ -125,12 +131,12 @@ function selectCurrency(currency) {
 }
 
 function selectPresetAmount(usdAmount) {
-  // Convert to the currently selected currency before storing
+  // Always store selectedAmount in USD (fixes custom/switch overrides)
   selectedAmount = currentCurrency === 'USD' 
     ? usdAmount 
-    : convertToCDF(usdAmount);
+    : convertToUSD(convertToCDF(usdAmount)); // Normalize to USD
 
-  // Rest of your existing code (highlight selected button, clear custom input, etc.)
+  // Highlight selected button, clear custom input
   document.querySelectorAll('.amount-preset-btn').forEach(btn => {
     btn.classList.remove('selected');
   });
@@ -152,7 +158,7 @@ function convertToUSD(cdfAmount) {
 }
 
 function formatCurrency(amount, currency) {
-  const curr = (currency || currentCurrency).toUpperCase(); // FIXED: Normalize case + fallback
+  const curr = (currency || currentCurrency).toUpperCase(); // Normalize case + fallback
   console.log('Formatting IN:', amount, 'Currency:', curr); // ← now you WILL see this
 
   if (curr === 'USD') {
@@ -175,7 +181,8 @@ function updateCustomAmountEquivalent() {
   
   if (customAmount > 0) {
     document.querySelectorAll('.amount-preset-btn').forEach(btn => btn.classList.remove('selected'));
-    selectedAmount = customAmount;
+    // Store custom as USD internally (fixes FC switch on typing)
+    selectedAmount = currentCurrency === 'USD' ? customAmount : convertToUSD(customAmount);
     
     const equivalent = currentCurrency === 'USD' 
       ? convertToCDF(customAmount) 
@@ -187,14 +194,15 @@ function updateCustomAmountEquivalent() {
     equivalentElement.textContent = '';
   }
   
-  updateTotalAmount(); // FIXED: Ensures total refreshes with correct currency after custom change
+  updateTotalAmount(); // Ensures total refreshes with correct currency after typing
 }
 
 function updateTotalAmount() {
   const quantityInput = document.getElementById('quantity');
   const quantity = parseInt(quantityInput?.value) || 1;
-  const amount = selectedAmount || 0;
-  const subtotal = amount * quantity;
+  const amountInUSD = selectedAmount || 0;
+  const amountDisplay = currentCurrency === 'USD' ? amountInUSD : convertToCDF(amountInUSD);
+  const subtotal = amountDisplay * quantity;
   
   console.log('TOTAL AMOUNT culprit Currency:', currentCurrency); 
 
@@ -219,6 +227,8 @@ function updateTotalAmount() {
     }
   }
 }
+
+// ... (Rest of the file remains unchanged – payments, helpers, exports, etc.)
 
 // ... (Rest of the file remains unchanged – payments, helpers, etc.)
 
