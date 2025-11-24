@@ -16,7 +16,7 @@ const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
 // State
 let currentCurrency = 'USD';
 let exchangeRate = DEFAULT_EXCHANGE_RATE;
-let selectedAmount = 0; // In current currency
+let selectedAmount = 0;
 let recipientCount = 0;
 let waitingListRequests = [];
 
@@ -27,16 +27,23 @@ document.addEventListener('DOMContentLoaded', function() {
   addRecipientField();
   setupEventListeners();
   checkForPrefilledData();
-  // Force USD & generate after all (fixes load FC)
-  currentCurrency = 'USD';
-  const symbolEl = document.getElementById('amountCurrencySymbol');
-  if (symbolEl) symbolEl.textContent = '$';
-  document.querySelectorAll('.currency-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.currency === 'USD'));
-  generatePresetButtons(); // Now with correct state
 });
 
 function initializeSendForm() {
   console.log('✅ Send voucher form initialized');
+  currentCurrency = 'USD'; // Force USD
+
+  // Set correct symbol
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = '$';
+
+  // Activate USD button
+  document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.currency === 'USD');
+  });
+
+  // NOW generate buttons with correct currency (fixes load FC)
+  generatePresetButtons();
 }
 
 // ============================================
@@ -84,7 +91,7 @@ function generatePresetButtons() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'amount-preset-btn';
-    button.onclick = () => selectPresetAmount(usdAmount); // ← always pass USD base
+    button.onclick = () => selectPresetAmount(usdAmount);
 
     // Primary/secondary based on current
     const primaryAmount = currentCurrency === 'USD' ? usdAmount : convertToCDF(usdAmount);
@@ -105,9 +112,9 @@ function generatePresetButtons() {
 
 function selectCurrency(currency) {
   const previousCurrency = currentCurrency;
-  currentCurrency = currency.toUpperCase(); // Normalize
+  currentCurrency = currency.toUpperCase(); // Normalize case
 
-  // Convert selectedAmount to new currency (fixes toggle back)
+  // Convert selectedAmount to new currency (fixes toggle back persistence)
   if (selectedAmount > 0 && previousCurrency !== currentCurrency) {
     if (previousCurrency === 'USD') {
       selectedAmount = convertToCDF(selectedAmount); // To CDF
@@ -183,7 +190,7 @@ function updateCustomAmountEquivalent() {
   
   if (customAmount > 0) {
     document.querySelectorAll('.amount-preset-btn').forEach(btn => btn.classList.remove('selected'));
-    // Set in current currency
+    // Set in current currency (fixes custom persistence)
     selectedAmount = customAmount;
     console.log('Custom - selectedAmount:', selectedAmount, 'in', currentCurrency);
     
