@@ -96,35 +96,26 @@ function generatePresetButtons() {
     button.className = 'amount-preset-btn';
     button.onclick = () => selectPresetAmount(usdAmount); // ← always pass USD base
 
-    // Always show correct values based on currentCurrency
-    const primary = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
-    const secondary = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
-
-
-
-
-    console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
-
-
-
+    // Determine the primary and secondary amounts
+    const primaryAmount = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
+    const secondaryAmount = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
 
     // Determine the explicit currency *codes* for formatting
     const primaryCurrencyCode = currentCurrency;
-    // The secondary code is the *opposite* of the current/primary code
     const secondaryCurrencyCode = currentCurrency === 'USD' ? 'CDF' : 'USD'; 
 
-    // console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency); // Cleaned up console logs
+    console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
 
     button.innerHTML = `
-      <!-- Pass the amount and the correct currency code explicitly -->
+      <!-- Use the correct variable names here -->
       <span class="amount-primary">${formatCurrency(primaryAmount, primaryCurrencyCode)}</span>
       <span class="amount-secondary">${formatCurrency(secondaryAmount, secondaryCurrencyCode)}</span>
     `;
 
     container.appendChild(button);
-    //console.log('✅ value of currentCurrency 2:', currentCurrency);
   });
 }
+
 
 function selectCurrency(currency) {
   currentCurrency = currency; // THIS WAS BROKEN BEFORE
