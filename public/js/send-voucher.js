@@ -177,11 +177,11 @@ function formatCurrency(amount, currency) {
   console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
 
   if (curr === 'USD') {
-      console.log('Formatting after usd:', amount, 'Currency:', curr); // ← now you WILL see this
+      console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
 
     return `${formatNumber(amount)} $`;
   } else {
-          console.log('Formatting after: cdf', amount, 'Currency:', curr); // ← now you WILL see this
+          console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
 
     return `${formatNumber(amount)} FC`;
   }
