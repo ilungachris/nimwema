@@ -164,9 +164,12 @@ function convertToUSD(cdfAmount) {
 }
 
 function formatCurrency(amount, currentCurrency) {
+
+  console.log('✅ value of currentCurrency before formatting:', currentCurrency);
   return currentCurrency === 'USD' // I changed this
     ? `${formatNumber(amount)} $`
     : `${formatNumber(amount)} FC`;
+    console.log('✅ value of currentCurrency after formatting:', currentCurrency);
 }
 
 function formatNumber(num) {
