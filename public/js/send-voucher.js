@@ -125,7 +125,7 @@ function selectCurrency(currency) {
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
   });
-
+console.log('ZEROOO BEFORE culprit Currency:', currency, 'Symbol:', symbolEl.textContent); 
   // Update $ / FC symbol
 const symbolEl = document.getElementById('amountCurrencySymbol');
 if (symbolEl) {
