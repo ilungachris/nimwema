@@ -24,7 +24,7 @@ let waitingListRequests = [];
 document.addEventListener('DOMContentLoaded', function() {
   initializeSendForm();
   loadExchangeRate();
-  generatePresetButtons();
+  //generatePresetButtons();
   addRecipientField();
   setupEventListeners();
   checkForPrefilledData();
@@ -33,7 +33,20 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeSendForm() {
   console.log('✅ Send voucher form initialized');
     currentCurrency = 'USD';
-  selectCurrency('USD');  // Sets active class + symbol + rebuilds buttons correctly
+  
+    
+
+      // Set correct symbol
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = '$';
+
+  // Activate USD button
+  document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.currency === 'USD');
+  });
+
+  // NOW generate buttons with correct currency
+  generatePresetButtons();
 }
 
 // ============================================
