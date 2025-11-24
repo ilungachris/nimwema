@@ -180,7 +180,7 @@ function formatCurrency(amount, currency) {
   //console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
 
   if (curr === 'USD') {
-     // console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
+    console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
 
     return `${formatNumber(amount)} $`;
   } else {
@@ -188,6 +188,10 @@ function formatCurrency(amount, currency) {
 
     return `${formatNumber(amount)} FC`;
   }
+
+  const curr = currency || currentCurrency; 
+         console.log('Formatting IN : FC', amount, 'Currency à la sortie:', curr); // ← now you WILL see this
+
 }
 
 
@@ -277,6 +281,8 @@ function updateFees() {
 
 function formatCurrencyWithDecimals(amount, currentCurrency) {
   const formatted = amount.toFixed(2);
+                console.log('Formatting after in num: cdf', formatted, 'Currency:', currentCurrency, 'num is:', amount); // ← now you WILL see this
+
   return currentCurrency === 'USD' ? `${formatted} $` : `${formatted} FC`;
 }
 
