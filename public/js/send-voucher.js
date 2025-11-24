@@ -139,7 +139,7 @@ function convertToUSD(cdfAmount) {
 
 function formatCurrency(amount, currency) {
   return currency === 'USD'
-    ? `$${formatNumber(amount)}`
+    ? `${formatNumber(amount)} $`
     : `${formatNumber(amount)} FC`;
 }
 
@@ -223,7 +223,7 @@ function updateFees() {
 
 function formatCurrencyWithDecimals(amount, currency) {
   const formatted = amount.toFixed(2);
-  return currency === 'USD' ? `$${formatted}` : `${formatted} FC`;
+  return currency === 'USD' ? `${formatted} $` : `${formatted} FC`;
 }
 
 function updateBatchInfo(quantity) {
