@@ -96,18 +96,18 @@ function generatePresetButtons() {
 }
 
 function selectCurrency(currency) {
-  currentCurrency = currency;  // ← FIXED: Update the global!
+  currentCurrency = currency; // THIS WAS BROKEN BEFORE
 
-  // Update active button
+  // Update active class on buttons
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
   });
 
-  // Update symbol
-  console.log('✅ value of currentCurrency 3:', currentCurrency);
-  document.getElementById('amountCurrencySymbol').textContent = currentCurrency === 'USD' ? '$' : 'FC';
+  // Update $ / FC symbol
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = currency === 'USD' ? '$' : 'FC';
 
-  // REBUILD BUTTONS WITH CORRECT CURRENCY
+  // Rebuild preset buttons with correct currency
   generatePresetButtons();
   updateCustomAmountEquivalent();
   updateTotalAmount();
