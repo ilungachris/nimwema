@@ -91,7 +91,7 @@ function generatePresetButtons() {
     `;
 
     container.appendChild(button);
-    console.log('✅ value of currentCurrency 2:', currentCurrency);
+    //console.log('✅ value of currentCurrency 2:', currentCurrency);
   });
 }
 
@@ -101,10 +101,11 @@ function selectCurrency(currency) {
   // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
-    console.log('✅ value of currentCurrency 3:', currentCurrency);
+    
   });
 
   // Update symbol
+  console.log('✅ value of currentCurrency 3:', currentCurrency);
   document.getElementById('amountCurrencySymbol').textContent = currentCurrency === 'USD' ? '$' : 'FC';
 
   // REBUILD BUTTONS WITH CORRECT CURRENCY
