@@ -16,7 +16,7 @@ const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
 // State
 let currentCurrency = 'USD';
 let exchangeRate = DEFAULT_EXCHANGE_RATE;
-let selectedAmount = 0;
+let selectedAmount = 0; // Stored in USD
 let recipientCount = 0;
 let waitingListRequests = [];
 
@@ -121,7 +121,17 @@ function generatePresetButtons() {
 
 
 function selectCurrency(currency) {
+  const previousCurrency = currentCurrency;
   currentCurrency = currency.toUpperCase(); // FIXED: Update the global! (was backwards)
+
+  // Convert selectedAmount to new currency if needed
+  if (selectedAmount > 0 && previousCurrency !== currentCurrency) {
+    if (previousCurrency === 'CDF') {
+      selectedAmount = convertToUSD(selectedAmount); // Back to USD
+    } else if (currentCurrency === 'CDF') {
+      selectedAmount = convertToCDF(selectedAmount); // To CDF
+    }
+  }
 
   // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
@@ -140,10 +150,10 @@ function selectCurrency(currency) {
 }
 
 function selectPresetAmount(usdAmount) {
-  // Convert to the currently selected currency before storing
+  // Store as USD
   selectedAmount = currentCurrency === 'USD' 
     ? usdAmount 
-    : convertToCDF(usdAmount);
+    : convertToUSD(convertToCDF(usdAmount)); // Normalize to USD
 
   // Rest of your existing code (highlight selected button, clear custom input, etc.)
   document.querySelectorAll('.amount-preset-btn').forEach(btn => {
@@ -165,6 +175,16 @@ function convertToCDF(usdAmount) {
 function convertToUSD(cdfAmount) {
   return cdfAmount / exchangeRate;
 }
+
+/*function formatCurrency(amount, currentCurrency) {
+
+  console.log('✅ value of currentCurrency before formatting:', currentCurrency);
+  return currentCurrency === 'USD' // I changed this
+    ? `${formatNumber(amount)} $`
+    : `${formatNumber(amount)} FC`;
+    console.log('✅ value of currentCurrency after formatting:', currentCurrency);
+}*/
+
 
 function formatCurrency(amount, currency) {
   const curr = currency || currentCurrency; // fallback safety
@@ -189,7 +209,11 @@ function formatCurrency(amount, currency) {
 
 
 function formatNumber(num) {
+              console.log('Formatting after in num num is:', num); // ← now you WILL see this
+
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+              console.log('Formatting after in num: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
+
 }
 
 function updateCustomAmountEquivalent() {
@@ -201,7 +225,7 @@ function updateCustomAmountEquivalent() {
   
   if (customAmount > 0) {
     document.querySelectorAll('.amount-preset-btn').forEach(btn => btn.classList.remove('selected'));
-    selectedAmount = customAmount;
+    selectedAmount = currentCurrency === 'USD' ? customAmount : convertToUSD(customAmount); // FIXED: Store in USD
     
     const equivalent = currentCurrency === 'USD' 
       ? convertToCDF(customAmount) 
@@ -219,9 +243,15 @@ function updateCustomAmountEquivalent() {
 function updateTotalAmount() {
   const quantityInput = document.getElementById('quantity');
   const quantity = parseInt(quantityInput?.value) || 1;
-  const amount = selectedAmount || 0;
-  const subtotal = amount * quantity;
+  const amountInUSD = selectedAmount || 0;
+  const amountDisplay = currentCurrency === 'USD' ? amountInUSD : convertToCDF(amountInUSD);
+  const subtotal = amountDisplay * quantity;
   
+console.log('TOTAL AMOUNT culprit Currency:', currentCurrency); 
+
+
+
+
   const totalDisplay = document.getElementById('totalAmountDisplay');
   if (totalDisplay) {
     totalDisplay.textContent = formatCurrency(subtotal, currentCurrency);
@@ -268,6 +298,8 @@ function updateFees() {
 
 function formatCurrencyWithDecimals(amount, currentCurrency) {
   const formatted = amount.toFixed(2);
+                console.log('STOP HERE Formatting ', formatted, 'Currency:', currentCurrency, 'num is:', amount); // ← now you WILL see this
+
   return currentCurrency === 'USD' ? `${formatted} $` : `${formatted} FC`;
 }
 
@@ -334,6 +366,11 @@ async function loadWaitingList() {
   }
 }
 
+
+
+
+
+/////////////////////////////////////////////////////////
 function renderWaitingList(requests) {
   const container = document.getElementById('waitingListContainer');
   if (!container) return;
