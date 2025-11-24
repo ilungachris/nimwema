@@ -22,9 +22,8 @@ let waitingListRequests = [];
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-  initializeSendForm();
+  initializeSendForm(); // This sets USD + generates
   loadExchangeRate();
-  //generatePresetButtons();
   addRecipientField();
   setupEventListeners();
   checkForPrefilledData();
@@ -50,6 +49,7 @@ function initializeSendForm() {
 
  // generatePresetButtons();
 //console.log('line 52 ZEROOO BEFORE culprit Currency:', currency   ); 
+  generatePresetButtons(); // ← ADD THIS LINE HERE
 
 }
 
@@ -123,7 +123,22 @@ function generatePresetButtons() {
 
 
 function selectCurrency(currency) {
-  currentCurrency = currency; // THIS WAS BROKEN BEFORE
+  const previousCurrency = currentCurrency; // ADD THIS
+  currentCurrency = currency; // Update global
+
+  // Convert selectedAmount if switching (fixes FC stay on toggle back)
+  if (selectedAmount > 0 && previousCurrency !== currentCurrency) {
+    if (previousCurrency === 'USD') {
+      selectedAmount = convertToCDF(selectedAmount);
+    } else {
+      selectedAmount = convertToUSD(selectedAmount);
+    }
+  }
+
+
+
+
+  
 
   // Update active class on buttons
   document.querySelectorAll('.currency-btn').forEach(btn => {
@@ -882,7 +897,7 @@ function checkForPrefilledData() {
     }
   }
 }
-selectCurrency('USD');  // ← Set default on load (active class + symbol)
+//selectCurrency('USD');  // ← Set default on load (active class + symbol)
 // ============================================
 // GLOBAL EXPORTS
 // ============================================
