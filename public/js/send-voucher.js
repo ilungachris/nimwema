@@ -126,9 +126,11 @@ function selectCurrency(currency) {
   });
 
   // Update $ / FC symbol
-  const symbolEl = document.getElementById('amountCurrencySymbol');
-  if (symbolEl) symbolEl.textContent = currency === 'USD' ? '$' : 'FC';
-  console.log('culprit Currency:', currency, 'Symbol:', symbolEl); // ← now you WILL see this
+const symbolEl = document.getElementById('amountCurrencySymbol');
+if (symbolEl) {
+  symbolEl.textContent = currency === 'USD' ? '$' : 'FC';
+}
+console.log('culprit Currency:', currency, 'Symbol:', symbolEl.textContent); 
 
   // Rebuild preset buttons with correct currency
   generatePresetButtons();
