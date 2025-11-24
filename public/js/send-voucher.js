@@ -111,6 +111,7 @@ function generatePresetButtons() {
       <span class="amount-primary">${formatCurrency(primaryAmount, primaryCurrencyCode)}</span>
       <span class="amount-secondary">${formatCurrency(secondaryAmount, secondaryCurrencyCode)}</span>
     `;
+        console.log('VRAI PROLEM secondary code', secondaryCurrencyCode, 'primary code:', primaryCurrencyCode); // ← now you WILL see this
 
     container.appendChild(button);
   });
