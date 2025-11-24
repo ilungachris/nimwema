@@ -24,7 +24,7 @@ let waitingListRequests = [];
 document.addEventListener('DOMContentLoaded', function() {
   initializeSendForm();
   loadExchangeRate();
-  generatePresetButtons();
+  //generatePresetButtons();
   addRecipientField();
   setupEventListeners();
   checkForPrefilledData();
@@ -32,6 +32,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeSendForm() {
   console.log('✅ Send voucher form initialized');
+    currentCurrency = 'USD';
+  
+    
+
+      // Set correct symbol
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = '$';
+
+  // Activate USD button
+  document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.currency === 'USD');
+  });
+
+  // NOW generate buttons with correct currency
+  //console.log('line 49 ZEROOO BEFORE culprit Currency:', currentCurrency   ); 
+
+ // generatePresetButtons();
+//console.log('line 52 ZEROOO BEFORE culprit Currency:', currency   ); 
+
 }
 
 // ============================================
@@ -69,60 +88,77 @@ function updateExchangeRateDisplay() {
 // AMOUNT SELECTION
 // ============================================
 function generatePresetButtons() {
+  //console.log('✅ value of currentCurrency 1:', currentCurrency);
   const container = document.getElementById('amountPresetGrid');
   if (!container) return;
   
   container.innerHTML = '';
-  
-  PRESET_AMOUNTS_USD.forEach(amount => {
+
+  PRESET_AMOUNTS_USD.forEach(usdAmount => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'amount-preset-btn';
-    button.onclick = () => selectPresetAmount(amount);
-    
-    const primaryAmount = currentCurrency === 'USD' ? amount : convertToCDF(amount);
-    const secondaryAmount = currentCurrency === 'USD' ? convertToCDF(amount) : amount;
-    
+    button.onclick = () => selectPresetAmount(usdAmount); // ← always pass USD base
+
+    // Determine the primary and secondary amounts
+    const primaryAmount = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
+    const secondaryAmount = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
+
+    // Determine the explicit currency *codes* for formatting
+    const primaryCurrencyCode = currentCurrency;
+    const secondaryCurrencyCode = currentCurrency === 'USD' ? 'CDF' : 'USD'; 
+
+    //console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
+
     button.innerHTML = `
-      <span class="amount-primary">${formatCurrency(primaryAmount, currentCurrency)}</span>
-      <span class="amount-secondary">${formatCurrency(secondaryAmount, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
+      <!-- Use the correct variable names here -->
+      <span class="amount-primary">${formatCurrency(primaryAmount, primaryCurrencyCode)}</span>
+      <span class="amount-secondary">${formatCurrency(secondaryAmount, secondaryCurrencyCode)}</span>
     `;
-    
+        console.log('VRAI PROLEM secondary code', secondaryCurrencyCode, 'primary code:', primaryCurrencyCode); // ← now you WILL see this
+
     container.appendChild(button);
   });
 }
 
+
 function selectCurrency(currency) {
-  currentCurrency = currency;
-  
+  currentCurrency = currency; // THIS WAS BROKEN BEFORE
+
+  // Update active class on buttons
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
   });
-  
-  const currencySymbol = document.getElementById('amountCurrencySymbol');
-  if (currencySymbol) {
-    currencySymbol.textContent = currency === 'USD' ? '$' : 'FC';
-  }
-  
+  // Update $ / FC symbol
+const symbolEl = document.getElementById('amountCurrencySymbol');
+console.log('ZEROOO BEFORE culprit Currency:', currency, 'Symbol:', symbolEl.textContent); 
+
+if (symbolEl) {
+  symbolEl.textContent = currency === 'USD' ? '$' : 'FC';
+}
+console.log('culprit Currency:', currency, 'Symbol:', symbolEl.textContent); 
+
+  // Rebuild preset buttons with correct currency
   generatePresetButtons();
   updateCustomAmountEquivalent();
   updateTotalAmount();
 }
 
-function selectPresetAmount(amount) {
-  selectedAmount = amount;
-  
+function selectPresetAmount(usdAmount) {
+  // Convert to the currently selected currency before storing
+  selectedAmount = currentCurrency === 'USD' 
+    ? usdAmount 
+    : convertToCDF(usdAmount);
+
+  // Rest of your existing code (highlight selected button, clear custom input, etc.)
   document.querySelectorAll('.amount-preset-btn').forEach(btn => {
     btn.classList.remove('selected');
   });
-  
   event.target.closest('.amount-preset-btn').classList.add('selected');
-  
+
   const customAmountInput = document.getElementById('customAmount');
-  if (customAmountInput) {
-    customAmountInput.value = '';
-  }
-  
+  if (customAmountInput) customAmountInput.value = '';
+
   updateTotalAmount();
 }
 
@@ -135,14 +171,44 @@ function convertToUSD(cdfAmount) {
   return cdfAmount / exchangeRate;
 }
 
-function formatCurrency(amount, currency) {
-  return currency === 'USD'
-    ? `$${formatNumber(amount)}`
+/*function formatCurrency(amount, currentCurrency) {
+
+  console.log('✅ value of currentCurrency before formatting:', currentCurrency);
+  return currentCurrency === 'USD' // I changed this
+    ? `${formatNumber(amount)} $`
     : `${formatNumber(amount)} FC`;
+    console.log('✅ value of currentCurrency after formatting:', currentCurrency);
+}*/
+
+
+function formatCurrency(amount, currency) {
+  const curr = currency || currentCurrency; // fallback safety
+  //console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
+
+  if (curr === 'USD') {
+    console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
+
+    return `${formatNumber(amount)} $`;
+  } else {
+        console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
+
+    return `${formatNumber(amount)} FC`;
+  }
+
+  //const curr = currency || currentCurrency; 
+         console.log('Formatting IN : FC', amount, 'Currency à la sortie:', curr); // ← now you WILL see this
+
 }
 
+
+
+
 function formatNumber(num) {
+              console.log('Formatting after in num num is:', num); // ← now you WILL see this
+
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+              console.log('Formatting after in num: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
+
 }
 
 function updateCustomAmountEquivalent() {
@@ -175,6 +241,11 @@ function updateTotalAmount() {
   const amount = selectedAmount || 0;
   const subtotal = amount * quantity;
   
+console.log('TOTAL AMOUNT culprit Currency:', currentCurrency); 
+
+
+
+
   const totalDisplay = document.getElementById('totalAmountDisplay');
   if (totalDisplay) {
     totalDisplay.textContent = formatCurrency(subtotal, currentCurrency);
@@ -219,9 +290,11 @@ function updateFees() {
   if (feeTotalEl) feeTotalEl.textContent = formatCurrencyWithDecimals(total, currentCurrency);
 }
 
-function formatCurrencyWithDecimals(amount, currency) {
+function formatCurrencyWithDecimals(amount, currentCurrency) {
   const formatted = amount.toFixed(2);
-  return currency === 'USD' ? `$${formatted}` : `${formatted} FC`;
+                console.log('STOP HERE Formatting ', formatted, 'Currency:', currentCurrency, 'num is:', amount); // ← now you WILL see this
+
+  return currentCurrency === 'USD' ? `${formatted} $` : `${formatted} FC`;
 }
 
 function updateBatchInfo(quantity) {
@@ -727,6 +800,7 @@ async function pollPaymentStatus(orderNumber, orderId) {
     
     try {
       const response = await fetch(`/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}`);
+ 
       const data = await response.json();
       
       const status = data?.transaction?.status;
@@ -808,7 +882,7 @@ function checkForPrefilledData() {
     }
   }
 }
-
+selectCurrency('USD');  // ← Set default on load (active class + symbol)
 // ============================================
 // GLOBAL EXPORTS
 // ============================================
