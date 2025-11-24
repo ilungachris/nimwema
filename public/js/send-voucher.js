@@ -108,9 +108,17 @@ function generatePresetButtons() {
 
 
 
+    // Determine the explicit currency *codes* for formatting
+    const primaryCurrencyCode = currentCurrency;
+    // The secondary code is the *opposite* of the current/primary code
+    const secondaryCurrencyCode = currentCurrency === 'USD' ? 'CDF' : 'USD'; 
+
+    // console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency); // Cleaned up console logs
+
     button.innerHTML = `
-      <span class="amount-primary">${formatCurrency(primary, currentCurrency)}</span>
-      <span class="amount-secondary">${formatCurrency(secondary, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
+      <!-- Pass the amount and the correct currency code explicitly -->
+      <span class="amount-primary">${formatCurrency(primaryAmount, primaryCurrencyCode)}</span>
+      <span class="amount-secondary">${formatCurrency(secondaryAmount, secondaryCurrencyCode)}</span>
     `;
 
     container.appendChild(button);
