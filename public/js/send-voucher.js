@@ -16,7 +16,7 @@ const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
 // State
 let currentCurrency = 'USD';
 let exchangeRate = DEFAULT_EXCHANGE_RATE;
-let selectedAmount = 0; // Stored in USD
+let selectedAmount = 0; // In current currency
 let recipientCount = 0;
 let waitingListRequests = [];
 
@@ -27,28 +27,16 @@ document.addEventListener('DOMContentLoaded', function() {
   addRecipientField();
   setupEventListeners();
   checkForPrefilledData();
+  // Force USD & generate after all (fixes load FC)
+  currentCurrency = 'USD';
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = '$';
+  document.querySelectorAll('.currency-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.currency === 'USD'));
+  generatePresetButtons(); // Now with correct state
 });
 
 function initializeSendForm() {
   console.log('✅ Send voucher form initialized');
-  currentCurrency = 'USD';
-  
-
-      // Set correct symbol
-  const symbolEl = document.getElementById('amountCurrencySymbol');
-  if (symbolEl) symbolEl.textContent = '$';
-
-  // Activate USD button
-  document.querySelectorAll('.currency-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.currency === 'USD');
-  });
-
-  // NOW generate buttons with correct currency
-  //console.log('line 49 ZEROOO BEFORE culprit Currency:', currentCurrency   ); 
-
- // generatePresetButtons();
-//console.log('line 52 ZEROOO BEFORE culprit Currency:', currency   ); 
-
 }
 
 // ============================================
@@ -86,7 +74,7 @@ function updateExchangeRateDisplay() {
 // AMOUNT SELECTION
 // ============================================
 function generatePresetButtons() {
-  //console.log('✅ value of currentCurrency 1:', currentCurrency);
+  console.log('Generate buttons - currentCurrency:', currentCurrency);
   const container = document.getElementById('amountPresetGrid');
   if (!container) return;
   
@@ -98,67 +86,60 @@ function generatePresetButtons() {
     button.className = 'amount-preset-btn';
     button.onclick = () => selectPresetAmount(usdAmount); // ← always pass USD base
 
-    // Determine the primary and secondary amounts
-    const primaryAmount = currentCurrency === 'USD' ? usdAmount : Math.round(convertToCDF(usdAmount) / 1000) * 1000;
-    const secondaryAmount = currentCurrency === 'USD' ? Math.round(convertToCDF(usdAmount) / 1000) * 1000 : usdAmount;
+    // Primary/secondary based on current
+    const primaryAmount = currentCurrency === 'USD' ? usdAmount : convertToCDF(usdAmount);
+    const secondaryAmount = currentCurrency === 'USD' ? convertToCDF(usdAmount) : usdAmount;
 
-    // Determine the explicit currency *codes* for formatting
     const primaryCurrencyCode = currentCurrency;
     const secondaryCurrencyCode = currentCurrency === 'USD' ? 'CDF' : 'USD'; 
 
-    //console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
-
     button.innerHTML = `
-      <!-- Use the correct variable names here -->
       <span class="amount-primary">${formatCurrency(primaryAmount, primaryCurrencyCode)}</span>
       <span class="amount-secondary">${formatCurrency(secondaryAmount, secondaryCurrencyCode)}</span>
     `;
-        console.log('VRAI PROLEM secondary code', secondaryCurrencyCode, 'primary code:', primaryCurrencyCode); // ← now you WILL see this
+    console.log('Button - primary:', formatCurrency(primaryAmount, primaryCurrencyCode), 'secondary:', formatCurrency(secondaryAmount, secondaryCurrencyCode));
 
     container.appendChild(button);
   });
 }
 
-
 function selectCurrency(currency) {
   const previousCurrency = currentCurrency;
-  currentCurrency = currency.toUpperCase(); // FIXED: Update the global! (was backwards)
+  currentCurrency = currency.toUpperCase(); // Normalize
 
-  // Convert selectedAmount to new currency if needed
+  // Convert selectedAmount to new currency (fixes toggle back)
   if (selectedAmount > 0 && previousCurrency !== currentCurrency) {
-    if (previousCurrency === 'CDF') {
-      selectedAmount = convertToUSD(selectedAmount); // Back to USD
-    } else if (currentCurrency === 'CDF') {
+    if (previousCurrency === 'USD') {
       selectedAmount = convertToCDF(selectedAmount); // To CDF
+    } else {
+      selectedAmount = convertToUSD(selectedAmount); // To USD
     }
+    console.log('Switch - converted selectedAmount:', selectedAmount, 'to', currentCurrency);
   }
 
   // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.currency === currency);
-    
+    btn.classList.toggle('active', btn.dataset.currency.toUpperCase() === currentCurrency);
   });
 
   // Update symbol
-  console.log('✅ value of currentCurrency 3:', currentCurrency);
-  document.getElementById('amountCurrencySymbol').textContent = currentCurrency === 'USD' ? '$' : 'FC';
+  console.log('Select currency - currentCurrency:', currentCurrency);
+  const symbolEl = document.getElementById('amountCurrencySymbol');
+  if (symbolEl) symbolEl.textContent = currentCurrency === 'USD' ? '$' : 'FC';
 
-  // REBUILD BUTTONS WITH CORRECT CURRENCY
+  // Rebuild
   generatePresetButtons();
   updateCustomAmountEquivalent();
   updateTotalAmount();
 }
 
 function selectPresetAmount(usdAmount) {
-  // Store as USD
-  selectedAmount = currentCurrency === 'USD' 
-    ? usdAmount 
-    : convertToUSD(convertToCDF(usdAmount)); // Normalize to USD
+  // Set in current currency
+  selectedAmount = currentCurrency === 'USD' ? usdAmount : convertToCDF(usdAmount);
+  console.log('Preset select - selectedAmount:', selectedAmount, 'in', currentCurrency);
 
-  // Rest of your existing code (highlight selected button, clear custom input, etc.)
-  document.querySelectorAll('.amount-preset-btn').forEach(btn => {
-    btn.classList.remove('selected');
-  });
+  // Highlight, clear custom
+  document.querySelectorAll('.amount-preset-btn').forEach(btn => btn.classList.remove('selected'));
   event.target.closest('.amount-preset-btn').classList.add('selected');
 
   const customAmountInput = document.getElementById('customAmount');
@@ -176,44 +157,21 @@ function convertToUSD(cdfAmount) {
   return cdfAmount / exchangeRate;
 }
 
-/*function formatCurrency(amount, currentCurrency) {
-
-  console.log('✅ value of currentCurrency before formatting:', currentCurrency);
-  return currentCurrency === 'USD' // I changed this
-    ? `${formatNumber(amount)} $`
-    : `${formatNumber(amount)} FC`;
-    console.log('✅ value of currentCurrency after formatting:', currentCurrency);
-}*/
-
-
 function formatCurrency(amount, currency) {
-  const curr = currency || currentCurrency; // fallback safety
-  //console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
+  const curr = (currency || currentCurrency).toUpperCase();
+  console.log('Format - amount:', amount, 'curr:', curr);
 
   if (curr === 'USD') {
-    console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
-
+    console.log('Format USD:', amount);
     return `${formatNumber(amount)} $`;
   } else {
-        console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
-
+    console.log('Format FC:', amount);
     return `${formatNumber(amount)} FC`;
   }
-
-  //const curr = currency || currentCurrency; 
-         console.log('Formatting IN : FC', amount, 'Currency à la sortie:', curr); // ← now you WILL see this
-
 }
 
-
-
-
 function formatNumber(num) {
-              console.log('Formatting after in num num is:', num); // ← now you WILL see this
-
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-              console.log('Formatting after in num: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
-
 }
 
 function updateCustomAmountEquivalent() {
@@ -225,7 +183,9 @@ function updateCustomAmountEquivalent() {
   
   if (customAmount > 0) {
     document.querySelectorAll('.amount-preset-btn').forEach(btn => btn.classList.remove('selected'));
-    selectedAmount = currentCurrency === 'USD' ? customAmount : convertToUSD(customAmount); // FIXED: Store in USD
+    // Set in current currency
+    selectedAmount = customAmount;
+    console.log('Custom - selectedAmount:', selectedAmount, 'in', currentCurrency);
     
     const equivalent = currentCurrency === 'USD' 
       ? convertToCDF(customAmount) 
@@ -243,14 +203,9 @@ function updateCustomAmountEquivalent() {
 function updateTotalAmount() {
   const quantityInput = document.getElementById('quantity');
   const quantity = parseInt(quantityInput?.value) || 1;
-  const amountInUSD = selectedAmount || 0;
-  const amountDisplay = currentCurrency === 'USD' ? amountInUSD : convertToCDF(amountInUSD);
-  const subtotal = amountDisplay * quantity;
+  const subtotal = selectedAmount * quantity; // Already in current
   
-console.log('TOTAL AMOUNT culprit Currency:', currentCurrency); 
-
-
-
+  console.log('Total - subtotal:', subtotal, 'currency:', currentCurrency); 
 
   const totalDisplay = document.getElementById('totalAmountDisplay');
   if (totalDisplay) {
@@ -259,8 +214,6 @@ console.log('TOTAL AMOUNT culprit Currency:', currentCurrency);
   
   updateFees();
   updateBatchInfo(quantity);
-
-
 
   // Auto-add recipient fields based on quantity (for specific type)
 const recipientType = document.querySelector('input[name="recipientType"]:checked')?.value;
