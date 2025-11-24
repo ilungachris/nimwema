@@ -84,7 +84,7 @@ function updateExchangeRateDisplay() {
 // AMOUNT SELECTION
 // ============================================
 function generatePresetButtons() {
-  console.log('✅ value of currentCurrency 1:', currentCurrency);
+  //console.log('✅ value of currentCurrency 1:', currentCurrency);
   const container = document.getElementById('amountPresetGrid');
   if (!container) return;
   
@@ -104,7 +104,7 @@ function generatePresetButtons() {
     const primaryCurrencyCode = currentCurrency;
     const secondaryCurrencyCode = currentCurrency === 'USD' ? 'CDF' : 'USD'; 
 
-    console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
+    //console.log('✅ value of currentCurrency just before class amount-primary:', currentCurrency);
 
     button.innerHTML = `
       <!-- Use the correct variable names here -->
@@ -177,14 +177,14 @@ function convertToUSD(cdfAmount) {
 
 function formatCurrency(amount, currency) {
   const curr = currency || currentCurrency; // fallback safety
-  console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
+  //console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
 
   if (curr === 'USD') {
-      console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
+     // console.log('Formatting IN  USD:', amount, 'Currency:', curr); // ← now you WILL see this
 
     return `${formatNumber(amount)} $`;
   } else {
-          console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
+        //  console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
 
     return `${formatNumber(amount)} FC`;
   }
@@ -194,6 +194,7 @@ function formatCurrency(amount, currency) {
 
 
 function formatNumber(num) {
+              console.log('Formatting after in num num is:', num); // ← now you WILL see this
 
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
               console.log('Formatting after in num: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
