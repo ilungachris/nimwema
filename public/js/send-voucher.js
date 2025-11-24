@@ -184,12 +184,12 @@ function formatCurrency(amount, currency) {
 
     return `${formatNumber(amount)} $`;
   } else {
-        //  console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
+        console.log('Formatting IN : FC', amount, 'Currency:', curr); // ← now you WILL see this
 
     return `${formatNumber(amount)} FC`;
   }
 
-  const curr = currency || currentCurrency; 
+  //const curr = currency || currentCurrency; 
          console.log('Formatting IN : FC', amount, 'Currency à la sortie:', curr); // ← now you WILL see this
 
 }
