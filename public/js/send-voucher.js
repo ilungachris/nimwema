@@ -87,7 +87,8 @@ function generatePresetButtons() {
       <span class="amount-primary">${formatCurrency(primaryAmount, currentCurrency)}</span>
       <span class="amount-secondary">${formatCurrency(secondaryAmount, currentCurrency === 'USD' ? 'CDF' : 'USD')}</span>
     `;
-    
+    console.log('FINALLY this is the culprit Currency:', currentCurrency); 
+
     container.appendChild(button);
   });
 }
