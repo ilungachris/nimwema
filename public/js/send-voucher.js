@@ -102,7 +102,7 @@ function selectCurrency(currency) {
   });
 
   // Update symbol
-  document.getElementById('amountCurrencySymbol').textContent = currency === 'USD' ? '$' : 'FC';
+  document.getElementById('amountCurrencySymbol').textContent = currentCurrency === 'USD' ? '$' : 'FC';
 
   // REBUILD BUTTONS WITH CORRECT CURRENCY
   generatePresetButtons();
@@ -138,7 +138,7 @@ function convertToUSD(cdfAmount) {
 }
 
 function formatCurrency(amount, currentCurrency) {
-  return currency === 'USD'
+  return currentCurrency === 'USD' // I changed this
     ? `${formatNumber(amount)} $`
     : `${formatNumber(amount)} FC`;
 }
@@ -221,9 +221,9 @@ function updateFees() {
   if (feeTotalEl) feeTotalEl.textContent = formatCurrencyWithDecimals(total, currentCurrency);
 }
 
-function formatCurrencyWithDecimals(amount, currency) {
+function formatCurrencyWithDecimals(amount, currentCurrency) {
   const formatted = amount.toFixed(2);
-  return currency === 'USD' ? `${formatted} $` : `${formatted} FC`;
+  return currentCurrency === 'USD' ? `${formatted} $` : `${formatted} FC`;
 }
 
 function updateBatchInfo(quantity) {
