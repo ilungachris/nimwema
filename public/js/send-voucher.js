@@ -174,11 +174,15 @@ function convertToUSD(cdfAmount) {
 
 function formatCurrency(amount, currency) {
   const curr = currency || currentCurrency; // fallback safety
-  console.log('Formatting:', amount, 'Currency:', curr); // ← now you WILL see this
+  console.log('Formatting before:', amount, 'Currency:', curr); // ← now you WILL see this
 
   if (curr === 'USD') {
+      console.log('Formatting after:', amount, 'Currency:', curr); // ← now you WILL see this
+
     return `${formatNumber(amount)} $`;
   } else {
+          console.log('Formatting after:', amount, 'Currency:', curr); // ← now you WILL see this
+
     return `${formatNumber(amount)} FC`;
   }
 }
