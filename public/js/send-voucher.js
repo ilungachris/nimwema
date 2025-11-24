@@ -94,7 +94,7 @@ function generatePresetButtons() {
 }
 
 function selectCurrency(currency) {
-  currentCurrency = currency;  // ← THIS MUST UPDATE THE GLOBAL
+  currency = currentCurrency ;  // ← THIS MUST UPDATE THE GLOBAL
 
   // Update active button
   document.querySelectorAll('.currency-btn').forEach(btn => {
