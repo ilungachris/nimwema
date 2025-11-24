@@ -281,7 +281,7 @@ function updateFees() {
 
 function formatCurrencyWithDecimals(amount, currentCurrency) {
   const formatted = amount.toFixed(2);
-                console.log('Formatting after in num: cdf', formatted, 'Currency:', currentCurrency, 'num is:', amount); // ← now you WILL see this
+                console.log('STOP HERE Formatting ', formatted, 'Currency:', currentCurrency, 'num is:', amount); // ← now you WILL see this
 
   return currentCurrency === 'USD' ? `${formatted} $` : `${formatted} FC`;
 }
