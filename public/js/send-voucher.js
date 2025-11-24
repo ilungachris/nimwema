@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeSendForm() {
   console.log('✅ Send voucher form initialized');
+    currentCurrency = 'USD';
+  selectCurrency('USD');  // Sets active class + symbol + rebuilds buttons correctly
 }
 
 // ============================================
