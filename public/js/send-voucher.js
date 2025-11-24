@@ -193,7 +193,7 @@ function formatCurrency(amount, currency) {
 function formatNumber(num) {
 
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-              console.log('Formatting after: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
+              console.log('Formatting after in num: cdf', amount, 'Currency:', curr, 'num is:', num); // ← now you WILL see this
 
 }
 
