@@ -163,14 +163,29 @@ function convertToUSD(cdfAmount) {
   return cdfAmount / exchangeRate;
 }
 
-function formatCurrency(amount, currentCurrency) {
+/*function formatCurrency(amount, currentCurrency) {
 
   console.log('✅ value of currentCurrency before formatting:', currentCurrency);
   return currentCurrency === 'USD' // I changed this
     ? `${formatNumber(amount)} $`
     : `${formatNumber(amount)} FC`;
     console.log('✅ value of currentCurrency after formatting:', currentCurrency);
+}*/
+
+
+function formatCurrency(amount, currency) {
+  const curr = currency || currentCurrency; // fallback safety
+  console.log('Formatting:', amount, 'Currency:', curr); // ← now you WILL see this
+
+  if (curr === 'USD') {
+    return `${formatNumber(amount)} $`;
+  } else {
+    return `${formatNumber(amount)} FC`;
+  }
 }
+
+
+
 
 function formatNumber(num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
