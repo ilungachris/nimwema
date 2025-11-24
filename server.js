@@ -209,10 +209,11 @@ const data = {
 };
 
 // MERGE: Kept FlexPay helpers from current
+// FIXED SHORT REFERENCE — MAX 25 CHARS
 function buildReference() {
-  const ts = Date.now().toString().slice(-8);  // Last 8 digits of timestamp
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();  // 4 random chars
-  return `ORDER_${ts}_${rand}`;  // Total: 8 + 1 + 4 = 13 chars max
+  const ts = Date.now().toString(36).toUpperCase();     // 8-9 chars
+  const rand = Math.random().toString(36).substring(2, 7).toUpperCase(); // 5 chars
+  return `NM${ts}${rand}`.substring(0, 25);  // → MAX 25 chars, e.g. NM1A2B3C4D5E6F7G8H9J
 }
 
 
