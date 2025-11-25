@@ -3185,6 +3185,8 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
 
 // Important CALLBACK (kept from current, added voucher trigger on success)
 app.post('/api/payment/flexpay/callback', async (req, res) => {
+         console.log('⚠️le call back est exécuté TOP');
+
   try {
     const body = req.body || {};
     // Accept multiple shapes for orderNumber and status/code
@@ -3374,6 +3376,7 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
     console.error('FlexPay callback error:', err);
     return res.json({ ok: true }); // still 200 to avoid retry storms
   }
+  console.log('⚠️le call back est exécuté BOTTOM');
 });
 
 
