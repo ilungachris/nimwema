@@ -2703,7 +2703,8 @@ app.post('/api/vouchers/create', async (req, res) => {
       
       data.vouchers.push(voucher);
       vouchers.push(voucher);
-      
+                 console.log('⚠️ API CREATE middle? orderId:', orderId);
+
       // Send SMS to recipient
       await sendSMSNotification(recipient.phone, {
         type: 'voucher_sent',
