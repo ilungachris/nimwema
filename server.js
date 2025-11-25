@@ -1295,8 +1295,7 @@ function normalizeDRCPhone(raw) {
 }
 
 // Merchant signup
-app.post(
-  '/api/auth/merchant-signup',
+app.post(  '/api/auth/merchant-signup',
   uploadMerchantDocs.fields([
     { name: 'businessLicense', maxCount: 1 },
     { name: 'idDocument',      maxCount: 1 },
@@ -3184,7 +3183,7 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
   }
 });
 
-// CALLBACK (kept from current, added voucher trigger on success)
+// Important CALLBACK (kept from current, added voucher trigger on success)
 app.post('/api/payment/flexpay/callback', async (req, res) => {
   try {
     const body = req.body || {};
