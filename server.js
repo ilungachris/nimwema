@@ -2700,10 +2700,10 @@ app.post('/api/vouchers/create', async (req, res) => {
         order_id: orderId,
         request_id: recipient.requestId || null
       };
-      
+      console.log('⚠️ API CREATE middle 1? orderId:', orderId);
       data.vouchers.push(voucher);
       vouchers.push(voucher);
-                 console.log('⚠️ API CREATE middle? orderId:', orderId);
+                 console.log('⚠️ API CREATE middle2? orderId:', orderId);
 
       // Send SMS to recipient
       await sendSMSNotification(recipient.phone, {
