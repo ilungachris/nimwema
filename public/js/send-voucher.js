@@ -2,7 +2,7 @@
 
 // Configuration
 const PRESET_AMOUNTS_USD = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
-const DEFAULT_EXCHANGE_RATE = 2200; // 1 USD = 2800 CDF
+const DEFAULT_EXCHANGE_RATE = 2250; // 1 USD = 2800 CDF
 const FEE_PERCENTAGE = 3.5;
 const MAX_RECIPIENTS_PER_BATCH = 50;
 const MAX_TOTAL_QUANTITY = 50;
@@ -390,8 +390,8 @@ async function handleFormSubmit(e) {
   form.classList.add('form-loading');
 
   try {
-    if (formData.paymentMethod === 'flexpay') await processFlexPayPayment(formData);
-    else if (formData.paymentMethod === 'flexpaycard') await processFlexPayPaymentCard(formData);
+    if (formData.paymentMethod === 'flexpay') await processFlexPayMobilePaymen(formData);
+    else if (formData.paymentMethod === 'flexpaycard') await processFlexPayCardPayment(formData);
     else if (['cash', 'bank'].includes(formData.paymentMethod)) await processManualPayment(formData);
   } catch (error) {
     console.error('Payment error:', error);
@@ -400,8 +400,165 @@ async function handleFormSubmit(e) {
   }
 }
 
+
+
+
+
+
+
+
+// ============================================
+// PAYMENT PROCESSORS
+// ============================================
+
+// FlexPay Mobile Money Payment
+async function processFlexPayMobilePayment(formData) {
+  const overlay = showLoadingOverlay('Connexion à FlexPay…<br>Vérifiez votre téléphone');
+  
+  try {
+    // Step 1: Create pending order
+    const pendingOrder = await createPendingOrder(formData);
+    const orderId = pendingOrder.orderId || pendingOrder.order?.id;
+    
+    if (!orderId) {
+      throw new Error('ID de commande manquant');
+    }
+    
+    // Step 2: Calculate total amount in CDF
+    const totalCDF = calculateTotalCDF(formData);
+    
+    // Step 3: Initiate FlexPay payment
+    const initResponse = await fetch('/api/payment/flexpay/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: orderId,
+        amount: totalCDF,
+        currency: 'CDF',
+        phone: formData.senderPhone
+      })
+    });
+    
+    const initData = await initResponse.json();
+    
+    if (!initResponse.ok || !initData.success || !initData.orderNumber) {
+      throw new Error(initData.message || 'Échec d\'initialisation FlexPay');
+    }
+    
+    // Step 4: Poll for payment status
+    const orderNumber = initData.orderNumber;
+    const paymentCompleted = await pollPaymentStatus(orderNumber, orderId);
+    
+    if (paymentCompleted) {
+      // Finalize order
+      await finalizeOrder(orderId);
+      window.location.href = `${PAYMENT_SUCCESS_URL}?order=${encodeURIComponent(orderId)}`;
+    }
+  } catch (error) {
+    console.error('❌ FlexPay payment error:', error);
+    hideLoadingOverlay(overlay);
+    showNotification(error.message || 'Erreur de paiement', 'error');
+    setTimeout(() => {
+      window.location.href = PAYMENT_CANCEL_URL;
+    }, 2000);
+  }
+}
+
+// FlexPay Card Payment
+async function processFlexPayCardPayment(formData) {
+  const overlay = showLoadingOverlay('Connexion à FlexPay…<br>Redirection vers la page de paiement sécurisée');
+  
+  try {
+    // Step 1: Create pending order
+    const pendingOrder = await createPendingOrder(formData);
+    const orderId = pendingOrder.orderId || pendingOrder.order?.id;
+    
+    if (!orderId) {
+      throw new Error('ID de commande manquant');
+    }
+    
+    // Step 2: Calculate total amount
+    const totalAmount = calculateTotalAmount(formData);
+    
+    // Step 3: Initiate hosted payment
+    const hostedResponse = await fetch('/api/payment/flexpay/initiate-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: orderId,
+        amount: totalAmount,
+        currency: formData.currency
+      })
+    });
+    
+    const hostedData = await hostedResponse.json();
+    
+    if (!hostedResponse.ok || !hostedData.success || !hostedData.redirectUrl) {
+      throw new Error(hostedData.message || 'Échec d\'initialisation FlexPay');
+    }
+    
+    // Step 4: Redirect to FlexPay hosted page
+    window.location.href = hostedData.redirectUrl;
+  } catch (error) {
+    console.error('❌ FlexPay card error:', error);
+    hideLoadingOverlay(overlay);
+    showNotification(error.message || 'Erreur de paiement', 'error');
+    setTimeout(() => {
+      window.location.href = PAYMENT_CANCEL_URL;
+    }, 2000);
+  }
+}
+
+// Manual Payment (Cash/Bank)
+async function processManualPayment(formData) {
+  try {
+
+    // In processManualPayment(), before fetch:
+console.log('🔍 Sending formData to create-pending:', formData); // Debug payload
+
+    // Create pending order
+    const response = await fetch('/api/vouchers/create-pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Impossible de créer la commande');
+    }
+    
+    // Store order data for payment instructions page
+    sessionStorage.setItem('pendingOrder', JSON.stringify(result.order));
+    
+    // Redirect to payment instructions
+    window.location.href = PAYMENT_INSTRUCTIONS_URL;
+  } catch (error) {
+    console.error('❌ Manual payment error:', error);
+    throw error;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////
 // Process FlexPay payment MoMo (final clean)
-async function processFlexPayPayment(formData) {
+/*async function processFlexPayPayment(formData) {
   const nm_maskDRC = raw => {
     let v = String(raw || '').replace(/[^\d+]/g, '');
     if (!v.startsWith('+243')) v = '+243' + v.replace(/\D/g, '').replace(/^243?/, '');
@@ -477,7 +634,7 @@ async function processFlexPayPayment(formData) {
         body: JSON.stringify({ orderId })
       }).catch(() => {});
       /** window.location.href = `/thank-you.html?order=${encodeURIComponent(orderId)}`;**/
-	  window.location.href = `${PAYMENT_SUCCESS_URL}?order=${encodeURIComponent(orderId)}`;
+	  /* window.location.href = `${PAYMENT_SUCCESS_URL}?order=${encodeURIComponent(orderId)}`;
 
     }
 
@@ -492,7 +649,7 @@ async function processFlexPayPayment(formData) {
       }
      /** if (status === 1) throw new Error('Paiement échoué (FlexPay)'); **/
 	  
-	  
+	  /*
 	  
 	   if (status === 1) {
     window.location.href = `${PAYMENT_CANCEL_URL}?order=${encodeURIComponent(orderId)}`;
@@ -516,11 +673,12 @@ async function processFlexPayPayment(formData) {
   } finally {
     overlay.remove();
   }
-}
+} 
 
 /** &&&&&&**/
 // Process FlexPay card payment   (final clean)
-async function processFlexPayPaymentCard(formData) {
+//  
+/* async function processFlexPayPaymentCard(formData) {
   // Show loading overlay
   const overlay = document.createElement('div');
   overlay.style.cssText =
@@ -582,8 +740,10 @@ async function processFlexPayPaymentCard(formData) {
   }
 }
 
-
+*/
 ///////////////////////////
+
+/*
 async function processFlutterwavePayment(formData) {
   window.location.href = `/payment/flutterwave?data=${encodeURIComponent(JSON.stringify(formData))}`;
 }
@@ -636,6 +796,10 @@ async function processManualPayment(formData) {
     throw error;
   }
 }
+*/
+/////////////////////////
+
+
 
 window.selectCurrency = selectCurrency;
 window.selectPresetAmount = selectPresetAmount;
