@@ -1894,8 +1894,7 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
   }
 
   try {
-    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+const orderId='O'+Date.now()+Math.random().toString(36).slice(2,6)
     // Calculs exacts
     const subtotal = amount * qty;
     const serviceFee = coverFees ? Math.round(subtotal * 0.035 * 100) / 100 : 0;
