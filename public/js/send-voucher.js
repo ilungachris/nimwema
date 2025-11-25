@@ -271,7 +271,7 @@ function addRecipientField() {
   row.className = 'recipient-input-row';
   row.innerHTML = `
     <input type="tel" class="form-input recipient-phone" placeholder="+243 XXX XXX XXX" required>
-    <button type="button" class="btn-remove-recipient" onclick="removeRecipientField(this)">✕</button>`;
+    <button type="button" class="btn btn-secondary" onclick="removeRecipientField(this)">✕</button>`;
   container.appendChild(row);
   const phoneInput = row.querySelector('.recipient-phone');
   phoneInput.addEventListener('input', function (e) {

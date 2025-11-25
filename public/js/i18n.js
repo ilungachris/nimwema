@@ -253,6 +253,7 @@ const translations = {
     add_recipient: "Ajouter un destinataire",
     sender_options: "Options d'envoi",
     your_name: "Votre nom",
+    your_mobile: "Votre Téléphone Mobile",
     hide_identity: "Masquer mon identité (envoyer anonymement)",
     fees_payment: "Frais et paiement",
     subtotal: "Sous-total:",

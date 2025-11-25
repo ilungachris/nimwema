@@ -239,7 +239,7 @@
 					
 					<div class="form-group">
                         <label for="senderName" class="form-label">
-                            <span data-i18n="your_name">Votre Téléphone (sera utilisé en cas de payment Mobile Money</span>
+                            <span data-i18n="your_mobile">Votre Téléphone (sera utilisé en cas de payment Mobile Money</span>
                             <span class="required">*</span>
                         </label>
 					<input type="tel" id="senderPhone" name="senderPhone"
@@ -380,7 +380,7 @@
                             <input type="radio" name="paymentMethod" value="cash">
                             <span class="payment-method-content">
                                 <span class="payment-method-icon">💵</span>
-                                <span class="payment-method-name">Cash / Western Union</span>
+                                <span class="payment-method-name">Cash/Western Union</span>
                                 <span class="payment-method-desc">Paiement manuel</span>
                             </span>
                         </label>
@@ -438,7 +438,7 @@
         
         // Show account fields when Cash/WU is selected
         document.addEventListener("DOMContentLoaded", function() {
-            const paymentMethods = document.querySelectorAll("input[name="paymentMethod"]");
+            const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
             const accountFields = document.getElementById("accountFields");
             const passwordFields = document.getElementById("passwordFields");
             

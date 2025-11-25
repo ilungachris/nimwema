@@ -1750,7 +1750,8 @@ app.get('/api/exchange-rate', async (req, res) => {
 app.post('/api/orders/create', async (req, res) => {
   try {
     const orderData = req.body;
-    const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const orderId='O'+Date.now()+Math.random().toString(36).slice(2,6);
+//    const orderId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     global.orders[orderId] = {
       ...orderData,
       id: orderId,
