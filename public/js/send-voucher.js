@@ -451,6 +451,8 @@ async function processFlexPayMobilePayment(formData) {
     
     if (paymentCompleted) {
       // Finalize order
+             console.log('⚠️ before calling finalizeOrder? orderId:', orderId);
+
       await finalizeOrder(orderId);
       window.location.href = `${PAYMENT_SUCCESS_URL}?order=${encodeURIComponent(orderId)}`;
     }
@@ -879,6 +881,8 @@ async function finalizeOrder(orderId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId })
     });
+          console.log('⚠️ finalize order after create? orderId:', orderId);
+
   } catch (error) {
     console.error('⚠️ Finalize order error:', error);
   }

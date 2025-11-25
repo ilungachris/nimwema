@@ -2669,6 +2669,8 @@ app.post('/api/merchantvouchers/redeem', async (req, res) => {
 
 // Create vouchers after payment success (synced with SMS)
 app.post('/api/vouchers/create', async (req, res) => {
+       console.log('⚠️ API CREATE top? orderId:', orderId);
+
   try {
     const {
       orderId,
@@ -2712,7 +2714,8 @@ app.post('/api/vouchers/create', async (req, res) => {
         senderName: senderName,
         expiresAt: voucher.expires_at
       });
-      
+             console.log('⚠️ API CREATE after sms? orderId:', orderId);
+
       // Update request status if from waiting list
       if (recipient.requestId) {
         const request = data.requests.find(r => r.id === recipient.requestId);
