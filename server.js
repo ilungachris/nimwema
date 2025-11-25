@@ -2669,7 +2669,6 @@ app.post('/api/merchantvouchers/redeem', async (req, res) => {
 
 // Create vouchers after payment success (synced with SMS)
 app.post('/api/vouchers/create', async (req, res) => {
-       console.log('⚠️ API CREATE top? orderId:', orderId);
 
   try {
     const {
@@ -2681,7 +2680,8 @@ app.post('/api/vouchers/create', async (req, res) => {
       message,
       recipients
     } = req.body;
-    
+           console.log('⚠️ API CREATE top? orderId:', orderId);
+
     const vouchers = [];
     
     // Generate vouchers for each recipient
