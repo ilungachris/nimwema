@@ -390,7 +390,7 @@ async function handleFormSubmit(e) {
   form.classList.add('form-loading');
 
   try {
-    if (formData.paymentMethod === 'flexpay') await processFlexPayMobilePaymen(formData);
+    if (formData.paymentMethod === 'flexpay') await processFlexPayMobilePayment(formData);
     else if (formData.paymentMethod === 'flexpaycard') await processFlexPayCardPayment(formData);
     else if (['cash', 'bank'].includes(formData.paymentMethod)) await processManualPayment(formData);
   } catch (error) {
