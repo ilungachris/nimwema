@@ -800,6 +800,140 @@ async function processManualPayment(formData) {
 /////////////////////////
 
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+async function createPendingOrder(formData) {
+  const response = await fetch('/api/vouchers/create-pending', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(formData)
+  });
+  
+  const result = await response.json();
+  
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || 'Impossible de créer la commande');
+  }
+  
+  return result;
+}
+
+function calculateTotalCDF(formData) {
+  const quantity = formData.quantity || 1;
+  let base = (formData.amount || 0) * quantity;
+  let amountCDF = formData.currency === 'USD' ? convertToCDF(base) : base;
+  
+  if (formData.coverFees) {
+    amountCDF += Math.ceil(amountCDF * (FEE_PERCENTAGE / 100));
+  }
+  
+  return Math.ceil(amountCDF);
+}
+
+function calculateTotalAmount(formData) {
+  const quantity = formData.quantity || 1;
+  let total = (formData.amount || 0) * quantity;
+  
+  if (formData.coverFees) {
+    total += total * (FEE_PERCENTAGE / 100);
+  }
+  
+  return total;
+}
+
+async function pollPaymentStatus(orderNumber, orderId) {
+  const startTime = Date.now();
+  const timeoutMs = 2 * 60 * 1000; // 2 minutes
+  const pollInterval = 4500; // 4.5 seconds
+  
+  while (Date.now() - startTime < timeoutMs) {
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    
+    try {
+      const response = await fetch(`/api/payment/flexpay/check/${encodeURIComponent(orderNumber)}`);
+ 
+      const data = await response.json();
+      
+      const status = data?.transaction?.status;
+      
+      if (status === 0) {
+        return true; // Payment successful
+      }
+      
+      if (status === 1) {
+        throw new Error('Paiement échoué');
+      }
+    } catch (error) {
+      console.error('⚠️ Payment status check error:', error);
+    }
+  }
+  
+  throw new Error('Délai dépassé, statut de paiement inconnu');
+}
+
+async function finalizeOrder(orderId) {
+  try {
+    await fetch('/api/vouchers/finalize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId })
+    });
+  } catch (error) {
+    console.error('⚠️ Finalize order error:', error);
+  }
+}
+
+function showLoadingOverlay(message) {
+  const overlay = document.createElement('div');
+  overlay.id = 'loadingOverlay';
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  `;
+  
+  overlay.innerHTML = `
+    <div style="background: #fff; padding: 32px; border-radius: 16px; text-align: center; min-width: 300px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+      <div style="width: 50px; height: 50px; border: 4px solid #E6E6E6; border-top: 4px solid #8BC34A; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+      <div style="font-size: 16px; color: #111; line-height: 1.5;">${message}</div>
+      <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function hideLoadingOverlay(overlay) {
+  if (overlay && overlay.parentNode) {
+    overlay.parentNode.removeChild(overlay);
+  }
+}
+
+function showNotification(message, type = 'info') {
+  // Simple notification implementation
+  alert(message);
+}
+
+function checkForPrefilledData() {
+  // Check if there's prefilled data in session storage
+  const prefilledData = sessionStorage.getItem('prefilledVoucherData');
+  if (prefilledData) {
+    try {
+      const data = JSON.parse(prefilledData);
+      // Prefill form with data
+      console.log('Prefilled data:', data);
+      sessionStorage.removeItem('prefilledVoucherData');
+    } catch (error) {
+      console.error('Error parsing prefilled data:', error);
+    }
+  }
+}
 
 window.selectCurrency = selectCurrency;
 window.selectPresetAmount = selectPresetAmount;
