@@ -874,7 +874,7 @@ async function pollPaymentStatus(orderNumber, orderId) {
 
 async function finalizeOrder(orderId) {
   try {
-    await fetch('/api/vouchers/finalize', {
+    await fetch('/api/vouchers/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId })
