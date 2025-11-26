@@ -616,32 +616,31 @@ app.get('/api/merchant/redemptions', requireMerchant, async (req, res) => {
     const params = [merchant.id];
     let dateFilter = '';
     if (period === 'today') {
-      dateFilter = 'AND r.redeemed_at::date = NOW()::date';
+      dateFilter = "AND DATE(r.created_at) = CURRENT_DATE";
     } else if (period === 'week') {
-      dateFilter = 'AND r.redeemed_at >= NOW() - INTERVAL \'7 days\'';
+      dateFilter = "AND r.created_at >= CURRENT_DATE - INTERVAL '7 days'";
     } else if (period === 'month') {
-      dateFilter = 'AND date_trunc(\'month\', r.redeemed_at) = date_trunc(\'month\', NOW())';
+      dateFilter = "AND date_trunc('month', r.created_at) = date_trunc('month', CURRENT_DATE)";
     }
 
     const sql = `
       SELECT
         r.id,
-        v.code,
-        v.amount,
-        r.redeemed_at,
-        COALESCE(c.name, 'N/A')       AS cashier_name,
-        COALESCE(rec.recipient_phone, '') AS recipient_phone
+        r.voucher_code as code,
+        r.amount,
+        r.currency,
+        r.created_at as redeemed_at,
+        r.merchant_name,
+        r.location,
+        r.notes,
+        v.recipient_phone,
+        v.recipient_name
       FROM redemptions r
-      JOIN vouchers v
-        ON v.id = r.voucher_id
-  LEFT JOIN cashiers c
-        ON c.id = r.cashier_id
-  LEFT JOIN voucher_recipients rec
-        ON rec.voucher_id = v.id
-     WHERE r.merchant_id = $1
-       ${dateFilter}
-     ORDER BY r.redeemed_at DESC
-     LIMIT ${limit}
+      LEFT JOIN vouchers v ON v.id = r.voucher_id
+      WHERE r.merchant_id = $1
+        ${dateFilter}
+      ORDER BY r.created_at DESC
+      LIMIT ${limit}
     `;
 
     const out = await client.query(sql, params);
@@ -649,10 +648,14 @@ app.get('/api/merchant/redemptions', requireMerchant, async (req, res) => {
     return res.json(out.rows.map(row => ({
       id: row.id,
       code: row.code,
-      amount: row.amount,
+      amount: parseFloat(row.amount),
+      currency: row.currency || 'USD',
       redeemedAt: row.redeemed_at,
-      cashierName: row.cashier_name,
-      recipientPhone: row.recipient_phone
+      merchantName: row.merchant_name,
+      location: row.location,
+      recipientPhone: row.recipient_phone || '',
+      recipientName: row.recipient_name || '',
+      cashierName: 'N/A'
     })));
   } catch (err) {
     console.error('❌ [MerchantRedemptions] Error', err);
@@ -674,34 +677,12 @@ app.get('/api/merchant/cashiers', requireMerchant, async (req, res) => {
       return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
     }
 
-    const sql = `
-      SELECT
-        c.id,
-        c.name,
-        c.phone,
-        c.email,
-        c.status,
-        COALESCE(r.cnt, 0) AS redemptions
-      FROM cashiers c
-      LEFT JOIN (
-        SELECT cashier_id, COUNT(*) AS cnt
-          FROM redemptions
-         WHERE merchant_id = $1
-      GROUP BY cashier_id
-      ) r ON r.cashier_id = c.id
-     WHERE c.merchant_id = $1
-     ORDER BY c.name
-    `;
-    const out = await client.query(sql, [merchant.id]);
-
-    return res.json(out.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      phone: row.phone,
-      email: row.email,
-      redemptions: Number(row.redemptions || 0),
-      active: row.status === 'active'
-    })));
+    // Note: No dedicated cashiers table exists. 
+    // Cashiers would be users with role='cashier'.
+    // For now, return empty array since cashier management is optional.
+    // Merchants can redeem vouchers directly from their dashboard.
+    
+    return res.json([]);
   } catch (err) {
     console.error('❌ [MerchantCashiers] Error', err);
     return res.status(500).json({ error: 'SERVER_ERROR' });
