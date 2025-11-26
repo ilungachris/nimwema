@@ -1214,8 +1214,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 
 
-req.user.user_id = user.id;
-req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin' ...
 
 
 
