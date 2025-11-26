@@ -2023,46 +2023,6 @@ res.json({ success: true, orders: result.rows });  } catch (error) {
   }
 });
 
-// Get ALL orders for current user (sent vouchers - all statuses)
-app.get('/api/orders/my-sent', async (req, res) => {
-  console.log('My sent orders called', { sessionId: req.cookies?.sessionId?.slice(0, 8) + '...' });
-  try {
-    const sessionId = req.cookies?.sessionId;
-    if (!sessionId) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const userResult = await db.query(
-      'SELECT u.id, u.phone FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP AND u.is_active = true',
-      [sessionId]
-    );
-    
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Session invalid or user inactive' });
-    }
-
-    const { id: userId, phone: userPhone } = userResult.rows[0];
-    console.log('User for my-sent:', { userId, userPhone });
-
-    // Get all orders (not just pending) - by sender_id OR sender_phone
-    const result = await db.query(
-      `SELECT o.id, o.amount, o.currency, o.quantity, o.total_amount as total, 
-              o.payment_method as "paymentMethod", o.status, o.payment_status as "paymentStatus",
-              o.message, o.created_at as "createdAt", o.recipient_type as "recipientType",
-              o.hide_identity as "hideIdentity", o.sender_name as "senderName"
-       FROM orders o
-       WHERE (o.sender_id = $1 OR o.sender_phone = $2)
-       ORDER BY o.created_at DESC`,
-      [userId, userPhone]
-    );
-
-    console.log('My sent orders result:', { count: result.rows.length });
-    res.json({ success: true, orders: result.rows });
-  } catch (error) {
-    console.error('Get sent orders error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
 
 
 // Get order by ID (synced global/data)
@@ -2505,222 +2465,112 @@ app.delete('/api/requests/:id', (req, res) => {
   }
 });
 
-// Sender management (DB-backed) - for requesters to save senders
-app.get('/api/senders', async (req, res) => {
+// Sender management (get/create/update/delete)
+app.get('/api/senders', (req, res) => {
+  const { userId } = req.query;
+  
+  let senders = data.senders || [];
+  
+  if (userId) {
+    senders = senders.filter(s => s.userId === parseInt(userId));
+  }
+  
+  res.json(senders);
+});
+
+app.post('/api/senders', (req, res) => {
   try {
-    const sessionId = req.cookies?.sessionId;
-    if (!sessionId) {
-      // Fallback: check query param for backward compatibility
-      const { userId } = req.query;
-      if (userId) {
-        const senders = await dbQueries.getSenders(userId);
-        return res.json({ success: true, senders });
-      }
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const userResult = await db.query(
-      'SELECT u.id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP',
-      [sessionId]
-    );
+    const { name, phone, relation, userId } = req.body;
     
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Session invalid' });
+    if (!data.senders) {
+      data.senders = [];
     }
-
-    const userId = userResult.rows[0].id;
-    const senders = await dbQueries.getSenders(userId);
     
-    res.json({ success: true, senders });
+    const sender = {
+      id: data.senders.length + 1,
+      name,
+      phone,
+      relation: relation || null,
+      userId: parseInt(userId),
+      created_at: new Date().toISOString()
+    };
+    
+    data.senders.push(sender);
+    
+    res.json({
+      success: true,
+      message: 'Sender created successfully',
+      sender
+    });
   } catch (error) {
-    console.error('Get senders error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error creating sender',
+      error: error.message
+    });
   }
 });
 
-app.post('/api/senders', async (req, res) => {
+app.put('/api/senders/:id', (req, res) => {
   try {
-    const sessionId = req.cookies?.sessionId;
-    let userId;
-
-    if (sessionId) {
-      const userResult = await db.query(
-        'SELECT u.id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP',
-        [sessionId]
-      );
-      if (userResult.rows.length > 0) {
-        userId = userResult.rows[0].id;
-      }
+    const senderId = parseInt(req.params.id);
+    const { name, phone, relation } = req.body;
+    
+    const senderIndex = data.senders.findIndex(s => s.id === senderId);
+    
+    if (senderIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sender not found'
+      });
     }
     
-    // Fallback to body userId for backward compatibility
-    if (!userId && req.body.userId) {
-      userId = req.body.userId;
-    }
-
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const { name, phone, relationship } = req.body;
-
-    if (!name || !phone) {
-      return res.status(400).json({ success: false, message: 'Name and phone required' });
-    }
-
-    const sender = await dbQueries.addSender(userId, name, phone);
+    data.senders[senderIndex] = {
+      ...data.senders[senderIndex],
+      name,
+      phone,
+      relation: relation || null,
+      updated_at: new Date().toISOString()
+    };
     
-    // Update relationship if provided (addSender doesn't include it, so we update)
-    if (relationship && sender) {
-      await db.query(
-        'UPDATE senders SET relationship = $1 WHERE id = $2',
-        [relationship, sender.id]
-      );
-      sender.relationship = relationship;
-    }
-
-    res.json({ success: true, message: 'Sender created successfully', sender });
+    res.json({
+      success: true,
+      message: 'Sender updated successfully',
+      sender: data.senders[senderIndex]
+    });
   } catch (error) {
-    console.error('Add sender error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error updating sender',
+      error: error.message
+    });
   }
 });
 
-app.put('/api/senders/:id', async (req, res) => {
+app.delete('/api/senders/:id', (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, phone, relationship } = req.body;
-
-    const query = `
-      UPDATE senders 
-      SET name = COALESCE($1, name), 
-          phone = COALESCE($2, phone), 
-          relationship = COALESCE($3, relationship),
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4
-      RETURNING *
-    `;
-    const result = await db.query(query, [name, phone, relationship, id]);
+    const senderId = parseInt(req.params.id);
+    const senderIndex = data.senders.findIndex(s => s.id === senderId);
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Sender not found' });
+    if (senderIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sender not found'
+      });
     }
-
-    res.json({ success: true, message: 'Sender updated successfully', sender: result.rows[0] });
+    
+    data.senders.splice(senderIndex, 1);
+    
+    res.json({
+      success: true,
+      message: 'Sender deleted successfully'
+    });
   } catch (error) {
-    console.error('Update sender error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.delete('/api/senders/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await dbQueries.deleteSender(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: 'Sender not found' });
-    }
-    
-    res.json({ success: true, message: 'Sender deleted successfully' });
-  } catch (error) {
-    console.error('Delete sender error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// ============================================
-// RECIPIENT MANAGEMENT (DB-backed) - for senders to save recipients
-// ============================================
-
-app.get('/api/recipients', async (req, res) => {
-  try {
-    const sessionId = req.cookies?.sessionId;
-    if (!sessionId) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const userResult = await db.query(
-      'SELECT u.id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP',
-      [sessionId]
-    );
-    
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Session invalid' });
-    }
-
-    const userId = userResult.rows[0].id;
-    const recipients = await dbQueries.getRecipients(userId);
-    
-    res.json({ success: true, recipients });
-  } catch (error) {
-    console.error('Get recipients error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.post('/api/recipients', async (req, res) => {
-  try {
-    const sessionId = req.cookies?.sessionId;
-    if (!sessionId) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const userResult = await db.query(
-      'SELECT u.id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP',
-      [sessionId]
-    );
-    
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Session invalid' });
-    }
-
-    const userId = userResult.rows[0].id;
-    const { name, phone, notes } = req.body;
-
-    if (!name || !phone) {
-      return res.status(400).json({ success: false, message: 'Name and phone required' });
-    }
-
-    const recipient = await dbQueries.addRecipient(userId, name, phone, notes);
-    res.json({ success: true, message: 'Recipient added successfully', recipient });
-  } catch (error) {
-    console.error('Add recipient error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.put('/api/recipients/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, phone, notes } = req.body;
-
-    const recipient = await dbQueries.updateRecipient(id, { name, phone, notes });
-    
-    if (!recipient) {
-      return res.status(404).json({ success: false, message: 'Recipient not found' });
-    }
-    
-    res.json({ success: true, message: 'Recipient updated successfully', recipient });
-  } catch (error) {
-    console.error('Update recipient error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.delete('/api/recipients/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await dbQueries.deleteRecipient(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: 'Recipient not found' });
-    }
-    
-    res.json({ success: true, message: 'Recipient deleted successfully' });
-  } catch (error) {
-    console.error('Delete recipient error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting sender',
+      error: error.message
+    });
   }
 });
 
