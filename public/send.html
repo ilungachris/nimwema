@@ -469,7 +469,7 @@
                 if (!params.toString()) return;
 
                 // 1) Sender name: accept ?senderName=... or ?name=...
-                var senderNameFromParams = params.get('senderName') || params.get('name');
+                var senderNameFromParams = params.get('senderName') || params.get('sname');
                 if (senderNameFromParams) {
                     var senderNameInput = document.getElementById('senderName');
                     if (senderNameInput && !senderNameInput.value) {
@@ -479,7 +479,7 @@
 
                 // 2) Sender phone: accept ?senderPhone=... or ?phone=...
                 //    Also try to prefill the first recipient phone if it exists.
-                var senderPhoneFromParams = params.get('senderPhone') || params.get('phone');
+                var senderPhoneFromParams = params.get('senderPhone') || params.get('sphone');
                 if (senderPhoneFromParams) {
                     var senderPhoneInput = document.getElementById('senderPhone');
                     if (senderPhoneInput && !senderPhoneInput.value) {
@@ -488,8 +488,10 @@
 
                     // Try to prefill first recipient phone, once send-voucher.js created it
                     var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
+                    var rPhoneFromParams = params.get('recipientPhone') || params.get('phone');
+
                     if (firstRecipientPhone && !firstRecipientPhone.value) {
-                        firstRecipientPhone.value = senderPhoneFromParams;
+                        firstRecipientPhone.value = rPhoneFromParams;
                     }
                 }
 

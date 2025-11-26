@@ -73,6 +73,12 @@ function checkAuth() {
     currentUser = JSON.parse(userStr);
     const displayName = currentUser.name || currentUser.email || currentUser.phone || 'Utilisateur';
     document.getElementById('userName').textContent = displayName;
+   
+    
+    
+   
+
+
     return true;
   } catch (error) {
     console.error('Error parsing user data:', error);
@@ -639,6 +645,33 @@ function getRequestTypeInfo(type) {
 // RECIPIENTS MANAGEMENT
 // ============================================
 
+
+
+ ///////
+currentUser = JSON.parse(userStr);
+const fullName = currentUser.name || "";
+const phone = currentUser.phone || "";
+
+// Split into first + last name
+let firstName = "";
+let lastName = "";
+
+if (fullName.includes(" ")) {
+    const parts = fullName.trim().split(" ");
+    firstName = parts[0];
+    lastName = parts.slice(1).join(" ");
+} else {
+    firstName = fullName;
+}
+
+// Encode for URL
+const qsFirst = encodeURIComponent(firstName);
+const qsLast = encodeURIComponent(lastName);
+const qsPhone = encodeURIComponent(phone);
+
+/////////
+
+
 async function loadRecipients() {
   const container = document.getElementById('recipientsList');
   container.innerHTML = '<div class="loading-state"><p>Chargement...</p></div>';
@@ -692,7 +725,9 @@ function renderRecipients() {
       <div class="contact-actions">
         <button class="btn-icon btn-edit" onclick="editRecipient('${recipient.id}')" title="Modifier">✏️</button>
         <button class="btn-icon btn-delete" onclick="deleteRecipientConfirm('${recipient.id}')" title="Supprimer">🗑️</button>
-        <a href="/send.html?phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a>
+        <a href="/send.html?sname=${qsFirst}%20${qsLast}&sphone=${qsPhone}&phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a>
+
+       <!--  <a href="/send.html?phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a> -->
       </div>
     </div>
   `).join('');
