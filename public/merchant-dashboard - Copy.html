@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord Commerçant - Nimwema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .merchant-dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #111111;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8BC34A;
+            text-decoration: none;
+        }
+
+        .sidebar-user {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #8BC34A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .user-details p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #8BC34A;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: rgba(139,195,74,0.1);
+            color: #8BC34A;
+        }
+
+        .menu-item .icon {
+            font-size: 20px;
+            width: 24px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-header h1 {
+            margin: 0 0 5px 0;
+            color: #111111;
+        }
+
+        .dashboard-header p {
+            margin: 0;
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-card-title {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-card-icon.green {
+            background: #e8f5e9;
+            color: #8BC34A;
+        }
+
+        .stat-card-icon.blue {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+
+        .stat-card-icon.orange {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .stat-card-icon.red {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 5px;
+        }
+
+        .stat-card-change {
+            font-size: 13px;
+            color: #8BC34A;
+        }
+
+        .stat-card-change.negative {
+            color: #f44336;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #8BC34A;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #7CB342;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #111111;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #111111;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-badge.pending {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .status-badge.expired {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn.view {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+
+        .action-btn.redeem {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+        }
+
+        .empty-state p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #111111;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #8BC34A;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="merchant-dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">NIMWEMA</a>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="user-info">
+                    <div class="user-avatar">M</div>
+                    <div class="user-details">
+                        <h3 id="merchantName">Mon Commerce</h3>
+                        <p>Commerçant</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a class="menu-item active" data-section="overview">
+                    <span class="icon">📊</span>
+                    <span>Vue d'ensemble</span>
+                </a>
+                <a class="menu-item" data-section="redemptions">
+                    <span class="icon">✅</span>
+                    <span>Rachats</span>
+                </a>
+                <a class="menu-item" data-section="cashiers">
+                    <span class="icon">👥</span>
+                    <span>Caissiers</span>
+                </a>
+                <a class="menu-item" data-section="settings">
+                    <span class="icon">⚙️</span>
+                    <span>Paramètres</span>
+                </a>
+                <a class="menu-item" href="redeem.html">
+                    <span class="icon">🎫</span>
+                    <span>Racheter un bon</span>
+                </a>
+                <a class="menu-item" id="logoutBtn">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h1>Tableau de bord Commerçant</h1>
+                <p>Gérez vos rachats et votre équipe</p>
+            </div>
+
+            <!-- Overview Section -->
+            <div class="content-section active" id="overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Rachats aujourd'hui</span>
+                            <div class="stat-card-icon green">✅</div>
+                        </div>
+                        <div class="stat-card-value" id="todayRedemptions">0</div>
+                        <div class="stat-card-change">+0% vs hier</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Montant total</span>
+                            <div class="stat-card-icon blue">💰</div>
+                        </div>
+                        <div class="stat-card-value" id="totalAmount">0 USD</div>
+                        <div class="stat-card-change">Ce mois</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Caissiers actifs</span>
+                            <div class="stat-card-icon orange">👥</div>
+                        </div>
+                        <div class="stat-card-value" id="activeCashiers">0</div>
+                        <div class="stat-card-change">Total: <span id="totalCashiers">0</span></div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Taux de rachat</span>
+                            <div class="stat-card-icon green">📈</div>
+                        </div>
+                        <div class="stat-card-value" id="redemptionRate">0%</div>
+                        <div class="stat-card-change">Moyenne mensuelle</div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Rachats récents</h2>
+                        <button class="btn btn-primary" onclick="window.location.href='redeem.html'">Racheter un bon</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="recentRedemptionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Montant</th>
+                                    <th>Date</th>
+                                    <th>Caissier</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentRedemptionsBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">📋</div>
+                                            <h3>Aucun rachat récent</h3>
+                                            <p>Les rachats apparaîtront ici</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Redemptions Section -->
+            <div class="content-section" id="redemptions">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Historique des rachats</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="filterPeriod" class="btn btn-secondary">
+                                <option value="today">Aujourd'hui</option>
+                                <option value="week">Cette semaine</option>
+                                <option value="month" selected>Ce mois</option>
+                                <option value="all">Tout</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="exportRedemptions()">📥 Exporter</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Montant</th>
+                                    <th>Date</th>
+                                    <th>Heure</th>
+                                    <th>Caissier</th>
+                                    <th>Bénéficiaire</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="redemptionsBody">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">📋</div>
+                                            <h3>Aucun rachat</h3>
+                                            <p>L'historique des rachats apparaîtra ici</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cashiers Section -->
+            <div class="content-section" id="cashiers">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Gestion des caissiers</h2>
+                        <button class="btn btn-primary" onclick="openAddCashierModal()">+ Ajouter un caissier</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Téléphone</th>
+                                    <th>Rachats</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cashiersBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">👥</div>
+                                            <h3>Aucun caissier</h3>
+                                            <p>Ajoutez des caissiers pour gérer les rachats</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="content-section" id="settings">
+                <div class="section-card">
+                    <h2 class="section-title">Paramètres du commerce</h2>
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label>Nom du commerce</label>
+                            <input type="text" id="businessNameInput" value="Mon Commerce">
+                        </div>
+                        <div class="form-group">
+                            <label>Adresse</label>
+                            <input type="text" id="businessAddress" value="">
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone</label>
+                            <input type="tel" id="businessPhone" value="">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="businessEmail" value="">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Cashier Modal -->
+    <div class="modal" id="addCashierModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ajouter un caissier</h3>
+                <span class="modal-close" onclick="closeAddCashierModal()">×</span>
+            </div>
+            <form id="addCashierForm">
+                <div class="form-group">
+                    <label>Nom complet *</label>
+                    <input type="text" id="cashierName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="cashierEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Téléphone *</label>
+                    <input type="tel" id="cashierPhone" placeholder="+243XXXXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe *</label>
+                    <input type="password" id="cashierPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script>
+
+        window.addEventListener('DOMContentLoaded', function() {
+    const user = localStorage.getItem('nimwema_user');
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    const userData = JSON.parse(user);
+    if (userData.role !== 'merchant') {
+        alert('Accès non autorisé');
+        window.location.href = '/';
+        return;
+    }
+
+    // safe to load data
+    loadMerchantProfile();
+    loadOverviewData();
+});
+        // Navigation
+        document.querySelectorAll('.menu-item[data-section]').forEach(item => {
+            item.addEventListener('click', function() {
+                const section = this.dataset.section;
+                
+                // Update active menu item
+                document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show section
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(section).classList.add('active');
+                
+                // Load section data
+                loadSectionData(section);
+            });
+        });
+
+        // Load data
+        async function loadSectionData(section) {
+            switch(section) {
+                case 'overview':
+                    await loadOverviewData();
+                    break;
+                case 'redemptions':
+                    await loadRedemptions();
+                    break;
+                case 'cashiers':
+                    await loadCashiers();
+                    break;
+            }
+        }
+
+        async function loadOverviewData() {
+            try {
+                const response = await fetch('/api/merchant/stats', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                document.getElementById('todayRedemptions').textContent = data.todayRedemptions || 0;
+                document.getElementById('totalAmount').textContent = (data.totalAmount || 0) + ' USD';
+                document.getElementById('activeCashiers').textContent = data.activeCashiers || 0;
+                document.getElementById('totalCashiers').textContent = data.totalCashiers || 0;
+                document.getElementById('redemptionRate').textContent = (data.redemptionRate || 0) + '%';
+                
+                // Load recent redemptions
+                await loadRecentRedemptions();
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+
+        async function loadRecentRedemptions() {
+            try {
+                const response = await fetch('/api/merchant/redemptions?limit=5', {
+                    credentials: 'include'
+                });
+                const redemptions = await response.json();
+                
+                const tbody = document.getElementById('recentRedemptionsBody');
+                if (redemptions.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📋</div>
+                                    <h3>Aucun rachat récent</h3>
+                                    <p>Les rachats apparaîtront ici</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = redemptions.map(r => `
+                        <tr>
+                            <td>${r.code}</td>
+                            <td>${r.amount} USD</td>
+                            <td>${new Date(r.date).toLocaleDateString()}</td>
+                            <td>${r.cashier}</td>
+                            <td><span class="status-badge success">Racheté</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn view" onclick="viewRedemption('${r.id}')">Voir</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading redemptions:', error);
+            }
+        }
+
+        async function loadRedemptions() {
+            // Similar to loadRecentRedemptions but for full history
+            await loadRecentRedemptions();
+        }
+
+        async function loadCashiers() {
+            try {
+                const response = await fetch('/api/merchant/cashiers', {
+                    credentials: 'include'
+                });
+                const cashiers = await response.json();
+                
+                const tbody = document.getElementById('cashiersBody');
+                if (cashiers.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">👥</div>
+                                    <h3>Aucun caissier</h3>
+                                    <p>Ajoutez des caissiers pour gérer les rachats</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = cashiers.map(c => `
+                        <tr>
+                            <td>${c.name}</td>
+                            <td>${c.email}</td>
+                            <td>${c.phone}</td>
+                            <td>${c.redemptions || 0}</td>
+                            <td><span class="status-badge ${c.active ? 'success' : 'pending'}">${c.active ? 'Actif' : 'Inactif'}</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn view" onclick="editCashier('${c.id}')">Modifier</button>
+                                    <button class="action-btn" onclick="deleteCashier('${c.id}')">Supprimer</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading cashiers:', error);
+            }
+        }
+
+        // Modal functions
+        function openAddCashierModal() {
+            document.getElementById('addCashierModal').classList.add('active');
+        }
+
+        function closeAddCashierModal() {
+            document.getElementById('addCashierModal').classList.remove('active');
+            document.getElementById('addCashierForm').reset();
+        }
+
+        document.getElementById('addCashierForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('cashierName').value,
+                email: document.getElementById('cashierEmail').value,
+                phone: document.getElementById('cashierPhone').value,
+                password: document.getElementById('cashierPassword').value
+            };
+            
+            try {
+                const response = await fetch('/api/merchant/cashiers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    alert('Caissier ajouté avec succès');
+                    closeAddCashierModal();
+                    loadCashiers();
+                } else {
+                    alert('Erreur lors de l\'ajout du caissier');
+                }
+            } catch (error) {
+                console.error('Error adding cashier:', error);
+                alert('Erreur lors de l\'ajout du caissier');
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    localStorage.removeItem('nimwema_user');
+                    window.location.href = 'login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+        });
+
+        // Initialize
+
+
+async function loadMerchantProfile() {
+    try {
+        const res = await fetch('/api/merchant/me', {
+            method: 'GET',
+            credentials: 'include' // send session cookie
+        });
+
+        if (res.status === 401) {
+            // Not logged in as merchant → go to login, with “next” parameter
+            window.location.href = 'login.html?next=merchant-dashboard.html';
+            return;
+        }
+
+        if (!res.ok) {
+            console.error('Error loading merchant profile:', res.status);
+            return;
+        }
+
+        const data = await res.json();
+        // Update UI with real merchant name
+        const nameEl = document.getElementById('merchantName');
+        if (nameEl) {
+            nameEl.textContent = data.businessName || 'Mon Commerce';
+        }
+        // (Optionally prefill settings form here)
+    } catch (err) {
+        console.error('Error loading merchant profile', err);
+    }
+}
+
+
+/* document.addEventListener('DOMContentLoaded', () => {
+    loadMerchantProfile();
+    loadOverviewData();
+}); */
+
+
+
+
+  //loadMerchantProfile();
+    //    loadOverviewData();
+    </script>
+</body>
+</html>

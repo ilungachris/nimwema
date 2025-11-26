@@ -3,178 +3,465 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Nimwema</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <title>Administration - Nimwema</title>
+    <meta name="description" content="Panneau d'administration Nimwema">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    
     <style>
-        /* Admin Dashboard Specific Styles */
-        .admin-dashboard {
-            display: flex;
+        /* ========== ADMIN DASHBOARD STYLES ========== */
+        :root {
+            --primary: #8BC34A;
+            --primary-dark: #7CB342;
+            --primary-light: #C5E1A5;
+            --dark: #111111;
+            --dark-light: #333333;
+            --gray: #666666;
+            --gray-light: #999999;
+            --bg: #f5f7fa;
+            --white: #ffffff;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --info: #2196F3;
+            --admin-accent: #6366f1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--dark);
             min-height: 100vh;
-            background: #f5f5f5;
         }
 
-        .sidebar {
-            width: 260px;
-            background: #111111;
-            color: white;
-            padding: 20px 0;
+        /* ========== HEADER ========== */
+        .header {
+            background: linear-gradient(135deg, var(--dark) 0%, #1a1a2e 100%);
+            color: var(--white);
             position: fixed;
-            height: 100vh;
-            overflow-y: auto;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.3);
         }
 
-        .sidebar-header {
-            padding: 0 20px 20px;
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            background: rgba(99, 102, 241, 0.1);
+            font-size: 13px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .sidebar-logo {
-            font-size: 24px;
-            font-weight: 700;
-            color: #8BC34A;
-            text-decoration: none;
-        }
-
-        .sidebar-user {
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .user-info {
+        .admin-badge {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #8BC34A;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+            gap: 8px;
+            color: var(--admin-accent);
             font-weight: 600;
         }
 
-        .user-details h3 {
-            margin: 0;
-            font-size: 16px;
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
-        .user-details p {
-            margin: 5px 0 0;
+        .user-name {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: var(--white);
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 12px;
-            color: #8BC34A;
+            transition: all 0.3s;
         }
 
-        .sidebar-menu {
+        .btn-logout:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .logo .w {
+            color: var(--primary);
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: var(--white);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        /* ========== DASHBOARD LAYOUT ========== */
+        .dashboard-container {
+            display: flex;
+            margin-top: 100px;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* ========== SIDEBAR ========== */
+        .dashboard-sidebar {
+            width: 260px;
+            background: var(--white);
+            border-right: 1px solid #e0e0e0;
+            position: fixed;
+            top: 100px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-nav {
             padding: 20px 0;
         }
 
-        .menu-item {
-            padding: 12px 20px;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
+        .nav-item {
             display: flex;
             align-items: center;
             gap: 12px;
+            padding: 14px 20px;
+            color: var(--gray);
+            text-decoration: none;
             transition: all 0.3s;
             cursor: pointer;
+            border-left: 3px solid transparent;
         }
 
-        .menu-item:hover,
-        .menu-item.active {
-            background: rgba(139,195,74,0.1);
-            color: #8BC34A;
+        .nav-item:hover {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--admin-accent);
         }
 
-        .menu-item .icon {
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--admin-accent);
+            border-left-color: var(--admin-accent);
+            font-weight: 600;
+        }
+
+        .nav-icon {
             font-size: 20px;
             width: 24px;
+            text-align: center;
         }
 
-        .main-content {
+        .nav-text {
+            font-size: 14px;
+        }
+
+        .nav-badge {
+            background: var(--danger);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: auto;
+            font-weight: 600;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 15px 20px;
+        }
+
+        /* ========== MAIN CONTENT ========== */
+        .dashboard-content {
             flex: 1;
             margin-left: 260px;
             padding: 30px;
+            max-width: 100%;
         }
 
-        .dashboard-header {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        /* ========== SECTIONS ========== */
+        .dashboard-section {
+            display: none;
         }
 
-        .dashboard-header h1 {
-            margin: 0 0 5px 0;
-            color: #111111;
+        .dashboard-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        .dashboard-header p {
-            margin: 0;
-            color: #666;
-        }
-
-        .section-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .section-title {
-            font-size: 20px;
+        .section-header h1 {
+            font-size: 28px;
             font-weight: 700;
-            color: #111111;
+            color: var(--dark);
             margin: 0;
         }
 
+        .section-header .text-small {
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* ========== STATS GRID ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .stat-card.purple::before { background: var(--admin-accent); }
+        .stat-card.green::before { background: var(--success); }
+        .stat-card.blue::before { background: var(--info); }
+        .stat-card.orange::before { background: var(--warning); }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .stat-card-title {
+            font-size: 13px;
+            color: var(--gray);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .stat-card-icon.purple { background: rgba(99, 102, 241, 0.1); }
+        .stat-card-icon.green { background: #e8f5e9; }
+        .stat-card-icon.blue { background: #e3f2fd; }
+        .stat-card-icon.orange { background: #fff3e0; }
+
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            line-height: 1.2;
+        }
+
+        .stat-card-change {
+            font-size: 13px;
+            color: var(--gray-light);
+            margin-top: 5px;
+        }
+
+        /* ========== DASHBOARD CARD ========== */
+        .dashboard-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .card-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        /* ========== BUTTONS ========== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--admin-accent);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            background: #43a047;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #e53935;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* ========== TABLES ========== */
         .table-container {
             overflow-x: auto;
+            margin: 0 -10px;
+            padding: 0 10px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 700px;
         }
 
         thead {
-            background: #f5f5f5;
+            background: #f8f9fa;
         }
 
         th {
-            padding: 12px;
+            padding: 14px 12px;
             text-align: left;
             font-weight: 600;
-            color: #666;
-            font-size: 13px;
+            color: var(--gray);
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         td {
-            padding: 15px 12px;
+            padding: 14px 12px;
             border-bottom: 1px solid #f0f0f0;
-            color: #333;
+            font-size: 14px;
+            color: var(--dark-light);
         }
 
         tr:hover {
             background: #fafafa;
         }
 
+        /* ========== STATUS BADGES ========== */
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -183,596 +470,1545 @@
             font-weight: 600;
         }
 
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
+        .status-badge.success, .status-badge.paid, .status-badge.sent {
+            background: #e8f5e9;
+            color: var(--success);
         }
 
-        .status-paid {
-            background: #d4edda;
-            color: #155724;
+        .status-badge.pending {
+            background: #fff3e0;
+            color: var(--warning);
         }
 
-        .status-failed {
-            background: #f8d7da;
-            color: #721c24;
+        .status-badge.danger, .status-badge.failed, .status-badge.cancelled {
+            background: #ffebee;
+            color: var(--danger);
         }
 
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
+        .status-badge.info {
+            background: #e3f2fd;
+            color: var(--info);
         }
 
-        .btn-primary {
-            background: #8BC34A;
-            color: #111;
-        }
-
-        .btn-primary:hover {
-            background: #7CB342;
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-
+        /* ========== ACTION BUTTONS ========== */
         .action-buttons {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .action-btn.approve {
+            background: #e8f5e9;
+            color: var(--success);
+        }
+
+        .action-btn.reject {
+            background: #ffebee;
+            color: var(--danger);
+        }
+
+        .action-btn.view {
+            background: #e3f2fd;
+            color: var(--info);
+        }
+
+        .action-btn.suspend {
+            background: #fff3e0;
+            color: var(--warning);
+        }
+
+        .action-btn:hover {
+            filter: brightness(0.95);
+            transform: translateY(-1px);
+        }
+
+        /* ========== EMPTY STATE ========== */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #999;
+            color: var(--gray-light);
         }
 
         .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 10px 0;
+            color: var(--gray);
+            font-size: 18px;
+        }
+
+        .empty-state p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* ========== LOADING STATE ========== */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f0f0f0;
+            border-top-color: var(--admin-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ========== MODAL ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* ========== ORDER DETAILS ========== */
+        .order-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .order-detail-label {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .order-detail-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .recipients-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .recipients-list h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .recipient-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .recipient-item:last-child {
+            border-bottom: none;
+        }
+
+        /* ========== FILTERS ========== */
+        .filters-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            color: var(--gray);
+            white-space: nowrap;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+        }
+
+        /* ========== FOOTER ========== */
+        .footer {
+            background: var(--dark);
+            color: var(--gray-light);
+            padding: 20px;
+            text-align: center;
+            margin-left: 260px;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-                z-index: 1000;
+            .hamburger {
+                display: flex;
             }
 
-            .sidebar.mobile-open {
+            .dashboard-sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                top: 0;
+                padding-top: 120px;
+                box-shadow: 5px 0 20px rgba(0,0,0,0.1);
+            }
+
+            .dashboard-sidebar.mobile-open {
                 transform: translateX(0);
             }
 
-            .main-content {
+            .dashboard-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .footer {
                 margin-left: 0;
             }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .section-header h1 {
+                font-size: 22px;
+            }
+
+            .header-top {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+
+            .filters-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                min-width: 600px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                margin-top: 90px;
+            }
+
+            .stat-card {
+                padding: 18px;
+            }
+
+            .stat-card-value {
+                font-size: 26px;
+            }
+
+            .dashboard-card {
+                padding: 18px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* ========== OVERLAY FOR MOBILE ========== */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="admin-dashboard">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <a href="index.html" class="sidebar-logo">NIMWEMA</a>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="admin-badge">🔐 Administration Nimwema</div>
+            <div class="user-menu">
+                <span class="user-name" id="adminName">Administrateur</span>
+                <button class="btn-logout" onclick="logout()">Déconnexion</button>
             </div>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo">NIM<span class="w">W</span>EMA</a>
+            <button class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
 
-            <div class="sidebar-user">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar">A</div>
-                    <div class="user-details">
-                        <h3 id="userName">Administrateur</h3>
-                        <p>Admin</p>
-                    </div>
-                </div>
-            </div>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
-            <nav class="sidebar-menu">
-                <a href="admin-dashboard.html" class="menu-item active">
-                    <span class="icon">📊</span>
-                    <span>Vue d'ensemble</span>
+    <!-- Main Dashboard -->
+    <main class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-sidebar" id="dashboardSidebar">
+            <nav class="dashboard-nav">
+                <a class="nav-item active" onclick="showSection('overview')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Vue d'ensemble</span>
                 </a>
-                <a href="admin-merchants.html" class="menu-item">
-                    <span class="icon">🏪</span>
-                    <span>Commerçants</span>
+                <a class="nav-item" onclick="showSection('pending')">
+                    <span class="nav-icon">⏳</span>
+                    <span class="nav-text">Commandes en attente</span>
+                    <span class="nav-badge" id="pendingBadge">0</span>
                 </a>
-                <a href="admin-users.html" class="menu-item">
-                    <span class="icon">👥</span>
-                    <span>Utilisateurs</span>
+                <a class="nav-item" onclick="showSection('merchants')">
+                    <span class="nav-icon">🏪</span>
+                    <span class="nav-text">Commerçants</span>
                 </a>
-                <a href="admin-transactions.html" class="menu-item">
-                    <span class="icon">💰</span>
-                    <span>Transactions</span>
+                <a class="nav-item" onclick="showSection('users')">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Utilisateurs</span>
                 </a>
-                <a class="menu-item" id="logoutBtn">
-                    <span class="icon">🚪</span>
-                    <span>Déconnexion</span>
+                <a class="nav-item" onclick="showSection('transactions')">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-text">Transactions</span>
+                </a>
+                
+                <div class="nav-divider"></div>
+                
+                <a class="nav-item" onclick="showSection('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Paramètres</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="dashboard-header">
-                <h1>Tableau de bord Administrateur</h1>
-                <p>Commandes de bon d'achats</p>
-            </div>
-
-            <!-- Pending Payment Orders Section -->
-            <div class="section-card">
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            
+            <!-- ========== OVERVIEW SECTION ========== -->
+            <section id="overviewSection" class="dashboard-section active">
                 <div class="section-header">
-                    <h2 class="section-title">📋 Commandes de bon d'achats</h2>
-                    <button class="btn btn-secondary" onclick="loadPendingOrders()">
-                        🔄 Actualiser
-                    </button>
+                    <div>
+                        <h1>Tableau de bord Admin</h1>
+                        <p class="text-small">Vue d'ensemble de la plateforme Nimwema</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="refreshAllData()">🔄 Actualiser</button>
                 </div>
-                
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Référence</th>
-                                <th>Expéditeur</th>
-                                <th>Montant</th>
-                                <th>Quantité</th>
-                                <th>Destinataires</th>
-                                <th>Méthode</th>
-                                <th>Statut</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pendingOrdersBody">
-                            <tr>
-                                <td colspan="9" class="empty-state">
-                                    <div class="empty-state-icon">⏳</div>
-                                    <p>Chargement des commandes...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- Order Details Modal -->
-            <div id="orderModal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>Détails de la commande</h2>
-                        <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card purple">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Commandes en attente</span>
+                            <div class="stat-card-icon purple">⏳</div>
+                        </div>
+                        <div class="stat-card-value" id="statPendingOrders">0</div>
+                        <div class="stat-card-change">À approuver</div>
                     </div>
-                    <div class="modal-body" id="orderModalBody">
-                        <!-- Will be filled dynamically -->
+
+                    <div class="stat-card green">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Bons envoyés (mois)</span>
+                            <div class="stat-card-icon green">🎫</div>
+                        </div>
+                        <div class="stat-card-value" id="statMonthVouchers">0</div>
+                        <div class="stat-card-change">Ce mois-ci</div>
+                    </div>
+
+                    <div class="stat-card blue">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Volume (mois)</span>
+                            <div class="stat-card-icon blue">💰</div>
+                        </div>
+                        <div class="stat-card-value" id="statMonthVolume">0 USD</div>
+                        <div class="stat-card-change">Total des transactions</div>
+                    </div>
+
+                    <div class="stat-card orange">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">Commerçants actifs</span>
+                            <div class="stat-card-icon orange">🏪</div>
+                        </div>
+                        <div class="stat-card-value" id="statActiveMerchants">0</div>
+                        <div class="stat-card-change">Partenaires</div>
                     </div>
                 </div>
+
+                <!-- Recent Pending Orders -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3>⏳ Commandes récentes en attente</h3>
+                        <a href="#" class="view-all-link" onclick="showSection('pending'); return false;" style="color: var(--admin-accent); text-decoration: none; font-weight: 500;">Voir tout →</a>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Expéditeur</th>
+                                    <th>Montant</th>
+                                    <th>Destinataires</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentPendingBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="loading-state">
+                                            <div class="loading-spinner"></div>
+                                            <p>Chargement...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== PENDING ORDERS SECTION ========== -->
+            <section id="pendingSection" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h1>Commandes en Attente</h1>
+                        <p class="text-small">Approuvez ou rejetez les commandes de bons d'achat</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Actualiser</button>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Expéditeur</th>
+                                    <th>Montant/Bon</th>
+                                    <th>Quantité</th>
+                                    <th>Total</th>
+                                    <th>Méthode</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingOrdersBody">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="loading-state">
+                                            <div class="loading-spinner"></div>
+                                            <p>Chargement...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== MERCHANTS SECTION ========== -->
+            <section id="merchantsSection" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h1>Commerçants</h1>
+                        <p class="text-small">Gestion des commerçants partenaires</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadMerchants()">🔄 Actualiser</button>
+                </div>
+
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label>Statut:</label>
+                        <select id="merchantStatusFilter" onchange="loadMerchants()">
+                            <option value="all">Tous</option>
+                            <option value="active">Actifs</option>
+                            <option value="pending">En attente</option>
+                            <option value="suspended">Suspendus</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Commerce</th>
+                                    <th>Contact</th>
+                                    <th>Ville</th>
+                                    <th>Rachats</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merchantsBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="loading-state">
+                                            <div class="loading-spinner"></div>
+                                            <p>Chargement...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== USERS SECTION ========== -->
+            <section id="usersSection" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h1>Utilisateurs</h1>
+                        <p class="text-small">Gestion des utilisateurs de la plateforme</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadUsers()">🔄 Actualiser</button>
+                </div>
+
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label>Rôle:</label>
+                        <select id="userRoleFilter" onchange="loadUsers()">
+                            <option value="all">Tous</option>
+                            <option value="user">Utilisateurs</option>
+                            <option value="merchant">Commerçants</option>
+                            <option value="cashier">Caissiers</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Statut:</label>
+                        <select id="userStatusFilter" onchange="loadUsers()">
+                            <option value="all">Tous</option>
+                            <option value="active">Actifs</option>
+                            <option value="suspended">Suspendus</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Téléphone</th>
+                                    <th>Email</th>
+                                    <th>Rôle</th>
+                                    <th>Inscrit</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersBody">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="loading-state">
+                                            <div class="loading-spinner"></div>
+                                            <p>Chargement...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== TRANSACTIONS SECTION ========== -->
+            <section id="transactionsSection" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h1>Transactions</h1>
+                        <p class="text-small">Historique de toutes les transactions</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="loadTransactions()">🔄 Actualiser</button>
+                        <button class="btn btn-secondary" onclick="exportTransactions()">📥 Exporter</button>
+                    </div>
+                </div>
+
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label>Période:</label>
+                        <select id="txnPeriodFilter" onchange="loadTransactions()">
+                            <option value="today">Aujourd'hui</option>
+                            <option value="week">Cette semaine</option>
+                            <option value="month" selected>Ce mois</option>
+                            <option value="all">Tout</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Type:</label>
+                        <select id="txnTypeFilter" onchange="loadTransactions()">
+                            <option value="all">Tous</option>
+                            <option value="voucher">Bons d'achat</option>
+                            <option value="redemption">Rachats</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Montant</th>
+                                    <th>De</th>
+                                    <th>À</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="loading-state">
+                                            <div class="loading-spinner"></div>
+                                            <p>Chargement...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== SETTINGS SECTION ========== -->
+            <section id="settingsSection" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h1>Paramètres</h1>
+                        <p class="text-small">Configuration de la plateforme</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3 style="margin-bottom: 20px;">🔧 Paramètres généraux</h3>
+                    <p style="color: var(--gray);">Les paramètres système sont gérés directement dans la configuration du serveur.</p>
+                    <p style="color: var(--gray); margin-top: 10px;">Contactez l'équipe technique pour toute modification.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 Nimwema Administration. Tous droits réservés.</p>
+    </footer>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Détails de la commande</h2>
+                <button class="modal-close" onclick="closeModal('orderModal')">&times;</button>
             </div>
-        </main>
+            <div class="modal-body" id="orderModalBody">
+                <!-- Filled dynamically -->
+            </div>
+            <div class="modal-footer" id="orderModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('orderModal')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Reason Modal -->
+    <div class="modal" id="rejectModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Rejeter la commande</h2>
+                <button class="modal-close" onclick="closeModal('rejectModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; color: var(--gray);">Veuillez indiquer la raison du rejet. L'expéditeur sera notifié par SMS.</p>
+                <textarea id="rejectReason" class="form-textarea" rows="4" placeholder="Raison du rejet..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rejectModal')">Annuler</button>
+                <button class="btn btn-danger" onclick="confirmReject()">Rejeter</button>
+            </div>
+        </div>
     </div>
 
     <script>
+    // ========== GLOBAL STATE ==========
+    let currentSection = 'overview';
+    let pendingOrders = [];
+    let currentRejectOrderId = null;
+
+    // ========== INITIALIZATION ==========
+    document.addEventListener('DOMContentLoaded', function() {
         // Check authentication
-        window.addEventListener('DOMContentLoaded', function() {
-            const user = localStorage.getItem('nimwema_user');
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-            
-            const userData = JSON.parse(user);
-            if (userData.role !== 'admin') {
-                alert('Accès non autorisé');
-                window.location.href = '/';
-                return;
-            }
-            
-            // Set user info
-            document.getElementById('userName').textContent = userData.name || 'Admin';
-            const avatar = document.getElementById('userAvatar');
-            if (userData.name) {
-                avatar.textContent = userData.name.charAt(0).toUpperCase();
-            }
-            
-            // Load pending orders
-            loadPendingOrders();
-            
-            // Auto-refresh every 30 seconds
-           // setInterval(loadPendingOrders, 30000);
+        const user = localStorage.getItem('nimwema_user');
+        if (!user) {
+            window.location.href = '/login.html?next=admin-dashboard.html';
+            return;
+        }
+
+        const userData = JSON.parse(user);
+        if (userData.role !== 'admin') {
+            alert('Accès non autorisé. Vous devez être administrateur.');
+            window.location.href = '/';
+            return;
+        }
+
+        // Set admin name
+        document.getElementById('adminName').textContent = userData.name || 'Administrateur';
+
+        // Load initial data
+        loadDashboardStats();
+        loadPendingOrders();
+    });
+
+    // ========== SECTION NAVIGATION ==========
+    function showSection(section) {
+        currentSection = section;
+        
+        // Update nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event?.target?.closest('.nav-item')?.classList.add('active');
+
+        // Hide all sections
+        document.querySelectorAll('.dashboard-section').forEach(s => {
+            s.classList.remove('active');
         });
 
-        // Load pending orders
-        async function loadPendingOrders() {
-            try {
-                const response = await fetch('/api/admin/orders/pending', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    console.error('Expected JSON but got:', contentType);
-                    throw new Error('Le serveur a renvoyé une réponse non-JSON. Vérifiez que l\'API est configurée correctement.');
-                }
-                
+        // Show selected section
+        const sectionEl = document.getElementById(section + 'Section');
+        if (sectionEl) {
+            sectionEl.classList.add('active');
+        }
+
+        // Load section data
+        loadSectionData(section);
+
+        // Close mobile menu
+        closeMobileMenu();
+    }
+
+    function loadSectionData(section) {
+        switch(section) {
+            case 'overview':
+                loadDashboardStats();
+                loadRecentPending();
+                break;
+            case 'pending':
+                loadPendingOrders();
+                break;
+            case 'merchants':
+                loadMerchants();
+                break;
+            case 'users':
+                loadUsers();
+                break;
+            case 'transactions':
+                loadTransactions();
+                break;
+        }
+    }
+
+    // ========== MOBILE MENU ==========
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('dashboardSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+
+    function closeMobileMenu() {
+        const sidebar = document.getElementById('dashboardSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+    }
+
+    // ========== LOAD DASHBOARD STATS ==========
+    async function loadDashboardStats() {
+        try {
+            const response = await fetch('/api/admin/dashboard', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
                 const data = await response.json();
                 
-console.log('Raw orders from API:', data.orders);
-
-
-
-                const tbody = document.getElementById('pendingOrdersBody');
+                document.getElementById('statPendingOrders').textContent = data.pendingApprovals || 0;
+                document.getElementById('statMonthVouchers').textContent = data.monthVouchers || 0;
+                document.getElementById('statMonthVolume').textContent = formatCurrency(data.monthVolume || 0);
+                document.getElementById('statActiveMerchants').textContent = data.activeMerchants || 0;
                 
-                if (!data.success || !data.orders || data.orders.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="empty-state">
-                                <div class="empty-state-icon">✅</div>
-                                <p>Aucune commande en attente</p>
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                tbody.innerHTML = data.orders.map(order => {
-                    const recipientsCount = order.recipients ? order.recipients.length : order.quantity;
-                    const paymentMethodLabel = getPaymentMethodLabel(order.payment_method);
-                    const statusLabel = getStatusLabel(order.status, order.payment_status);
-                    
-                    return `
-                        <tr>
-                            <td><strong>${order.id}</strong></td>
-                            <td>
-                                ${order.sender_name || 'N/A'}<br>
-                                <small style="color: #666;">${order.sender_phone || ''}</small>
-                            </td>
-                            <td><strong>${formatAmount(order.amount)} ${order.currency}</strong></td>
-                            <td>${order.quantity} bon(s)</td>
-                            <td>${recipientsCount} personne(s)</td>
-                            <td><span class="status-badge status-pending">${paymentMethodLabel}</span></td>
-                            <td><span class="status-badge ${getStatusClass(order.status)}">${statusLabel}</span></td>
-                            <td>${formatDate(order.created_at)}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-success btn-sm" onclick="approveOrder('${order.id}')">
-                                        ✅ Approuver
-                                    </button>
-                                    <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">
-                                        ❌ Rejeter
-                                    </button>
-                                    <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails('${order.id}')">
-                                        👁️ Voir
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('Error loading pending orders:', error);
-                const tbody = document.getElementById('pendingOrdersBody');
+                // Update badge
+                document.getElementById('pendingBadge').textContent = data.pendingApprovals || 0;
+            }
+        } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+        }
+    }
+
+    // ========== LOAD RECENT PENDING (for overview) ==========
+    async function loadRecentPending() {
+        const tbody = document.getElementById('recentPendingBody');
+        
+        if (pendingOrders.length === 0) {
+            await loadPendingOrders();
+        }
+
+        if (pendingOrders.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">✅</div>
+                            <h3>Aucune commande en attente</h3>
+                            <p>Toutes les commandes ont été traitées</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const recent = pendingOrders.slice(0, 5);
+        tbody.innerHTML = recent.map(order => `
+            <tr>
+                <td><strong>${order.id}</strong></td>
+                <td>${order.sender_name || 'N/A'}<br><small style="color: var(--gray);">${order.sender_phone || ''}</small></td>
+                <td>${formatCurrency(order.total_amount)} ${order.currency}</td>
+                <td>${order.quantity} bon(s)</td>
+                <td>${formatDate(order.created_at)}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn approve" onclick="approveOrder('${order.id}')">✅ Approuver</button>
+                        <button class="action-btn reject" onclick="openRejectModal('${order.id}')">❌ Rejeter</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // ========== LOAD PENDING ORDERS ==========
+    async function loadPendingOrders() {
+        const tbody = document.getElementById('pendingOrdersBody');
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await fetch('/api/admin/orders/pending', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur serveur');
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Réponse non-JSON du serveur');
+            }
+
+            const data = await response.json();
+            pendingOrders = data.orders || [];
+
+            // Update badge
+            document.getElementById('pendingBadge').textContent = pendingOrders.length;
+            document.getElementById('statPendingOrders').textContent = pendingOrders.length;
+
+            if (pendingOrders.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="empty-state">
-                            <div class="empty-state-icon">⚠️</div>
-                            <p style="color: #dc3545; font-weight: 600;">Erreur lors du chargement des commandes</p>
-                            <p style="font-size: 14px; color: #666; margin: 10px 0;">${error.message}</p>
-                            <p style="font-size: 13px; color: #999; margin-bottom: 15px;">
-                                Vérifiez que:<br>
-                                • L'API backend est démarrée<br>
-                                • L'endpoint /api/admin/orders/pending existe<br>
-                                • Vous êtes authentifié en tant qu'administrateur
-                            </p>
-                            <button class="btn btn-secondary" onclick="loadPendingOrders()">🔄 Réessayer</button>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">✅</div>
+                                <h3>Aucune commande en attente</h3>
+                                <p>Toutes les commandes ont été traitées</p>
+                            </div>
                         </td>
                     </tr>
                 `;
-            }
-        }
-
-        // Approve order
-        async function approveOrder(orderId) {
-            if (!confirm('⚠️ Confirmer l\'approbation de cette commande?\n\nLes bons d\'achat seront automatiquement:\n✓ Générés avec des codes uniques\n✓ Envoyés par SMS aux destinataires\n✓ Confirmés à l\'expéditeur')) {
                 return;
             }
-            
-            try {
-                const response = await fetch(`/api/admin/orders/${orderId}/approve`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Le serveur a renvoyé une réponse non-JSON');
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(`✅ ${data.message}\n\n${data.vouchers.length} bon(s) d'achat généré(s) et envoyé(s)`);
-                    loadPendingOrders();
-                } else {
-                    alert(`❌ Erreur: ${data.message}`);
-                }
-            } catch (error) {
-                console.error('Error approving order:', error);
-                alert('❌ Erreur lors de l\'approbation: ' + error.message);
-            }
-        }
 
-        // Reject order
-        async function rejectOrder(orderId) {
-            const reason = prompt('📝 Raison du rejet de cette commande:\n(L\'expéditeur sera notifié par SMS)');
-            if (!reason || reason.trim() === '') {
-                return;
-            }
-            
-            if (!confirm(`Confirmer le rejet de cette commande?\n\nRaison: ${reason}`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/admin/orders/${orderId}/reject`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ reason: reason.trim() })
-                });
-                
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Le serveur a renvoyé une réponse non-JSON');
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(`✅ ${data.message}`);
-                    loadPendingOrders();
-                } else {
-                    alert(`❌ Erreur: ${data.message}`);
-                }
-            } catch (error) {
-                console.error('Error rejecting order:', error);
-                alert('❌ Erreur lors du rejet: ' + error.message);
-            }
-        }
-
-        // View order details
-        async function viewOrderDetails(orderId) {
-            try {
-                const response = await fetch('/api/admin/orders/pending', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Le serveur a renvoyé une réponse non-JSON');
-                }
-                
-                const data = await response.json();
-                const order = data.orders.find(o => o.id === orderId);
-                
-                if (!order) {
-                    alert('Commande non trouvée');
-                    return;
-                }
-                
-                const modal = document.getElementById('orderModal');
-                const modalBody = document.getElementById('orderModalBody');
-                
-                modalBody.innerHTML = `
-                    <div style="padding: 20px;">
-                        <h3>Commande ${order.id}</h3>
-                        
-                        <div style="margin: 20px 0;">
-                            <h4>Expéditeur</h4>
-                            <p><strong>Nom:</strong> ${order.sender_name || 'N/A'}</p>
-                            <p><strong>Téléphone:</strong> ${order.sender_phone || 'N/A'}</p>
-                            ${order.user_email ? `<p><strong>Email:</strong> ${order.user_email}</p>` : ''}
-                        </div>
-                        
-                        <div style="margin: 20px 0;">
-                            <h4>Détails de la commande</h4>
-                            <p><strong>Montant par bon:</strong> ${formatAmount(order.amount)} ${order.currency}</p>
-                            <p><strong>Quantité:</strong> ${order.quantity} bon(s)</p>
-                            <p><strong>Frais de service:</strong> ${formatAmount(order.service_fee)} ${order.currency}</p>
-                            <p><strong>Total:</strong> ${formatAmount(order.total_amount)} ${order.currency}</p>
-                            <p><strong>Méthode de paiement:</strong> ${getPaymentMethodLabel(order.payment_method)}</p>
-                        </div>
-                        
-                        <div style="margin: 20px 0;">
-                            <h4>Destinataires (${order.recipients ? order.recipients.length : 0})</h4>
-                            ${order.recipients ? order.recipients.map(r => `
-                                <p>• ${r.name} - ${r.phone}</p>
-                            `).join('') : '<p>Aucun destinataire</p>'}
-                        </div>
-                        
-                        ${order.message ? `
-                            <div style="margin: 20px 0;">
-                                <h4>Message</h4>
-                                <p style="background: #f5f5f5; padding: 10px; border-radius: 8px;">${order.message}</p>
+            tbody.innerHTML = pendingOrders.map(order => {
+                const recipientsCount = order.recipients ? order.recipients.length : order.quantity;
+                return `
+                    <tr>
+                        <td><strong>${order.id}</strong></td>
+                        <td>
+                            ${order.sender_name || 'N/A'}<br>
+                            <small style="color: var(--gray);">${order.sender_phone || ''}</small>
+                        </td>
+                        <td>${formatCurrency(order.amount)} ${order.currency}</td>
+                        <td>${order.quantity} bon(s)</td>
+                        <td><strong>${formatCurrency(order.total_amount)} ${order.currency}</strong></td>
+                        <td><span class="status-badge info">${getPaymentMethodLabel(order.payment_method)}</span></td>
+                        <td>${formatDateTime(order.created_at)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn approve" onclick="approveOrder('${order.id}')">✅ Approuver</button>
+                                <button class="action-btn reject" onclick="openRejectModal('${order.id}')">❌ Rejeter</button>
+                                <button class="action-btn view" onclick="viewOrderDetails('${order.id}')">👁️ Voir</button>
                             </div>
-                        ` : ''}
-                        
-                        <div style="margin: 20px 0;">
-                            <h4>Statut</h4>
-                            <p><strong>Statut:</strong> ${getStatusLabel(order.status, order.payment_status)}</p>
-                            <p><strong>Date de création:</strong> ${formatDateTime(order.created_at)}</p>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                 `;
-                
-                modal.style.display = 'flex';
-            } catch (error) {
-                console.error('Error viewing order details:', error);
-                alert('Erreur lors du chargement des détails');
-            }
+            }).join('');
+
+            // Also update overview
+            loadRecentPending();
+
+        } catch (error) {
+            console.error('Error loading pending orders:', error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⚠️</div>
+                            <h3>Erreur de chargement</h3>
+                            <p>${error.message}</p>
+                            <button class="btn btn-secondary" style="margin-top: 15px;" onclick="loadPendingOrders()">🔄 Réessayer</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    // ========== APPROVE ORDER ==========
+    async function approveOrder(orderId) {
+        if (!confirm('⚠️ Confirmer l\'approbation de cette commande?\n\nLes bons d\'achat seront:\n✓ Générés avec des codes uniques\n✓ Envoyés par SMS aux destinataires\n✓ Confirmés à l\'expéditeur')) {
+            return;
         }
 
-        function closeOrderModal() {
-            document.getElementById('orderModal').style.display = 'none';
-        }
-
-        // Utility functions
-        function getPaymentMethodLabel(method) {
-            const labels = {
-                'cash': '💵 Cash / WU',
-                'bank': '🏦 Virement Bancaire',
-                'flexpay': '📱 FlexPay Mobile',
-                'flexpaycard': '💳 FlexPay Carte'
-            };
-            return labels[method] || method;
-        }
-
-        function getStatusLabel(status, paymentStatus) {
-            if (status === 'pending_payment') return 'En attente de paiement';
-            if (status === 'pending_approval') return 'En attente d\'approbation';
-            if (status === 'sent') return 'Envoyé';
-            if (status === 'paid') return 'Payé';
-            if (status === 'cancelled') return 'Annulé';
-            return status;
-        }
-
-        function getStatusClass(status) {
-            if (status === 'pending_payment' || status === 'pending_approval' || status === 'pending') return 'status-pending';
-            if (status === 'paid' || status === 'sent') return 'status-paid';
-            if (status === 'cancelled' || status === 'failed') return 'status-failed';
-            return 'status-pending';
-        }
-
-        function formatAmount(amount) {
-            return parseFloat(amount).toLocaleString('fr-FR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+        try {
+            const response = await fetch(`/api/admin/orders/${orderId}/approve`, {
+                method: 'POST',
+                credentials: 'include'
             });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Réponse non-JSON du serveur');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(`✅ ${data.message}\n\n${data.vouchers?.length || 0} bon(s) généré(s) et envoyé(s)`);
+                loadPendingOrders();
+                loadDashboardStats();
+            } else {
+                alert(`❌ Erreur: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error approving order:', error);
+            alert('❌ Erreur lors de l\'approbation: ' + error.message);
+        }
+    }
+
+    // ========== REJECT ORDER ==========
+    function openRejectModal(orderId) {
+        currentRejectOrderId = orderId;
+        document.getElementById('rejectReason').value = '';
+        document.getElementById('rejectModal').classList.add('active');
+    }
+
+    async function confirmReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+        
+        if (!reason) {
+            alert('Veuillez indiquer une raison pour le rejet');
+            return;
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('fr-FR');
+        try {
+            const response = await fetch(`/api/admin/orders/${currentRejectOrderId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ reason })
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Réponse non-JSON du serveur');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(`✅ ${data.message}`);
+                closeModal('rejectModal');
+                loadPendingOrders();
+                loadDashboardStats();
+            } else {
+                alert(`❌ Erreur: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error rejecting order:', error);
+            alert('❌ Erreur lors du rejet: ' + error.message);
+        }
+    }
+
+    // ========== VIEW ORDER DETAILS ==========
+    function viewOrderDetails(orderId) {
+        const order = pendingOrders.find(o => o.id === orderId);
+        
+        if (!order) {
+            alert('Commande non trouvée');
+            return;
         }
 
-        function formatDateTime(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleString('fr-FR');
-        }
-
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                try {
-                    localStorage.removeItem('nimwema_user');
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    console.error('Logout error:', error);
-                }
-            }
-        });
-
-        // Modal styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .modal {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                display: none;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-            }
+        const recipients = order.recipients || [];
+        const body = document.getElementById('orderModalBody');
+        
+        body.innerHTML = `
+            <div class="order-detail-row">
+                <span class="order-detail-label">Référence</span>
+                <span class="order-detail-value">${order.id}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Expéditeur</span>
+                <span class="order-detail-value">${order.sender_name || 'N/A'}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Téléphone expéditeur</span>
+                <span class="order-detail-value">${order.sender_phone || 'N/A'}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Montant par bon</span>
+                <span class="order-detail-value">${formatCurrency(order.amount)} ${order.currency}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Quantité</span>
+                <span class="order-detail-value">${order.quantity} bon(s)</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Frais de service</span>
+                <span class="order-detail-value">${formatCurrency(order.service_fee || 0)} ${order.currency}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Total</span>
+                <span class="order-detail-value" style="color: var(--success); font-size: 18px;">${formatCurrency(order.total_amount)} ${order.currency}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Méthode de paiement</span>
+                <span class="order-detail-value">${getPaymentMethodLabel(order.payment_method)}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Date</span>
+                <span class="order-detail-value">${formatDateTime(order.created_at)}</span>
+            </div>
+            ${order.message ? `
+                <div class="order-detail-row" style="flex-direction: column; align-items: flex-start;">
+                    <span class="order-detail-label">Message</span>
+                    <span class="order-detail-value" style="margin-top: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; width: 100%;">${order.message}</span>
+                </div>
+            ` : ''}
             
-            .modal-content {
-                background: white;
-                border-radius: 12px;
-                max-width: 800px;
-                width: 90%;
-                max-height: 90vh;
-                overflow-y: auto;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            }
-            
-            .modal-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px;
-                border-bottom: 1px solid #f0f0f0;
-            }
-            
-            .modal-header h2 {
-                margin: 0;
-            }
-            
-            .modal-close {
-                width: 32px;
-                height: 32px;
-                border: none;
-                background: #f0f0f0;
-                border-radius: 50%;
-                font-size: 20px;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-            
-            .modal-close:hover {
-                background: #e0e0e0;
-            }
+            <div class="recipients-list">
+                <h4>👥 Destinataires (${recipients.length || order.quantity})</h4>
+                ${recipients.length > 0 ? recipients.map(r => `
+                    <div class="recipient-item">
+                        <strong>${r.name || 'Anonyme'}</strong> - ${r.phone}
+                    </div>
+                `).join('') : '<p style="color: var(--gray);">Informations des destinataires non disponibles</p>'}
+            </div>
         `;
-        document.head.appendChild(style);
+
+        // Update footer with action buttons
+        const footer = document.getElementById('orderModalFooter');
+        footer.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal('orderModal')">Fermer</button>
+            <button class="btn btn-danger" onclick="closeModal('orderModal'); openRejectModal('${orderId}')">❌ Rejeter</button>
+            <button class="btn btn-success" onclick="closeModal('orderModal'); approveOrder('${orderId}')">✅ Approuver</button>
+        `;
+
+        document.getElementById('orderModal').classList.add('active');
+    }
+
+    // ========== LOAD MERCHANTS ==========
+    async function loadMerchants() {
+        const tbody = document.getElementById('merchantsBody');
+        const statusFilter = document.getElementById('merchantStatusFilter').value;
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await fetch(`/api/admin/merchants?status=${statusFilter}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Erreur serveur');
+
+            const merchants = await response.json();
+
+            if (!merchants || merchants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">🏪</div>
+                                <h3>Aucun commerçant</h3>
+                                <p>Les commerçants apparaîtront ici</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = merchants.map(m => `
+                <tr>
+                    <td><strong>${m.business_name || m.name || 'N/A'}</strong></td>
+                    <td>${m.phone || 'N/A'}<br><small style="color: var(--gray);">${m.email || ''}</small></td>
+                    <td>${m.city || 'N/A'}</td>
+                    <td>${m.redemptions || 0}</td>
+                    <td><span class="status-badge ${getStatusClass(m.status)}">${getStatusLabel(m.status)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            ${m.status === 'pending' ? `<button class="action-btn approve" onclick="approveMerchant('${m.id}')">Approuver</button>` : ''}
+                            ${m.status === 'active' ? `<button class="action-btn suspend" onclick="suspendMerchant('${m.id}')">Suspendre</button>` : ''}
+                            ${m.status === 'suspended' ? `<button class="action-btn approve" onclick="activateMerchant('${m.id}')">Activer</button>` : ''}
+                            <button class="action-btn view" onclick="viewMerchant('${m.id}')">Voir</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading merchants:', error);
+            tbody.innerHTML = createErrorState(error.message, 'loadMerchants()');
+        }
+    }
+
+    // ========== LOAD USERS ==========
+    async function loadUsers() {
+        const tbody = document.getElementById('usersBody');
+        const roleFilter = document.getElementById('userRoleFilter').value;
+        const statusFilter = document.getElementById('userStatusFilter').value;
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await fetch(`/api/admin/users?role=${roleFilter}&status=${statusFilter}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Erreur serveur');
+
+            const users = await response.json();
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">👥</div>
+                                <h3>Aucun utilisateur</h3>
+                                <p>Les utilisateurs apparaîtront ici</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td><strong>${u.name || u.first_name || 'N/A'}</strong></td>
+                    <td>${u.phone || 'N/A'}</td>
+                    <td>${u.email || 'N/A'}</td>
+                    <td><span class="status-badge info">${getRoleLabel(u.role)}</span></td>
+                    <td>${formatDate(u.created_at)}</td>
+                    <td><span class="status-badge ${u.is_active ? 'success' : 'danger'}">${u.is_active ? 'Actif' : 'Suspendu'}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            ${u.is_active ? `<button class="action-btn suspend" onclick="suspendUser('${u.id}')">Suspendre</button>` : `<button class="action-btn approve" onclick="activateUser('${u.id}')">Activer</button>`}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading users:', error);
+            tbody.innerHTML = createErrorState(error.message, 'loadUsers()');
+        }
+    }
+
+    // ========== LOAD TRANSACTIONS ==========
+    async function loadTransactions() {
+        const tbody = document.getElementById('transactionsBody');
+        const period = document.getElementById('txnPeriodFilter').value;
+        const type = document.getElementById('txnTypeFilter').value;
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await fetch(`/api/admin/transactions?period=${period}&type=${type}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Erreur serveur');
+
+            const transactions = await response.json();
+
+            if (!transactions || transactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">💰</div>
+                                <h3>Aucune transaction</h3>
+                                <p>Les transactions apparaîtront ici</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = transactions.map(t => `
+                <tr>
+                    <td><strong>${t.id || t.code || 'N/A'}</strong></td>
+                    <td><span class="status-badge info">${t.type || 'Bon'}</span></td>
+                    <td>${formatCurrency(t.amount)} ${t.currency || 'USD'}</td>
+                    <td>${t.sender_name || t.from || 'N/A'}</td>
+                    <td>${t.recipient_name || t.to || 'N/A'}</td>
+                    <td>${formatDateTime(t.created_at)}</td>
+                    <td><span class="status-badge ${getStatusClass(t.status)}">${getStatusLabel(t.status)}</span></td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            tbody.innerHTML = createErrorState(error.message, 'loadTransactions()');
+        }
+    }
+
+    // ========== MERCHANT ACTIONS ==========
+    async function approveMerchant(id) {
+        if (!confirm('Approuver ce commerçant?')) return;
+        try {
+            await fetch(`/api/admin/merchants/${id}/approve`, { method: 'POST', credentials: 'include' });
+            alert('✅ Commerçant approuvé');
+            loadMerchants();
+        } catch (e) { alert('❌ Erreur'); }
+    }
+
+    async function suspendMerchant(id) {
+        const reason = prompt('Raison de la suspension:');
+        if (!reason) return;
+        try {
+            await fetch(`/api/admin/merchants/${id}/suspend`, { method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reason}) });
+            alert('✅ Commerçant suspendu');
+            loadMerchants();
+        } catch (e) { alert('❌ Erreur'); }
+    }
+
+    async function activateMerchant(id) {
+        if (!confirm('Activer ce commerçant?')) return;
+        try {
+            await fetch(`/api/admin/merchants/${id}/approve`, { method: 'POST', credentials: 'include' });
+            alert('✅ Commerçant activé');
+            loadMerchants();
+        } catch (e) { alert('❌ Erreur'); }
+    }
+
+    function viewMerchant(id) {
+        alert('Détails du commerçant: ' + id);
+    }
+
+    // ========== USER ACTIONS ==========
+    async function suspendUser(id) {
+        if (!confirm('Suspendre cet utilisateur?')) return;
+        try {
+            await fetch(`/api/admin/users/${id}/suspend`, { method: 'POST', credentials: 'include' });
+            alert('✅ Utilisateur suspendu');
+            loadUsers();
+        } catch (e) { alert('❌ Erreur'); }
+    }
+
+    async function activateUser(id) {
+        if (!confirm('Activer cet utilisateur?')) return;
+        try {
+            await fetch(`/api/admin/users/${id}/activate`, { method: 'POST', credentials: 'include' });
+            alert('✅ Utilisateur activé');
+            loadUsers();
+        } catch (e) { alert('❌ Erreur'); }
+    }
+
+    // ========== MODAL FUNCTIONS ==========
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    // ========== UTILITY FUNCTIONS ==========
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('fr-FR', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount || 0);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('fr-FR');
+    }
+
+    function formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getPaymentMethodLabel(method) {
+        const labels = {
+            'cash': '💵 Cash/WU',
+            'bank': '🏦 Virement',
+            'flexpay': '📱 FlexPay Mobile',
+            'flexpaycard': '💳 FlexPay Carte'
+        };
+        return labels[method] || method || 'N/A';
+    }
+
+    function getStatusLabel(status) {
+        const labels = {
+            'pending': 'En attente',
+            'pending_payment': 'Paiement en attente',
+            'pending_approval': 'À approuver',
+            'active': 'Actif',
+            'paid': 'Payé',
+            'sent': 'Envoyé',
+            'failed': 'Échoué',
+            'cancelled': 'Annulé',
+            'suspended': 'Suspendu',
+            'redeemed': 'Racheté'
+        };
+        return labels[status] || status || 'N/A';
+    }
+
+    function getStatusClass(status) {
+        if (['active', 'paid', 'sent', 'redeemed'].includes(status)) return 'success';
+        if (['pending', 'pending_payment', 'pending_approval'].includes(status)) return 'pending';
+        if (['failed', 'cancelled', 'suspended'].includes(status)) return 'danger';
+        return 'info';
+    }
+
+    function getRoleLabel(role) {
+        const labels = {
+            'user': 'Utilisateur',
+            'merchant': 'Commerçant',
+            'cashier': 'Caissier',
+            'admin': 'Admin'
+        };
+        return labels[role] || role || 'N/A';
+    }
+
+    function createErrorState(message, retryFn) {
+        return `
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Erreur de chargement</h3>
+                        <p>${message}</p>
+                        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="${retryFn}">🔄 Réessayer</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    function refreshAllData() {
+        loadDashboardStats();
+        loadPendingOrders();
+    }
+
+    function exportTransactions() {
+        alert('Export à venir - Les données seront téléchargées en CSV');
+    }
+
+    // ========== LOGOUT ==========
+    async function logout() {
+        if (!confirm('Êtes-vous sûr de vouloir vous déconnecter?')) {
+            return;
+        }
+
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+
+        localStorage.removeItem('nimwema_user');
+        window.location.href = '/login.html';
+    }
     </script>
-
-
-
 </body>
 </html>
