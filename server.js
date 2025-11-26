@@ -1410,19 +1410,20 @@ app.post(  '/api/auth/merchant-signup',
       }
 
       // --- Create user (let DB generate id, use "password" column) ---
-      const passwordHash = await bcrypt.hash(password, 10);
+const passwordHash = await bcrypt.hash(password, 10);
 
       const userInsert = `
-        INSERT INTO users (first_name, last_name, email, phone, password, role, is_active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW())
-        RETURNING id, firstname, lastname, email, phone, role, created_at
+        INSERT INTO users (first_name, last_name, email, phone, password, role)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id, first_name, last_name, email, phone, role, created_at
       `;
 
       const userRes = await client.query(userInsert, [
-        fullName,
+        firstName.trim(),
+        lastName.trim(),
         email.toLowerCase(),
         normalizedPhone,
-        passwordHash,      // hash stored in "password"
+        passwordHash,
         'merchant'
       ]);
 
