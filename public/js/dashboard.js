@@ -18,6 +18,34 @@ const CONFIG = {
   PREVIEW_LIMIT: 5
 };
 
+
+
+//MyCongig
+
+///////
+ const userString = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
+currentUser = JSON.parse(userString);
+const sfullName = currentUser.name || "";
+const sphone = currentUser.phone || "";
+
+// Split into first + last name
+let sfirstName = "";
+let slastName = "";
+
+if (sfullName.includes(" ")) {
+    const parts = sfullName.trim().split(" ");
+    sfirstName = parts[0];
+    slastName = parts.slice(1).join(" ");
+} else {
+    sfirstName = sfullName;
+}
+
+// Encode for URL
+const qsFirst = encodeURIComponent(sfirstName);
+const qsLast = encodeURIComponent(slastName);
+const qsPhone = encodeURIComponent(sphone);
+
+/////////
 // ============================================
 // STATE
 // ============================================
@@ -647,29 +675,7 @@ function getRequestTypeInfo(type) {
 
 
 
- ///////
-currentUser = JSON.parse(userStr);
-const fullName = currentUser.name || "";
-const phone = currentUser.phone || "";
-
-// Split into first + last name
-let firstName = "";
-let lastName = "";
-
-if (fullName.includes(" ")) {
-    const parts = fullName.trim().split(" ");
-    firstName = parts[0];
-    lastName = parts.slice(1).join(" ");
-} else {
-    firstName = fullName;
-}
-
-// Encode for URL
-const qsFirst = encodeURIComponent(firstName);
-const qsLast = encodeURIComponent(lastName);
-const qsPhone = encodeURIComponent(phone);
-
-/////////
+ 
 
 
 async function loadRecipients() {
@@ -725,7 +731,7 @@ function renderRecipients() {
       <div class="contact-actions">
         <button class="btn-icon btn-edit" onclick="editRecipient('${recipient.id}')" title="Modifier">✏️</button>
         <button class="btn-icon btn-delete" onclick="deleteRecipientConfirm('${recipient.id}')" title="Supprimer">🗑️</button>
-        <a href="/send.html?sname=${qsFirst}%20${qsLast}&sphone=${qsPhone}&phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a>
+        <a href="/send.html?sname=${encodeURIComponent(sfirstName)}%20${encodeURIComponent(slastName)}&sphone=${encodeURIComponent(sphone)}&phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a>
 
        <!--  <a href="/send.html?phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a> -->
       </div>
