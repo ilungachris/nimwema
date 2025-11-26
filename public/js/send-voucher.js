@@ -11,6 +11,7 @@ const MAX_TOTAL_QUANTITY = 50;
 // Payment result pages
 const PAYMENT_SUCCESS_URL = '/payment-success.html';
 const PAYMENT_CANCEL_URL  = '/payment-cancel.html';
+const PAYMENT_INSTRUCTIONS_URL = '/payment-instructions.html';
 
 
 // State
