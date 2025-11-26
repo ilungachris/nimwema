@@ -878,7 +878,9 @@ function renderSenders() {
       <div class="contact-actions">
         <button class="btn-icon btn-edit" onclick="editSender('${sender.id}')" title="Modifier">✏️</button>
         <button class="btn-icon btn-delete" onclick="deleteSenderConfirm('${sender.id}')" title="Supprimer">🗑️</button>
-        <a href="/request.html?senderPhone=${encodeURIComponent(sender.phone)}&senderName=${encodeURIComponent(sender.name)}" class="btn btn-primary btn-sm">Demander</a>
+        <a href="/request.html?senderPhone=${encodeURIComponent(sender.phone)}&senderName=${encodeURIComponent(sender.name)}&sphone=${encodeURIComponent(sphone)}&sfirstName=${encodeURIComponent(sfirstName)}&slastName=${encodeURIComponent(slastName)}" class="btn btn-primary btn-sm">Demander</a>
+
+ <!--       <a href="/request.html?senderPhone=${encodeURIComponent(sender.phone)}&senderName=${encodeURIComponent(sender.name)}" class="btn btn-primary btn-sm">Demander</a>  -->
       </div>
     </div>
   `).join('');

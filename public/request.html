@@ -325,7 +325,7 @@
                 }
 
                 // Optional: allow dashboard to prefill requester too
-                var phone = params.get('phone');
+                var phone = params.get('sphone');
                 if (phone) {
                     ['phone', 'phoneConfirm'].forEach(function (id) {
                         var el = document.getElementById(id);
@@ -333,13 +333,13 @@
                     });
                 }
 
-                var firstName = params.get('firstName');
+                var firstName = params.get('sfirstName');
                 if (firstName) {
                     var elFirstName = document.getElementById('firstName');
                     if (elFirstName && !elFirstName.value) elFirstName.value = firstName;
                 }
 
-                var lastName = params.get('lastName');
+                var lastName = params.get('slastName');
                 if (lastName) {
                     var elLastName = document.getElementById('lastName');
                     if (elLastName && !elLastName.value) elLastName.value = lastName;
