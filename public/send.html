@@ -459,6 +459,54 @@
             });
         });
     </script>
+<!-- Prefill from dashboard query params -->
+    <script>
+        (function () {
+            function applyPrefillFromQuery() {
+                if (!('URLSearchParams' in window)) return;
 
+                var params = new URLSearchParams(window.location.search);
+                if (!params.toString()) return;
+
+                // 1) Sender name: accept ?senderName=... or ?name=...
+                var senderNameFromParams = params.get('senderName') || params.get('name');
+                if (senderNameFromParams) {
+                    var senderNameInput = document.getElementById('senderName');
+                    if (senderNameInput && !senderNameInput.value) {
+                        senderNameInput.value = senderNameFromParams;
+                    }
+                }
+
+                // 2) Sender phone: accept ?senderPhone=... or ?phone=...
+                //    Also try to prefill the first recipient phone if it exists.
+                var senderPhoneFromParams = params.get('senderPhone') || params.get('phone');
+                if (senderPhoneFromParams) {
+                    var senderPhoneInput = document.getElementById('senderPhone');
+                    if (senderPhoneInput && !senderPhoneInput.value) {
+                        senderPhoneInput.value = senderPhoneFromParams;
+                    }
+
+                    // Try to prefill first recipient phone, once send-voucher.js created it
+                    var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
+                    if (firstRecipientPhone && !firstRecipientPhone.value) {
+                        firstRecipientPhone.value = senderPhoneFromParams;
+                    }
+                }
+
+               
+
+                // 3) Generic fallback: param name == element id
+                params.forEach(function (value, key) {
+                    var el = document.getElementById(key);
+                    if (el && !el.value) {
+                        el.value = value;
+                    }
+                });
+            }
+
+            // Use window.load so /js/send-voucher.js has time to build recipient fields
+            window.addEventListener('load', applyPrefillFromQuery);
+        })();
+    </script>
 </body>
 </html>

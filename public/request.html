@@ -298,5 +298,70 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/request-form.js"></script>
+
+
+    <script>
+        (function () {
+            function applyPrefillFromQuery() {
+                if (!('URLSearchParams' in window)) return;
+
+                var params = new URLSearchParams(window.location.search);
+                if (!params.toString()) return;
+
+                // 1) Special mappings you already use from the dashboard
+                // Example: ?senderPhone=...&senderName=...
+                var senderPhone = params.get('senderPhone');
+                if (senderPhone) {
+                    ['senderPhone', 'senderPhoneConfirm'].forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el && !el.value) el.value = senderPhone;
+                    });
+                }
+
+                var senderName = params.get('senderName');
+                if (senderName) {
+                    var elSenderName = document.getElementById('senderName');
+                    if (elSenderName && !elSenderName.value) elSenderName.value = senderName;
+                }
+
+                // Optional: allow dashboard to prefill requester too
+                var phone = params.get('phone');
+                if (phone) {
+                    ['phone', 'phoneConfirm'].forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el && !el.value) el.value = phone;
+                    });
+                }
+
+                var firstName = params.get('firstName');
+                if (firstName) {
+                    var elFirstName = document.getElementById('firstName');
+                    if (elFirstName && !elFirstName.value) elFirstName.value = firstName;
+                }
+
+                var lastName = params.get('lastName');
+                if (lastName) {
+                    var elLastName = document.getElementById('lastName');
+                    if (elLastName && !elLastName.value) elLastName.value = lastName;
+                }
+
+                var message = params.get('message');
+                if (message) {
+                    var elMessage = document.getElementById('message');
+                    if (elMessage && !elMessage.value) elMessage.value = message;
+                }
+
+                // 2) Generic mapping: if a param name matches an element id, fill it
+                params.forEach(function (value, key) {
+                    var el = document.getElementById(key);
+                    if (el && !el.value) {
+                        el.value = value;
+                    }
+                });
+            }
+
+            window.addEventListener('load', applyPrefillFromQuery);
+        })();
+    </script>
 </body>
 </html>
