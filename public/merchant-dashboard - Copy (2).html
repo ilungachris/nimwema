@@ -1292,23 +1292,8 @@
                 const data = await response.json();
                 
                 document.getElementById('todayRedemptions').textContent = data.todayRedemptions || 0;
-                
-                // Display month amount with currency breakdown
-                document.getElementById('monthAmount').innerHTML = formatMultiCurrency(
-                    data.monthUSD || 0, 
-                    data.monthCDF || 0, 
-                    data.monthTotalUSD || data.monthAmount || 0,
-                    data.exchangeRate || 2800
-                );
-                
-                // Display today amount with currency breakdown
-                document.getElementById('todayAmount').innerHTML = formatMultiCurrency(
-                    data.todayUSD || 0, 
-                    data.todayCDF || 0, 
-                    data.todayTotalUSD || data.todayAmount || 0,
-                    data.exchangeRate || 2800
-                );
-                
+                document.getElementById('monthAmount').textContent = formatCurrency(data.monthAmount || data.totalAmount || 0);
+                document.getElementById('todayAmount').textContent = formatCurrency(data.todayAmount || 0);
                 document.getElementById('activeCashiers').textContent = data.activeCashiers || 0;
                 document.getElementById('totalCashiers').textContent = data.totalCashiers || 0;
             }
@@ -1354,7 +1339,7 @@
             tbody.innerHTML = redemptions.map(r => `
                 <tr>
                     <td><strong>${r.code}</strong></td>
-                    <td>${formatCurrency(r.amount, r.currency)}</td>
+                    <td>${formatCurrency(r.amount)}</td>
                     <td>${formatDateTime(r.redeemedAt)}</td>
                     <td>${r.cashierName || 'N/A'}</td>
                     <td><span class="status-badge success">Validé</span></td>
@@ -1411,7 +1396,7 @@
             tbody.innerHTML = redemptions.map(r => `
                 <tr>
                     <td><strong>${r.code}</strong></td>
-                    <td>${formatCurrency(r.amount, r.currency)}</td>
+                    <td>${formatCurrency(r.amount)}</td>
                     <td>${formatDateTime(r.redeemedAt)}</td>
                     <td>${r.cashierName || 'N/A'}</td>
                     <td>${r.recipientPhone || 'N/A'}</td>
@@ -1587,7 +1572,7 @@
                     <div style="font-size: 64px; margin-bottom: 20px;">🎉</div>
                     <h3 style="color: var(--success); margin-bottom: 15px;">Rachat réussi</h3>
                     <p style="font-size: 24px; font-weight: 700; margin-bottom: 10px;">
-                        ${formatCurrency(data.voucher?.amount || 0, data.voucher?.currency || 'USD')}
+                        ${formatCurrency(data.voucher?.amount || 0)}
                     </p>
                     <p style="color: var(--gray);">Code: ${data.voucher?.code || 'N/A'}</p>
                 </div>
@@ -1678,31 +1663,12 @@
     }
 
     // ========== UTILITY FUNCTIONS ==========
-    function formatCurrency(amount, currency = 'USD') {
-        const curr = (currency || 'USD').toUpperCase();
-        if (curr === 'CDF') {
-            return new Intl.NumberFormat('fr-FR', {
-                style: 'decimal',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount || 0) + ' CDF';
-        }
+    function formatCurrency(amount) {
         return new Intl.NumberFormat('fr-FR', {
             style: 'decimal',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }).format(amount || 0) + ' USD';
-    }
-    
-    function formatMultiCurrency(usd, cdf, totalUSD, rate) {
-        let parts = [];
-        if (usd > 0) parts.push(formatCurrency(usd, 'USD'));
-        if (cdf > 0) parts.push(formatCurrency(cdf, 'CDF'));
-        if (parts.length === 0) return '0 USD';
-        if (parts.length === 2 && totalUSD > 0) {
-            return parts.join(' + ') + '<br><small style="color:#666;">(≈ ' + formatCurrency(totalUSD, 'USD') + ')</small>';
-        }
-        return parts.join(' + ');
     }
 
     function formatDateTime(dateString) {

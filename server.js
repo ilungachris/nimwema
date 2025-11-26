@@ -4470,6 +4470,9 @@ app.post('/api/admin/orders/:orderId/reject', authMiddleware.requireAuth, authMi
 
 // ========== END NEW ENDPOINTS ==========
 
+// Get exchange rate from environment
+const DEFAULT_RATE = parseFloat(process.env.DEFAULT_RATE) || 2800;
+
 // Merchant endpoints (with authMiddleware) - FIXED: Actual DB queries
 app.get('/api/merchant/stats', authMiddleware.requireAuth, authMiddleware.requireRole('merchant'), async (req, res) => {
   let client;
@@ -4479,22 +4482,29 @@ app.get('/api/merchant/stats', authMiddleware.requireAuth, authMiddleware.requir
     // NOTE: redemptions.merchant_id references users.id, not merchants.id
     const userId = req.user.user_id;
     
-    // Today's redemptions
+    // Today's redemptions by currency
     const todayResult = await client.query(`
-      SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
+      SELECT 
+        currency,
+        COUNT(*) AS count, 
+        COALESCE(SUM(amount), 0) AS total
       FROM redemptions
       WHERE merchant_id = $1 AND DATE(created_at) = CURRENT_DATE
+      GROUP BY currency
     `, [userId]);
     
-    // Month's total
+    // Month's total by currency
     const monthResult = await client.query(`
-      SELECT COALESCE(SUM(amount), 0) AS total
+      SELECT 
+        currency,
+        COALESCE(SUM(amount), 0) AS total
       FROM redemptions
       WHERE merchant_id = $1 
         AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
+      GROUP BY currency
     `, [userId]);
     
-    // Cashiers count (users with role='cashier' linked to this merchant via redemptions or a merchant_id field)
+    // Cashiers count
     const cashiersResult = await client.query(`
       SELECT COUNT(DISTINCT u.id) as total,
              COUNT(DISTINCT u.id) FILTER (WHERE u.is_active = true) as active
@@ -4502,13 +4512,49 @@ app.get('/api/merchant/stats', authMiddleware.requireAuth, authMiddleware.requir
       WHERE u.role = 'cashier' AND u.is_active = true
     `);
     
+    // Process today's amounts by currency
+    let todayUSD = 0, todayCDF = 0, todayCount = 0;
+    for (const row of todayResult.rows) {
+      todayCount += parseInt(row.count || 0);
+      if (row.currency === 'USD') {
+        todayUSD = parseFloat(row.total || 0);
+      } else if (row.currency === 'CDF') {
+        todayCDF = parseFloat(row.total || 0);
+      }
+    }
+    
+    // Process month's amounts by currency
+    let monthUSD = 0, monthCDF = 0;
+    for (const row of monthResult.rows) {
+      if (row.currency === 'USD') {
+        monthUSD = parseFloat(row.total || 0);
+      } else if (row.currency === 'CDF') {
+        monthCDF = parseFloat(row.total || 0);
+      }
+    }
+    
+    // Calculate USD equivalents
+    const todayTotalUSD = todayUSD + (todayCDF / DEFAULT_RATE);
+    const monthTotalUSD = monthUSD + (monthCDF / DEFAULT_RATE);
+    
     const stats = {
-      todayRedemptions: parseInt(todayResult.rows[0]?.count || 0),
-      todayAmount: parseFloat(todayResult.rows[0]?.total || 0),
-      monthAmount: parseFloat(monthResult.rows[0]?.total || 0),
-      totalAmount: parseFloat(monthResult.rows[0]?.total || 0),
+      todayRedemptions: todayCount,
+      // Today amounts
+      todayUSD: todayUSD,
+      todayCDF: todayCDF,
+      todayTotalUSD: todayTotalUSD,
+      todayAmount: todayTotalUSD, // Legacy field
+      // Month amounts
+      monthUSD: monthUSD,
+      monthCDF: monthCDF,
+      monthTotalUSD: monthTotalUSD,
+      monthAmount: monthTotalUSD, // Legacy field
+      totalAmount: monthTotalUSD, // Legacy field
+      // Cashiers
       activeCashiers: parseInt(cashiersResult.rows[0]?.active || 0),
       totalCashiers: parseInt(cashiersResult.rows[0]?.total || 0),
+      // Exchange rate for frontend
+      exchangeRate: DEFAULT_RATE,
       redemptionRate: 0
     };
     
