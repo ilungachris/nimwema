@@ -20,32 +20,7 @@ const CONFIG = {
 
 
 
-//MyCongig
 
-///////
- const userString = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
-currentUser = JSON.parse(userString);
-const sfullName = currentUser.name || "";
-const sphone = currentUser.phone || "";
-
-// Split into first + last name
-let sfirstName = "";
-let slastName = "";
-
-if (sfullName.includes(" ")) {
-    const parts = sfullName.trim().split(" ");
-    sfirstName = parts[0];
-    slastName = parts.slice(1).join(" ");
-} else {
-    sfirstName = sfullName;
-}
-
-// Encode for URL
-const qsFirst = encodeURIComponent(sfirstName);
-const qsLast = encodeURIComponent(slastName);
-const qsPhone = encodeURIComponent(sphone);
-
-/////////
 // ============================================
 // STATE
 // ============================================
@@ -71,7 +46,37 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load home section by default
   showSection('home');
 });
+//==================================
 
+
+
+
+//MyConfig
+
+///////
+ const userString = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
+currentUser = JSON.parse(userString);
+const sfullName = currentUser.name || "";
+const sphone = currentUser.phone || "";
+
+// Split into first + last name
+let sfirstName = "";
+let slastName = "";
+
+if (sfullName.includes(" ")) {
+    const parts = sfullName.trim().split(" ");
+    sfirstName = parts[0];
+    slastName = parts.slice(1).join(" ");
+} else {
+    sfirstName = sfullName;
+}
+
+// Encode for URL
+const qsFirst = encodeURIComponent(sfirstName);
+const qsLast = encodeURIComponent(slastName);
+const qsPhone = encodeURIComponent(sphone);
+
+/////////
 // ============================================
 // AUTHENTICATION
 // ============================================
