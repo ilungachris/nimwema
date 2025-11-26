@@ -500,7 +500,7 @@ function authenticateSession(req, res, next) {
 
 
 
-app.get('/api/merchant/me', requireMerchant, async (req, res) => {
+/*app.get('/api/merchant/me', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
@@ -534,10 +534,56 @@ app.get('/api/merchant/me', requireMerchant, async (req, res) => {
   } finally {
     if (client) client.release();
   }
+}); */
+
+
+
+
+//////
+
+app.get('/api/merchant/me', requireMerchant, async (req, res) => {
+  let client;
+  try {
+    const userId = req.user?.user_id; // from SELECT s.user_id, u.role ...
+
+    if (!userId) {
+      return res.status(401).json({ error: 'UNAUTHENTICATED' });
+    }
+
+    client = await db.pool.connect();
+    const merchant = await client.query(
+      `SELECT m.*
+         FROM merchants m
+         JOIN users u ON u.id = m.user_id
+        WHERE u.id = $1
+        LIMIT 1`,
+      [userId]
+    );
+
+    if (!merchant.rowCount) {
+      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
+    }
+
+    const m = merchant.rows[0];
+    return res.json({
+      id: m.id,
+      businessName: m.business_name,
+      address: m.address,
+      city: m.city,
+      commune: m.commune,
+      phone: m.phone,
+      email: m.email,
+      status: m.status,
+    });
+  } catch (err) {
+    console.error('❌ [MerchantMe] Error', err);
+    return res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    if (client) client.release();
+  }
 });
 
-
-
+/////
 
 
 
