@@ -510,7 +510,7 @@ app.get('/api/merchant/me', requireMerchant, async (req, res) => {
          JOIN users u ON u.id = m.user_id
         WHERE u.id = $1
         LIMIT 1`,
-      [req.user.user_id]
+      [req.session.userId]
     );
 
     if (!merchant.rowCount) {
@@ -520,7 +520,6 @@ app.get('/api/merchant/me', requireMerchant, async (req, res) => {
     const m = merchant.rows[0];
     return res.json({
       id: m.id,
-      visibleMerchantId: m.id,
       businessName: m.business_name,
       address: m.address,
       city: m.city,
@@ -547,7 +546,7 @@ app.get('/api/merchant/overview', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
-    const merchant = await loadMerchantForUser(client, req.user.user_id);
+    const merchant = await loadMerchantForUser(client, req.session.userId);
     if (!merchant) {
       return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
     }
@@ -608,7 +607,7 @@ app.get('/api/merchant/redemptions', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
-    const merchant = await loadMerchantForUser(client, req.user.user_id);
+    const merchant = await loadMerchantForUser(client, req.session.userId);
     if (!merchant) {
       return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
     }
@@ -669,7 +668,7 @@ app.get('/api/merchant/cashiers', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
-    const merchant = await loadMerchantForUser(client, req.user.user_id);
+    const merchant = await loadMerchantForUser(client, req.session.userId);
     if (!merchant) {
       return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
     }
@@ -719,7 +718,7 @@ app.post('/api/merchant/settings', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
-    const merchant = await loadMerchantForUser(client, req.user.user_id);
+    const merchant = await loadMerchantForUser(client, req.session.userId);
     if (!merchant) {
       return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
     }
@@ -753,7 +752,7 @@ app.post('/api/merchant/settings', requireMerchant, async (req, res) => {
 
     console.info('⚙️ [MerchantSettings] Updated', {
       merchantId: merchant.id,
-      userId: req.user.user_id
+      userId: req.session.userId
     });
 
     return res.json({ success: true, merchant: out.rows[0] });
@@ -770,33 +769,18 @@ app.post('/api/merchant/settings', requireMerchant, async (req, res) => {
 app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
   const { code, merchant_name, merchant_phone, location, notes } = req.body;
 
-  if (!code) {
+  if (!code || !merchant_name || !merchant_phone) {
     return res.status(400).json({
       success: false,
-      message: 'Code du bon obligatoire'
+      message: 'Code, nom marchand et téléphone obligatoires'
     });
   }
 
-  let client;
   try {
-    client = await db.pool.connect();
-    
-    // Get merchant for this user
-    const merchantResult = await client.query(
-      'SELECT id, business_name, phone FROM merchants WHERE user_id = $1 LIMIT 1',
-      [req.user.user_id]
-    );
-    
-    if (merchantResult.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Commerçant non trouvé' });
-    }
-    
-    const merchant = merchantResult.rows[0];
-    
     // 1) Charger le bon
-    const voucherResult = await client.query(
-      'SELECT * FROM vouchers WHERE UPPER(code) = UPPER($1) LIMIT 1',
-      [code.trim()]
+    const voucherResult = await db.query(
+      'SELECT * FROM vouchers WHERE code = $1 LIMIT 1',
+      [code]
     );
 
     if (voucherResult.rows.length === 0) {
@@ -809,50 +793,53 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
     if (voucher.status === 'redeemed') {
       return res.status(400).json({ success: false, message: 'Bon déjà utilisé' });
     }
-    if (voucher.status === 'expired' || (voucher.expires_at && new Date(voucher.expires_at) < new Date())) {
+    if (voucher.status === 'expired') {
       return res.status(400).json({ success: false, message: 'Bon expiré' });
     }
 
     // 3) Marquer comme utilisé + créer la rédemption (transaction)
-    await client.query('BEGIN');
+    await db.query('BEGIN');
 
-    const redeemResult = await client.query(
-      `INSERT INTO redemptions (
-        voucher_id,
-        voucher_code,
-        merchant_id,
-        merchant_name,
-        merchant_phone,
-        location,
-        amount,
-        currency,
-        notes
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *`,
-      [
-        voucher.id,
-        voucher.code,
-        merchant.id,
-        merchant_name || merchant.business_name,
-        merchant_phone || merchant.phone,
-        location || null,
-        voucher.amount,
-        voucher.currency || 'USD',
-        notes || null
-      ]
+const redeemResult = await db.query(
+ // `INSERT INTO redemptions (voucher_id, merchant_id, cashier_id, redeemed_at)
+ // VALUES ($1, $2, $3, NOW())
+   `INSERT INTO redemptions (
+      voucher_id,
+      voucher_code,
+      merchant_id,
+      merchant_name,
+      merchant_phone,
+      location,
+      amount,
+      currency,
+      notes
+   )
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+   RETURNING *`,
+  [
+    voucher.id,
+    voucher.code,
+    req.user.merchant_id || null,
+    merchant_name || null,
+    merchant_phone || null,
+    location || null,
+    voucher.amount,
+    voucher.currency,
+    notes || null
+  ]
+);
+
+
+    await db.query(
+      'UPDATE vouchers SET status = $1 WHERE id = $2',
+      ['redeemed', voucher.id]
     );
 
-    await client.query(
-      'UPDATE vouchers SET status = $1, redeemed_at = NOW(), merchant_id = $2 WHERE id = $3',
-      ['redeemed', merchant.id, voucher.id]
-    );
-
-    await client.query('COMMIT');
+    await db.query('COMMIT');
 
     const redemption = redeemResult.rows[0];
 
-    console.log(`✅ Voucher redeemed: ${voucher.code} by merchant ${merchant.business_name}`);
+    // TODO: envoyer SMS au bénéficiaire / expéditeur ici, avec ton service SMS existant
 
     return res.json({
       success: true,
@@ -860,15 +847,13 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
       redemption
     });
   } catch (err) {
-    console.error('Redeem error:', err);
-    if (client) await client.query('ROLLBACK').catch(() => {});
-    return res.status(500).json({
-      success: false,
-      message: err.message || 'Erreur serveur lors de la validation du bon'
-    });
-  } finally {
-    if (client) client.release();
-  }
+  console.error('Redeem error:', err);
+  await db.query('ROLLBACK').catch(() => {});
+  return res.status(500).json({
+    success: false,
+    message: err.message || 'Erreur serveur lors de la validation du bon'
+  });
+}
 });
 
 
@@ -1214,7 +1199,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 
 
-req.user.user_id = user.id;
+req.session.userId = user.id;
 req.session.role   = user.role;  // 'sender' | 'requester' | 'merchant' | 'admin' ...
 
 
@@ -1501,7 +1486,7 @@ const passwordHash = await bcrypt.hash(password, 10);
       });
 
       // Optional: auto-login
-      // req.user.user_id = dbUserId;
+      // req.session.userId = dbUserId;
       // req.session.role   = 'merchant';
 
       return res.status(201).json({
@@ -3028,33 +3013,25 @@ app.post('/api/vouchers/create', async (req, res) => {
   }
 });
 
-// Check voucher validity - FIXED: Uses DB instead of in-memory
+// Check voucher validity 
+/*
 app.get('/api/vouchers/check/:code', async (req, res) => {
-  let client;
   try {
     const { code } = req.params;
-    client = await db.pool.connect();
     
-    // Find voucher in database
-    const result = await client.query(
-      'SELECT * FROM vouchers WHERE UPPER(code) = UPPER($1) LIMIT 1',
-      [code.trim()]
-    );
+    // Find voucher in memory storage
+    const voucher = data.vouchers.find(v => v.code === code.toUpperCase());
     
-    if (result.rows.length === 0) {
+    if (!voucher) {
       return res.status(404).json({
-        valid: false,
         success: false,
-        message: 'Code invalide ou bon introuvable'
+        message: 'Code invalide'
       });
     }
-    
-    const voucher = result.rows[0];
     
     // Check if already redeemed
     if (voucher.status === 'redeemed') {
       return res.status(400).json({
-        valid: false,
         success: false,
         message: 'Ce bon a déjà été utilisé',
         voucher: {
@@ -3068,14 +3045,14 @@ app.get('/api/vouchers/check/:code', async (req, res) => {
     // Check if expired
     const now = new Date();
     const expiryDate = new Date(voucher.expires_at);
-    if (voucher.expires_at && now > expiryDate) {
+    if (now > expiryDate) {
+      voucher.status = 'expired';
       return res.status(400).json({
-        valid: false,
         success: false,
         message: 'Ce bon a expiré',
         voucher: {
           code: voucher.code,
-          status: 'expired',
+          status: voucher.status,
           expires_at: voucher.expires_at
         }
       });
@@ -3083,120 +3060,31 @@ app.get('/api/vouchers/check/:code', async (req, res) => {
     
     // Voucher is valid
     res.json({
-      valid: true,
       success: true,
       message: 'Bon valide',
       voucher: {
         code: voucher.code,
-        amount: parseFloat(voucher.amount),
-        currency: voucher.currency || 'USD',
+        amount: voucher.amount,
+        currency: voucher.currency || 'CDF',
         status: voucher.status,
-        recipientPhone: voucher.recipient_phone,
-        recipientName: voucher.recipient_name,
-        senderName: voucher.sender_name,
+        recipient_phone: voucher.recipient_phone,
+        recipient_name: voucher.recipient_name,
+        sender_name: voucher.sender_name,
         message: voucher.message,
-        hideIdentity: voucher.hide_identity,
-        createdAt: voucher.created_at,
-        expiresAt: voucher.expires_at
+        hide_identity: voucher.hide_identity,
+        created_at: voucher.created_at,
+        expires_at: voucher.expires_at
       }
     });
   } catch (error) {
     console.error('Check voucher error:', error);
     res.status(500).json({
-      valid: false,
       success: false,
       message: 'Erreur lors de la vérification du code',
       error: error.message
     });
-  } finally {
-    if (client) client.release();
   }
-});
-
-// General voucher redeem endpoint (for cashiers)
-app.post('/api/vouchers/redeem', authMiddleware.requireAuth, async (req, res) => {
-  const { code } = req.body;
-
-  if (!code) {
-    return res.status(400).json({
-      success: false,
-      message: 'Code du bon obligatoire'
-    });
-  }
-
-  let client;
-  try {
-    client = await db.pool.connect();
-    
-    // Find voucher in database
-    const voucherResult = await client.query(
-      'SELECT * FROM vouchers WHERE UPPER(code) = UPPER($1) LIMIT 1',
-      [code.trim()]
-    );
-
-    if (voucherResult.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Bon introuvable' });
-    }
-
-    const voucher = voucherResult.rows[0];
-
-    // Verify status
-    if (voucher.status === 'redeemed') {
-      return res.status(400).json({ success: false, message: 'Bon déjà utilisé' });
-    }
-    if (voucher.status === 'expired' || (voucher.expires_at && new Date(voucher.expires_at) < new Date())) {
-      return res.status(400).json({ success: false, message: 'Bon expiré' });
-    }
-
-    await client.query('BEGIN');
-
-    // Create redemption record
-    const redeemResult = await client.query(
-      `INSERT INTO redemptions (
-        voucher_id,
-        voucher_code,
-        amount,
-        currency,
-        notes
-      )
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *`,
-      [
-        voucher.id,
-        voucher.code,
-        voucher.amount,
-        voucher.currency || 'USD',
-        'Racheté via caissier'
-      ]
-    );
-
-    // Update voucher status
-    await client.query(
-      'UPDATE vouchers SET status = $1, redeemed_at = NOW() WHERE id = $2',
-      ['redeemed', voucher.id]
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`✅ Voucher redeemed: ${voucher.code} by user ${req.user.user_id}`);
-
-    return res.json({
-      success: true,
-      message: 'Bon racheté avec succès',
-      voucher: { ...voucher, status: 'redeemed' },
-      redemption: redeemResult.rows[0]
-    });
-  } catch (err) {
-    console.error('Redeem error:', err);
-    if (client) await client.query('ROLLBACK').catch(() => {});
-    return res.status(500).json({
-      success: false,
-      message: err.message || 'Erreur serveur lors de la validation du bon'
-    });
-  } finally {
-    if (client) client.release();
-  }
-});
+});*/
 
 // MUST exist and return JSON
 app.get('/api/merchant/vouchers/check', requireMerchant, async (req, res) => {
@@ -4493,576 +4381,219 @@ app.post('/api/admin/orders/:orderId/reject', authMiddleware.requireAuth, authMi
 
 // ========== END NEW ENDPOINTS ==========
 
-// Merchant endpoints (with authMiddleware) - FIXED: Actual DB queries
+// Merchant endpoints (with authMiddleware)
 app.get('/api/merchant/stats', authMiddleware.requireAuth, authMiddleware.requireRole('merchant'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    
-    // Get merchant for this user
-    const merchantResult = await client.query(
-      'SELECT id FROM merchants WHERE user_id = $1 LIMIT 1',
-      [req.user.user_id]
-    );
-    
-    if (merchantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
-    }
-    
-    const merchantId = merchantResult.rows[0].id;
-    
-    // Today's redemptions
-    const todayResult = await client.query(`
-      SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
-      FROM redemptions
-      WHERE merchant_id = $1 AND DATE(created_at) = CURRENT_DATE
-    `, [merchantId]);
-    
-    // Month's total
-    const monthResult = await client.query(`
-      SELECT COALESCE(SUM(amount), 0) AS total
-      FROM redemptions
-      WHERE merchant_id = $1 
-        AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
-    `, [merchantId]);
-    
-    // Cashiers count (users with role='cashier' linked to this merchant via redemptions or a merchant_id field)
-    const cashiersResult = await client.query(`
-      SELECT COUNT(DISTINCT u.id) as total,
-             COUNT(DISTINCT u.id) FILTER (WHERE u.is_active = true) as active
-      FROM users u
-      WHERE u.role = 'cashier' AND u.is_active = true
-    `);
-    
     const stats = {
-      todayRedemptions: parseInt(todayResult.rows[0]?.count || 0),
-      todayAmount: parseFloat(todayResult.rows[0]?.total || 0),
-      monthAmount: parseFloat(monthResult.rows[0]?.total || 0),
-      totalAmount: parseFloat(monthResult.rows[0]?.total || 0),
-      activeCashiers: parseInt(cashiersResult.rows[0]?.active || 0),
-      totalCashiers: parseInt(cashiersResult.rows[0]?.total || 0),
+      todayRedemptions: 0,
+      totalAmount: 0,
+      activeCashiers: 0,
+      totalCashiers: 0,
       redemptionRate: 0
     };
-    
     res.json(stats);
   } catch (error) {
     console.error('Merchant stats error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
-// NOTE: /api/merchant/redemptions is defined earlier at line ~603 with full DB logic
-// NOTE: /api/merchant/cashiers GET is defined earlier at line ~667 with full DB logic
-// NOTE: /api/merchant/cashiers POST needs to be implemented here since it's not above
-
-// Cashier endpoints (with authMiddleware) - FIXED: Actual DB queries
-app.get('/api/cashier/stats', authMiddleware.requireAuth, authMiddleware.requireRole('cashier'), async (req, res) => {
-  let client;
+app.get('/api/merchant/redemptions', authMiddleware.requireAuth, authMiddleware.requireRole('merchant'), async (req, res) => {
   try {
-    client = await db.pool.connect();
-    const userId = req.user.user_id;
+    const redemptions = [];
+    res.json(redemptions);
+  } catch (error) {
+    console.error('Merchant redemptions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/merchant/cashiers', authMiddleware.requireAuth, authMiddleware.requireRole('merchant'), async (req, res) => {
+  try {
+    const cashiers = [];
+    res.json(cashiers);
+  } catch (error) {
+    console.error('Merchant cashiers error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/merchant/cashiers', authMiddleware.requireAuth, authMiddleware.requireRole('merchant'), async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
     
-    // Today's redemptions by this cashier
-    const todayResult = await client.query(`
-      SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
-      FROM redemptions
-      WHERE DATE(created_at) = CURRENT_DATE
-    `);
+    // Create cashier account
+    const result = await authService.createCashier({
+      name,
+      email,
+      phone,
+      password,
+      merchantId: req.user.id
+    });
     
-    // Total redemptions
-    const totalResult = await client.query(`
-      SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
-      FROM redemptions
-    `);
-    
-    // Last redemption
-    const lastResult = await client.query(`
-      SELECT created_at FROM redemptions ORDER BY created_at DESC LIMIT 1
-    `);
-    
+    res.json(result);
+  } catch (error) {
+    console.error('Add cashier error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Cashier endpoints (with authMiddleware)
+app.get('/api/cashier/stats', authMiddleware.requireAuth, authMiddleware.requireRole('cashier'), async (req, res) => {
+  try {
     const stats = {
-      todayRedemptions: parseInt(todayResult.rows[0]?.count || 0),
-      totalRedemptions: parseInt(totalResult.rows[0]?.count || 0),
-      todayAmount: parseFloat(todayResult.rows[0]?.total || 0),
-      totalAmount: parseFloat(totalResult.rows[0]?.total || 0),
-      lastRedemption: lastResult.rows[0]?.created_at || null
+      todayRedemptions: 0,
+      totalRedemptions: 0,
+      todayAmount: 0,
+      totalAmount: 0,
+      lastRedemption: null
     };
-    
     res.json(stats);
   } catch (error) {
     console.error('Cashier stats error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
 app.get('/api/cashier/redemptions', authMiddleware.requireAuth, authMiddleware.requireRole('cashier'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    
-    const result = await client.query(`
-      SELECT 
-        r.id,
-        r.voucher_code as code,
-        r.amount,
-        r.currency,
-        r.created_at as date,
-        v.recipient_phone as recipient
-      FROM redemptions r
-      LEFT JOIN vouchers v ON v.id = r.voucher_id
-      ORDER BY r.created_at DESC
-      LIMIT 100
-    `);
-    
-    res.json(result.rows);
+    const redemptions = [];
+    res.json(redemptions);
   } catch (error) {
     console.error('Cashier redemptions error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
-// Admin endpoints (with authMiddleware) - FIXED: Actual DB queries
+// Admin endpoints (with authMiddleware)
 app.get('/api/admin/dashboard', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    
-    // Total users
-    const usersResult = await client.query('SELECT COUNT(*) FROM users');
-    
-    // Merchants stats
-    const merchantsResult = await client.query(`
-      SELECT 
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'approved') as active,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending
-      FROM merchants
-    `);
-    
-    // Pending orders for approval
-    const pendingResult = await client.query(`
-      SELECT COUNT(*) FROM orders 
-      WHERE status IN ('pending', 'pending_payment', 'pending_approval')
-    `);
-    
-    // Vouchers this month
-    const vouchersResult = await client.query(`
-      SELECT 
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)) as month_count
-      FROM vouchers
-    `);
-    
-    // Volume this month
-    const volumeResult = await client.query(`
-      SELECT 
-        COALESCE(SUM(total_amount), 0) as total,
-        COALESCE(SUM(total_amount) FILTER (WHERE date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)), 0) as month_total
-      FROM orders 
-      WHERE status = 'paid'
-    `);
-    
     const data = {
-      totalUsers: parseInt(usersResult.rows[0]?.count || 0),
-      activeMerchants: parseInt(merchantsResult.rows[0]?.active || 0),
-      totalMerchants: parseInt(merchantsResult.rows[0]?.total || 0),
-      pendingMerchants: parseInt(merchantsResult.rows[0]?.pending || 0),
-      totalVouchers: parseInt(vouchersResult.rows[0]?.total || 0),
-      monthVouchers: parseInt(vouchersResult.rows[0]?.month_count || 0),
-      totalVolume: parseFloat(volumeResult.rows[0]?.total || 0),
-      monthVolume: parseFloat(volumeResult.rows[0]?.month_total || 0),
-      pendingApprovals: parseInt(pendingResult.rows[0]?.count || 0),
-      redemptionRate: 0
+      totalUsers: 0,
+      activeMerchants: 0,
+      totalMerchants: 0,
+      totalVouchers: 0,
+      monthVouchers: 0,
+      totalVolume: 0,
+      monthVolume: 0,
+      redemptionRate: 0,
+      pendingApprovals: 0
     };
-    
     res.json(data);
   } catch (error) {
     console.error('Admin dashboard error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
 app.get('/api/admin/merchants', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    const statusFilter = req.query.status;
-    
-    let query = `
-      SELECT 
-        m.id,
-        m.business_name,
-        m.business_type,
-        m.address,
-        m.city,
-        m.commune,
-        m.phone,
-        m.email,
-        m.status,
-        m.created_at,
-        u.first_name,
-        u.last_name,
-        u.name as user_name
-      FROM merchants m
-      JOIN users u ON u.id = m.user_id
-    `;
-    
-    const params = [];
-    if (statusFilter && statusFilter !== 'all') {
-      query += ' WHERE m.status = $1';
-      params.push(statusFilter);
-    }
-    
-    query += ' ORDER BY m.created_at DESC';
-    
-    const result = await client.query(query, params);
-    
-    const merchants = result.rows.map(m => ({
-      id: m.id,
-      businessName: m.business_name,
-      businessType: m.business_type || 'Commerce',
-      businessAddress: m.address,
-      address: m.address,
-      city: m.city,
-      commune: m.commune,
-      phone: m.phone,
-      email: m.email,
-      status: m.status,
-      createdAt: m.created_at,
-      firstName: m.first_name || '',
-      lastName: m.last_name || '',
-      name: m.user_name || `${m.first_name || ''} ${m.last_name || ''}`.trim()
-    }));
-    
+    const merchants = [];
     res.json(merchants);
   } catch (error) {
     console.error('Admin merchants error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
 app.post('/api/admin/merchants/:id/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
     const { id } = req.params;
-    client = await db.pool.connect();
-    
-    await client.query('BEGIN');
-    
-    // Update merchant status to approved
-    const merchantResult = await client.query(
-      `UPDATE merchants SET status = 'approved', updated_at = NOW() 
-       WHERE id = $1 RETURNING user_id, business_name`,
-      [id]
-    );
-    
-    if (merchantResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'Commerçant non trouvé' });
-    }
-    
-    // Also activate the user account
-    await client.query(
-      `UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1`,
-      [merchantResult.rows[0].user_id]
-    );
-    
-    await client.query('COMMIT');
-    
-    console.log(`✅ Merchant approved: ${merchantResult.rows[0].business_name}`);
-    res.json({ success: true, message: 'Commerçant approuvé avec succès' });
+    // Approve merchant logic
+    res.json({ success: true, message: 'Commerçant approuvé' });
   } catch (error) {
-    if (client) await client.query('ROLLBACK').catch(() => {});
     console.error('Approve merchant error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  } finally {
-    if (client) client.release();
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/api/admin/merchants/:id/reject', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    client = await db.pool.connect();
-    
-    const result = await client.query(
-      `UPDATE merchants SET status = 'rejected', updated_at = NOW() 
-       WHERE id = $1 RETURNING business_name`,
-      [id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Commerçant non trouvé' });
-    }
-    
-    console.log(`❌ Merchant rejected: ${result.rows[0].business_name}, reason: ${reason}`);
+    // Reject merchant logic
     res.json({ success: true, message: 'Commerçant rejeté' });
   } catch (error) {
     console.error('Reject merchant error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  } finally {
-    if (client) client.release();
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/api/admin/merchants/:id/suspend', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    client = await db.pool.connect();
-    
-    await client.query('BEGIN');
-    
-    const merchantResult = await client.query(
-      `UPDATE merchants SET status = 'suspended', updated_at = NOW() 
-       WHERE id = $1 RETURNING user_id, business_name`,
-      [id]
-    );
-    
-    if (merchantResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'Commerçant non trouvé' });
-    }
-    
-    // Also deactivate the user account
-    await client.query(
-      `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`,
-      [merchantResult.rows[0].user_id]
-    );
-    
-    await client.query('COMMIT');
-    
-    console.log(`⚠️ Merchant suspended: ${merchantResult.rows[0].business_name}, reason: ${reason}`);
+    // Suspend merchant logic
     res.json({ success: true, message: 'Commerçant suspendu' });
   } catch (error) {
-    if (client) await client.query('ROLLBACK').catch(() => {});
     console.error('Suspend merchant error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  } finally {
-    if (client) client.release();
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.get('/api/admin/users', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    const { role, status } = req.query;
-    
-    let query = `
-      SELECT 
-        id, phone, email, first_name, last_name, name, role, 
-        is_active, created_at, last_login
-      FROM users
-      WHERE 1=1
-    `;
-    const params = [];
-    let paramCount = 0;
-    
-    if (role && role !== 'all') {
-      paramCount++;
-      query += ` AND role = $${paramCount}`;
-      params.push(role);
-    }
-    
-    if (status === 'active') {
-      query += ' AND is_active = true';
-    } else if (status === 'suspended') {
-      query += ' AND is_active = false';
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT 500';
-    
-    const result = await client.query(query, params);
-    
-    res.json(result.rows);
+    const users = [];
+    res.json(users);
   } catch (error) {
     console.error('Admin users error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
 app.post('/api/admin/users/:id/suspend', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
     const { id } = req.params;
-    client = await db.pool.connect();
-    
-    await client.query(
-      `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`,
-      [id]
-    );
-    
+    // Suspend user logic
     res.json({ success: true, message: 'Utilisateur suspendu' });
   } catch (error) {
     console.error('Suspend user error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  } finally {
-    if (client) client.release();
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/api/admin/users/:id/activate', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
     const { id } = req.params;
-    client = await db.pool.connect();
-    
-    await client.query(
-      `UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1`,
-      [id]
-    );
-    
+    // Activate user logic
     res.json({ success: true, message: 'Utilisateur activé' });
   } catch (error) {
     console.error('Activate user error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  } finally {
-    if (client) client.release();
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.get('/api/admin/transactions', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    const { period, type } = req.query;
-    
-    let dateFilter = '';
-    if (period === 'today') {
-      dateFilter = "AND DATE(o.created_at) = CURRENT_DATE";
-    } else if (period === 'week') {
-      dateFilter = "AND o.created_at >= CURRENT_DATE - INTERVAL '7 days'";
-    } else if (period === 'month') {
-      dateFilter = "AND date_trunc('month', o.created_at) = date_trunc('month', CURRENT_DATE)";
-    }
-    
-    // Get orders as transactions
-    const result = await client.query(`
-      SELECT 
-        o.id,
-        'voucher' as type,
-        o.total_amount as amount,
-        o.currency,
-        o.sender_name,
-        o.sender_phone,
-        o.status,
-        o.payment_method,
-        o.created_at
-      FROM orders o
-      WHERE 1=1 ${dateFilter}
-      ORDER BY o.created_at DESC
-      LIMIT 500
-    `);
-    
-    const transactions = result.rows.map(t => ({
-      id: t.id,
-      code: t.id,
-      type: t.type,
-      amount: parseFloat(t.amount),
-      currency: t.currency,
-      sender_name: t.sender_name,
-      from: t.sender_name,
-      to: 'Destinataires',
-      status: t.status,
-      payment_method: t.payment_method,
-      created_at: t.created_at
-    }));
-    
+    const transactions = [];
     res.json(transactions);
   } catch (error) {
     console.error('Admin transactions error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
 app.get('/api/admin/analytics', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    
-    // Monthly volume
-    const volumeResult = await client.query(`
-      SELECT COALESCE(SUM(total_amount), 0) as volume
-      FROM orders 
-      WHERE status = 'paid' 
-        AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
-    `);
-    
-    // Last month volume for growth calculation
-    const lastMonthResult = await client.query(`
-      SELECT COALESCE(SUM(total_amount), 0) as volume
-      FROM orders 
-      WHERE status = 'paid' 
-        AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
-    `);
-    
-    // Conversion rate (paid orders / total orders)
-    const conversionResult = await client.query(`
-      SELECT 
-        COUNT(*) FILTER (WHERE status = 'paid') as paid,
-        COUNT(*) as total
-      FROM orders
-      WHERE date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
-    `);
-    
-    const monthlyVolume = parseFloat(volumeResult.rows[0]?.volume || 0);
-    const lastMonthVolume = parseFloat(lastMonthResult.rows[0]?.volume || 0);
-    const growth = lastMonthVolume > 0 ? Math.round(((monthlyVolume - lastMonthVolume) / lastMonthVolume) * 100) : 0;
-    const paidOrders = parseInt(conversionResult.rows[0]?.paid || 0);
-    const totalOrders = parseInt(conversionResult.rows[0]?.total || 0);
-    const conversionRate = totalOrders > 0 ? Math.round((paidOrders / totalOrders) * 100) : 0;
-    
-    res.json({
-      monthlyVolume: monthlyVolume,
-      growth: growth,
-      conversionRate: conversionRate
-    });
+    const analytics = {
+      monthlyVolume: 0,
+      growth: 0,
+      conversionRate: 0
+    };
+    res.json(analytics);
   } catch (error) {
     console.error('Admin analytics error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
 app.get('/api/admin/activity', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
-  let client;
   try {
-    client = await db.pool.connect();
-    
-    // Get recent activities from various tables
-    const result = await client.query(`
-      SELECT 'order' as type, id, sender_name as description, created_at 
-      FROM orders 
-      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
-      ORDER BY created_at DESC
-      LIMIT 50
-    `);
-    
-    res.json(result.rows);
+    const activities = [];
+    res.json(activities);
   } catch (error) {
     console.error('Admin activity error:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (client) client.release();
   }
 });
 
