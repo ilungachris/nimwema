@@ -608,12 +608,9 @@ app.get('/api/merchant/redemptions', requireMerchant, async (req, res) => {
   let client;
   try {
     client = await db.pool.connect();
-    const merchant = await loadMerchantForUser(client, req.user.user_id);
-    if (!merchant) {
-      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
-    }
-
-    const params = [merchant.id];
+    
+    // NOTE: redemptions.merchant_id references users.id, not merchants.id
+    const params = [req.user.user_id];
     let dateFilter = '';
     if (period === 'today') {
       dateFilter = "AND DATE(r.created_at) = CURRENT_DATE";
@@ -797,6 +794,7 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
     // 3) Marquer comme utilisé + créer la rédemption (transaction)
     await client.query('BEGIN');
 
+    // NOTE: redemptions.merchant_id references users.id, not merchants.id
     const redeemResult = await client.query(
       `INSERT INTO redemptions (
         voucher_id,
@@ -814,7 +812,7 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
       [
         voucher.id,
         voucher.code,
-        merchant.id,
+        req.user.user_id,  // Use user_id, not merchant.id (FK constraint)
         merchant_name || merchant.business_name,
         merchant_phone || merchant.phone,
         location || null,
@@ -826,7 +824,7 @@ app.post('/api/merchant/vouchers/redeem', requireMerchant, async (req, res) => {
 
     await client.query(
       'UPDATE vouchers SET status = $1, redeemed_at = NOW(), merchant_id = $2 WHERE id = $3',
-      ['redeemed', merchant.id, voucher.id]
+      ['redeemed', req.user.user_id, voucher.id]  // Also use user_id here
     );
 
     await client.query('COMMIT');
@@ -4478,24 +4476,15 @@ app.get('/api/merchant/stats', authMiddleware.requireAuth, authMiddleware.requir
   try {
     client = await db.pool.connect();
     
-    // Get merchant for this user
-    const merchantResult = await client.query(
-      'SELECT id FROM merchants WHERE user_id = $1 LIMIT 1',
-      [req.user.user_id]
-    );
-    
-    if (merchantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'MERCHANT_NOT_FOUND' });
-    }
-    
-    const merchantId = merchantResult.rows[0].id;
+    // NOTE: redemptions.merchant_id references users.id, not merchants.id
+    const userId = req.user.user_id;
     
     // Today's redemptions
     const todayResult = await client.query(`
       SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
       FROM redemptions
       WHERE merchant_id = $1 AND DATE(created_at) = CURRENT_DATE
-    `, [merchantId]);
+    `, [userId]);
     
     // Month's total
     const monthResult = await client.query(`
@@ -4503,7 +4492,7 @@ app.get('/api/merchant/stats', authMiddleware.requireAuth, authMiddleware.requir
       FROM redemptions
       WHERE merchant_id = $1 
         AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
-    `, [merchantId]);
+    `, [userId]);
     
     // Cashiers count (users with role='cashier' linked to this merchant via redemptions or a merchant_id field)
     const cashiersResult = await client.query(`
