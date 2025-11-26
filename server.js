@@ -1413,7 +1413,7 @@ app.post(  '/api/auth/merchant-signup',
       const passwordHash = await bcrypt.hash(password, 10);
 
       const userInsert = `
-        INSERT INTO users (firstname, lastname, email, phone, password, role, is_active, created_at, updated_at)
+        INSERT INTO users (first_name, last_name, email, phone, password, role, is_active, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW())
         RETURNING id, firstname, lastname, email, phone, role, created_at
       `;
