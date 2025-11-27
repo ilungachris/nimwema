@@ -494,7 +494,14 @@
                         firstRecipientPhone.value = rPhoneFromParams;
                     }
                 }
+else {              var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
+                    var rPhoneFromParams = params.get('recipientPhone') || params.get('phone');
 
+                    if (firstRecipientPhone && !firstRecipientPhone.value) {
+                        firstRecipientPhone.value = rPhoneFromParams;
+                    }
+
+}
                
 
                 // 3) Generic fallback: param name == element id
