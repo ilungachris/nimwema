@@ -1,139 +1,134 @@
 // src/services/sms.js
-const AfricasTalking = require('africastalking');
+// Centralised SMS service for Nimwema.
+// Now uses Twilio instead of Africa's Talking.
+
+const twilio = require('twilio');
 
 class SMSService {
   constructor() {
+    // Which provider to use (for now: Twilio only)
+    this.provider   = process.env.SMS_PROVIDER || 'twilio';
 
+    // Twilio credentials (ALWAYS via env vars)
+    this.accountSid = process.env.TWILIO_ACCOUNT_SID;
+    this.authToken  = process.env.TWILIO_AUTH_TOKEN;
+    this.fromNumber = process.env.TWILIO_FROM_NUMBER || null;
 
+    console.log('[SMSService] Provider:', this.provider);
+    console.log(
+      '[SMSService] Twilio Account SID:',
+      this.accountSid ? this.accountSid.substring(0, 10) + '...' : 'NOT SET'
+    );
+    console.log(
+      '[SMSService] From number:',
+      this.fromNumber || 'NOT SET'
+    );
 
+    this.client = null;
 
- 
-  this.provider = process.env.SMS_PROVIDER || 'africas_talking';
-  this.apiKey   = process.env.SMS_API_KEY;
-  this.username = process.env.SMS_USERNAME;
-  this.senderId = process.env.SMS_SENDER_ID || null;
+    // Initialise Twilio client
+    if (this.provider === 'twilio') {
+      try {
+        if (!this.accountSid || !this.authToken || !this.fromNumber) {
+          throw new Error(
+            'Missing TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER'
+          );
+        }
 
-  console.log('[SMSService] Username:', this.username);
-  console.log(
-    '[SMSService] API key (first 20):',
-    this.apiKey ? this.apiKey.substring(0, 75) + '...' : 'NOT SET'
-  );
-
-  try {
-    const AfricasTalking = require('africastalking');
-    this.at = AfricasTalking({
-      apiKey: this.apiKey,
-      username: this.username
-    });
-    this.sms = this.at.SMS;
-    console.log("Africa's Talking SDK initialized successfully");
-  } catch (error) {
-    console.error("Failed to initialize Africa's Talking SDK:", error);
-    this.sms = null;
-  }
-}
-
-
-
-
-/*
-    this.provider = process.env.SMS_PROVIDER || 'africas_talking';
-    this.apiKey = process.env.SMS_API_KEY;
-    this.username = process.env.SMS_USERNAME;
-    this.senderId = process.env.SMS_SENDER_ID || null;
-
-    try {
-      this.at = AfricasTalking({
-        apiKey: this.apiKey,
-        username: this.username
-      });
-      this.sms = this.at.SMS;
-      console.log("Africa's Talking SDK initialized successfully");
-    } catch (error) {
-      console.error("Failed to initialize Africa's Talking SDK:", error);
-      this.sms = null;
+        this.client = twilio(this.accountSid, this.authToken);
+        console.log('Twilio client initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize Twilio client:', error);
+      }
     }
-  }*/
+  }
 
+  /**
+   * Basic phone normalisation for DRC and international numbers.
+   * - trims spaces
+   * - converts leading "0" to "+243" for local DRC numbers
+   * - keeps +E.164 numbers as they are
+   */
+  formatPhoneNumber(phone) {
+    if (!phone) return phone;
+
+    let p = String(phone).trim();
+
+    // Already in international format
+    if (p.startsWith('+')) return p;
+
+    // Replace leading "00" with "+"
+    if (p.startsWith('00')) {
+      return '+' + p.slice(2);
+    }
+
+    // If it's a 9-digit local DRC number (e.g. 8xxxxxxxx), prefix +243
+    const digits = p.replace(/\D/g, '');
+    if (digits.length === 9 && (digits.startsWith('8') || digits.startsWith('9'))) {
+      return '+243' + digits;
+    }
+
+    // If it starts with "0" and is 10 digits, assume DRC and convert "0" -> "+243"
+    if (digits.length === 10 && digits.startsWith('0')) {
+      return '+243' + digits.slice(1);
+    }
+
+    // Fallback: just return trimmed value
+    return p;
+  }
+
+  /**
+   * Low-level send via Twilio.
+   * Used internally by sendSMS() and other helpers.
+   *
+   * @param {string} phone E.164 phone number (e.g. +243...)
+   * @param {string} message SMS body
+   */
   async send(phone, message) {
     try {
-      if (!this.sms) {
-        throw new Error("Africa's Talking SMS service not initialized");
+      if (this.provider !== 'twilio') {
+        throw new Error(`Unsupported SMS provider: ${this.provider}`);
+      }
+      if (!this.client) {
+        throw new Error('Twilio client not initialized');
       }
 
       console.log('[SMSService] send() received phone:', phone);
-
-     /**   const options = {
-        to: [phone],
-        message: message
-      };
-
-      if (this.senderId) {
-        options.from = this.senderId;
-      }*/
-
-
-
-
-        const options = {
-  to: [phone],
-  message: message
-};
-
-// Only use from in production; avoid custom sender in sandbox
-if (this.senderId && process.env.SMS_USERNAME !== 'sandbox') {
-  options.from = this.senderId;
-}
-
-
-      console.log('📱 Sending SMS:', {
+      console.log('📱 Sending SMS via Twilio:', {
         to: phone,
-        message: message.substring(0, 80) + '...'
+        from: this.fromNumber,
+        preview: message.substring(0, 80) + (message.length > 80 ? '...' : '')
       });
-      console.log('📱 SMS Options:', JSON.stringify(options));
-      console.log('📱 API Key:', this.apiKey ? `Set (length: ${this.apiKey.length})` : 'Not set');
-      console.log('📱 Username:', this.username);
 
-      const response = await this.sms.send(options);
-      console.log('✅ SMS Response:', JSON.stringify(response, null, 2));
+      const response = await this.client.messages.create({
+        to: phone,
+        from: this.fromNumber,
+        body: message,
+      });
 
-      if (response.SMSMessageData && response.SMSMessageData.Recipients) {
-        return { success: true, data: response.SMSMessageData };
-      }
+      console.log('✅ Twilio SMS Response:', JSON.stringify({
+        sid: response.sid,
+        status: response.status,
+        to: response.to,
+        errorCode: response.errorCode,
+        errorMessage: response.errorMessage,
+      }, null, 2));
 
       return { success: true, data: response };
     } catch (error) {
-      console.error('❌ SMS sending failed:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      return { success: false, error: error.message || error.toString() };
+      console.error('❌ Twilio SMS sending failed:', error);
+      return { success: false, error: error.message || String(error) };
     }
   }
 
-  formatPhoneNumber(phone) {
-    console.log('[SMSService] formatPhoneNumber input:', phone);
-
-    if (!phone) {
-      console.warn('[SMSService] formatPhoneNumber called with empty phone');
-      return '';
-    }
-
-    let cleaned = String(phone).replace(/\D/g, '');
-
-    // Remove leading 0 if present
-    if (cleaned.startsWith('0')) {
-      cleaned = cleaned.substring(1);
-    }
-
-    // Add DRC country code if missing
-    if (!cleaned.startsWith('243')) {
-      cleaned = '243' + cleaned;
-    }
-
-    const result = '+' + cleaned;
-    console.log('[SMSService] formatPhoneNumber output:', result);
-    return result;
-  }
-
+  /**
+   * Generic send function used by your application.
+   * This is what sendSMSNotification(...) calls for most types.
+   *
+   * @param {string} phoneNumber Raw user-entered phone number
+   * @param {string} message SMS text
+   * @param {string} [type='general'] Just for logging
+   */
   async sendSMS(phoneNumber, message, type = 'general') {
     try {
       console.log('[SMSService] sendSMS() raw phoneNumber:', phoneNumber);
@@ -146,48 +141,120 @@ if (this.senderId && process.env.SMS_USERNAME !== 'sandbox') {
   type: '${type}'
 }`);
 
-      if (this.provider === 'africas_talking') {
+      if (this.provider === 'twilio') {
         return await this.send(formattedPhone, message);
       }
 
       return { success: false, error: 'Unsupported SMS provider' };
     } catch (error) {
       console.error('SMS service error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || String(error) };
     }
   }
 
-  async sendVoucherCode(phoneNumber, code, amount, currency, senderName) {
-    const message = `Nimwema: Vous avez reçu un bon d'achat de ${amount} ${currency}. Code: ${code}. De la part de ${senderName}. Valide 90 jours. Toute question: nimwema.com`;
-    return await this.sendSMS(phoneNumber, message, 'voucher');
+  /**
+   * Voucher code SMS template.
+   * Used by sendSMSNotification when type === 'voucher_sent'.
+   *
+   * @param {string} phoneNumber
+   * @param {string} code
+   * @param {string} amountText e.g. "10 USD" or "25 000 CDF"
+   * @param {string} senderName
+   * @param {Date}   expiresAt JS Date instance
+   */
+async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
+  const formattedPhone = this.formatPhoneNumber(phoneNumber);
+
+  // Clean amount text to avoid double "CDF"
+  // If amountText already contains "CDF" or "USD", do NOT add another symbol.
+  const cleanAmount = amountText
+    .replace(/FC|CDF|USD/gi, '')       // remove leftover currency fragments
+    .trim();
+
+  // Format final amount safely
+  const finalAmount = amountText.includes('USD')
+    ? `${cleanAmount} USD`
+    : `${Number(cleanAmount).toLocaleString('fr-CD')} CDF`;
+
+  // 90-day validity (short text, no timestamp)
+  const expiryText = `Valide 90j. Présenter chez tous nos marchands: nimwema.com`;
+
+  // FINAL CLEAN SMS (≤160 chars)
+  const message =
+    `Nimwema: Bon d'achat de ${finalAmount}.\n` +
+    `Code: ${code}.\n` +
+    `De la part de ${senderName}.\n` +
+    `${expiryText}`;
+
+  return this.sendSMS(formattedPhone, message, 'voucher_sent');
+}
+
+
+  /**
+   * Payment confirmation for sender.
+   *
+   * @param {string} phoneNumber
+   * @param {number} quantity
+   * @param {number} amount
+   * @param {string} currency "USD" or "CDF"
+   */
+  async sendPaymentConfirmation(phoneNumber, quantity, amount, currency) {
+    const formattedPhone = this.formatPhoneNumber(phoneNumber);
+
+    const amountText =
+      currency === 'USD'
+        ? `${amount} USD`
+        : `${amount.toLocaleString('fr-CD')} CDF`;
+
+    const message =
+      `Nimwema: Votre paiement de ${amountText} pour ${quantity} bon(s) ` +
+      `a été confirmé. Merci !`;
+
+    return this.sendSMS(formattedPhone, message, 'payment_confirmation');
   }
 
-  async sendRequestNotification(phoneNumber, requesterName, message) {
-    const smsMessage = `Nimwema: ${requesterName} vous demande un bon d'achat. Message: "${message}". Répondez sur nimwema.com`;
-    return await this.sendSMS(phoneNumber, smsMessage, 'request');
+  /**
+   * Redemption confirmation for beneficiary.
+   *
+   * @param {string} phoneNumber
+   * @param {number} amount
+   * @param {string} merchantName
+   */
+  async sendRedemptionConfirmation(phoneNumber, amount, merchantName) {
+    const formattedPhone = this.formatPhoneNumber(phoneNumber);
+
+    const amountText = amount.toLocaleString('fr-CD') + ' CDF';
+
+    const message =
+      `Nimwema: Votre bon d'achat de ${amountText} a été utilisé chez ` +
+      `${merchantName}. Merci pour votre confiance.`;
+
+    return this.sendSMS(formattedPhone, message, 'redemption_confirmation');
   }
 
-  async sendRedemptionConfirmation(phoneNumber, code, amount, merchantName) {
-    const message = `Nimwema: Votre bon ${code} de ${amount} a été utilisé chez ${merchantName}. Merci de votre confiance!`;
-    return await this.sendSMS(phoneNumber, message, 'redemption');
-  }
-
-  async sendPaymentConfirmation(phoneNumber, amount, recipientCount) {
-    const message = `Nimwema: Paiement de ${amount} confirmé. ${recipientCount} bon(s) envoyé(s). Vous pouvez suivre sur nimwema.com/dashboard`;
-    return await this.sendSMS(phoneNumber, message, 'payment');
-  }
-
+  /**
+   * Send to multiple recipients (simple loop over sendSMS).
+   *
+   * @param {string[]} phoneNumbers
+   * @param {string} message
+   * @param {string} [type='bulk']
+   */
   async sendBulkSMS(phoneNumbers, message, type = 'bulk') {
     try {
+      if (!Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+        throw new Error('phoneNumbers must be a non-empty array');
+      }
+
       const results = [];
       for (const phone of phoneNumbers) {
         const result = await this.sendSMS(phone, message, type);
         results.push({ phone, result });
       }
+
       return { success: true, results };
     } catch (error) {
       console.error('Bulk SMS error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || String(error) };
     }
   }
 }
