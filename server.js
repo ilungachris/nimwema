@@ -293,7 +293,7 @@ async function sendSMSNotification(phone, data) {
         'voucher_request'
       );
 */if (data.type === 'voucher_request') {
-  const linkUrl = `https://nimwema.com/send.html?recipientPhone[]=${encodeURIComponent(phone)}`;
+  const linkUrl = `https://nimwema.com/send.html?phone=${encodeURIComponent(phone)}`;
 
   const smsMessage =
     `${data.requesterName} vous demande un bon d'achat: ` +
