@@ -310,7 +310,7 @@ async function sendSMSNotification(phone, data) {
     smsMessage,
     'voucher_request'
   );
-}
+
     } else if (data.type === 'voucher_sent') {
       const amountText = data.currency === 'USD' 
         ? `${data.amount} USD` 
