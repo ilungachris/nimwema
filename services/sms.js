@@ -172,9 +172,8 @@ class SMSService {
   console.log("[EXPIRY TEXT]", expiryText);
 
   const message =
-    `Bon d'achat de ${finalAmount}.\n` +
+    `${senderName} Vous a envoyé un bon d'achat de ${finalAmount}.\n` +
     `Code: ${code}.\n` +
-    `De: ${senderName}.\n` +
     `${expiryText}`;
 
   console.log("[FINAL SMS MESSAGE BEFORE SEND]\n", message);
