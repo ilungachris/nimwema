@@ -268,6 +268,7 @@ async function sendSMSNotification(phone, data) {
   try {
     let result;
     
+    /*
     if (data.type === 'voucher_request') {
 
       const linkUrl = `https://nimwema.com/send.html?phone=${data.recipientPhone}`;
@@ -291,7 +292,25 @@ async function sendSMSNotification(phone, data) {
         smsMessage,     // built message
         'voucher_request'
       );
+*/if (data.type === 'voucher_request') {
+  const linkUrl = `https://nimwema.com/send.html?recipientPhone[]=${encodeURIComponent(phone)}`;
 
+  const smsMessage =
+    `${data.requesterName} vous demande un bon d'achat: ` +
+    `"${data.message}". Envoyez par ${linkUrl}`;
+
+  console.log('📲 [SMS DEBUG] voucher_request sending via SMSService.sendSMS', {
+    phone,
+    requesterName: data.requesterName,
+    provider: process.env.SMS_PROVIDER,
+  });
+
+  result = await sms.sendSMS(
+    phone,
+    smsMessage,
+    'voucher_request'
+  );
+}
     } else if (data.type === 'voucher_sent') {
       const amountText = data.currency === 'USD' 
         ? `${data.amount} USD` 

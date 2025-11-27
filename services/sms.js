@@ -1,15 +1,11 @@
 // src/services/sms.js
-// Centralised SMS service for Nimwema.
-// Now uses Twilio instead of Africa's Talking.
+// Centralised SMS service for Nimwema using Twilio.
 
 const twilio = require('twilio');
 
 class SMSService {
   constructor() {
-    // Which provider to use (for now: Twilio only)
     this.provider   = process.env.SMS_PROVIDER || 'twilio';
-
-    // Twilio credentials (ALWAYS via env vars)
     this.accountSid = process.env.TWILIO_ACCOUNT_SID;
     this.authToken  = process.env.TWILIO_AUTH_TOKEN;
     this.fromNumber = process.env.TWILIO_FROM_NUMBER || null;
@@ -26,7 +22,6 @@ class SMSService {
 
     this.client = null;
 
-    // Initialise Twilio client
     if (this.provider === 'twilio') {
       try {
         if (!this.accountSid || !this.authToken || !this.fromNumber) {
@@ -43,47 +38,33 @@ class SMSService {
     }
   }
 
-  /**
-   * Basic phone normalisation for DRC and international numbers.
-   * - trims spaces
-   * - converts leading "0" to "+243" for local DRC numbers
-   * - keeps +E.164 numbers as they are
-   */
+  // ---- Helpers -------------------------------------------------------------
+
   formatPhoneNumber(phone) {
     if (!phone) return phone;
 
     let p = String(phone).trim();
 
-    // Already in international format
     if (p.startsWith('+')) return p;
 
-    // Replace leading "00" with "+"
     if (p.startsWith('00')) {
       return '+' + p.slice(2);
     }
 
-    // If it's a 9-digit local DRC number (e.g. 8xxxxxxxx), prefix +243
     const digits = p.replace(/\D/g, '');
     if (digits.length === 9 && (digits.startsWith('8') || digits.startsWith('9'))) {
       return '+243' + digits;
     }
 
-    // If it starts with "0" and is 10 digits, assume DRC and convert "0" -> "+243"
     if (digits.length === 10 && digits.startsWith('0')) {
       return '+243' + digits.slice(1);
     }
 
-    // Fallback: just return trimmed value
     return p;
   }
 
-  /**
-   * Low-level send via Twilio.
-   * Used internally by sendSMS() and other helpers.
-   *
-   * @param {string} phone E.164 phone number (e.g. +243...)
-   * @param {string} message SMS body
-   */
+  // ---- Core low-level Twilio send() ---------------------------------------
+
   async send(phone, message) {
     try {
       if (this.provider !== 'twilio') {
@@ -121,14 +102,8 @@ class SMSService {
     }
   }
 
-  /**
-   * Generic send function used by your application.
-   * This is what sendSMSNotification(...) calls for most types.
-   *
-   * @param {string} phoneNumber Raw user-entered phone number
-   * @param {string} message SMS text
-   * @param {string} [type='general'] Just for logging
-   */
+  // ---- Public generic SMS API ---------------------------------------------
+
   async sendSMS(phoneNumber, message, type = 'general') {
     try {
       console.log('[SMSService] sendSMS() raw phoneNumber:', phoneNumber);
@@ -152,52 +127,31 @@ class SMSService {
     }
   }
 
-  /**
-   * Voucher code SMS template.
-   * Used by sendSMSNotification when type === 'voucher_sent'.
-   *
-   * @param {string} phoneNumber
-   * @param {string} code
-   * @param {string} amountText e.g. "10 USD" or "25 000 CDF"
-   * @param {string} senderName
-   * @param {Date}   expiresAt JS Date instance
-   */
-async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
-  const formattedPhone = this.formatPhoneNumber(phoneNumber);
+  // ---- Templates: voucher, payment, redemption, bulk ----------------------
 
-  // Clean amount text to avoid double "CDF"
-  // If amountText already contains "CDF" or "USD", do NOT add another symbol.
-  const cleanAmount = amountText
-    .replace(/FC|CDF|USD/gi, '')       // remove leftover currency fragments
-    .trim();
+  async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
+    const formattedPhone = this.formatPhoneNumber(phoneNumber);
 
-  // Format final amount safely
-  const finalAmount = amountText.includes('USD')
-    ? `${cleanAmount} USD`
-    : `${Number(cleanAmount).toLocaleString('fr-CD')} CDF`;
+    // Clean amount to avoid double currency like "FC CDF"
+    const cleanAmount = amountText
+      .replace(/FC|CDF|USD/gi, '')
+      .trim();
 
-  // 90-day validity (short text, no timestamp)
-  const expiryText = `Valide 90j. Présenter chez tous nos marchands: nimwema.com`;
+    const finalAmount = amountText.includes('USD')
+      ? `${cleanAmount} USD`
+      : `${Number(cleanAmount).toLocaleString('fr-CD')} CDF`;
 
-  // FINAL CLEAN SMS (≤160 chars)
-  const message =
-    `Nimwema: Bon d'achat de ${finalAmount}.\n` +
-    `Code: ${code}.\n` +
-    `De la part de ${senderName}.\n` +
-    `${expiryText}`;
+    const expiryText = `Valide 90 jours. Toute question: nimwema.com`;
 
-  return this.sendSMS(formattedPhone, message, 'voucher_sent');
-}
+    const message =
+      `Nimwema: Bon d'achat de ${finalAmount}.\n` +
+      `Code: ${code}.\n` +
+      `De la part de ${senderName}.\n` +
+      `${expiryText}`;
 
+    return this.sendSMS(formattedPhone, message, 'voucher_sent');
+  }
 
-  /**
-   * Payment confirmation for sender.
-   *
-   * @param {string} phoneNumber
-   * @param {number} quantity
-   * @param {number} amount
-   * @param {string} currency "USD" or "CDF"
-   */
   async sendPaymentConfirmation(phoneNumber, quantity, amount, currency) {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
 
@@ -213,16 +167,8 @@ async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
     return this.sendSMS(formattedPhone, message, 'payment_confirmation');
   }
 
-  /**
-   * Redemption confirmation for beneficiary.
-   *
-   * @param {string} phoneNumber
-   * @param {number} amount
-   * @param {string} merchantName
-   */
   async sendRedemptionConfirmation(phoneNumber, amount, merchantName) {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
-
     const amountText = amount.toLocaleString('fr-CD') + ' CDF';
 
     const message =
@@ -232,13 +178,6 @@ async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
     return this.sendSMS(formattedPhone, message, 'redemption_confirmation');
   }
 
-  /**
-   * Send to multiple recipients (simple loop over sendSMS).
-   *
-   * @param {string[]} phoneNumbers
-   * @param {string} message
-   * @param {string} [type='bulk']
-   */
   async sendBulkSMS(phoneNumbers, message, type = 'bulk') {
     try {
       if (!Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
