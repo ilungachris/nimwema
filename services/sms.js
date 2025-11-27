@@ -130,42 +130,59 @@ class SMSService {
   // ---- Templates: voucher, payment, redemption, bulk ----------------------
 
   async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
-    const formattedPhone = this.formatPhoneNumber(phoneNumber);
+  console.log("\n================= SEND VOUCHER CODE =================");
+  console.log("[RAW INPUT] phoneNumber:", phoneNumber);
+  console.log("[RAW INPUT] amountText:", amountText);
+  console.log("[RAW INPUT] senderName:", senderName);
+  console.log("[RAW INPUT] expiresAt:", expiresAt);
 
-    // Clean amount to avoid double currency like "FC CDF"
-    const cleanAmount = amountText
-      .replace(/FC|CDF|USD/gi, '')
-      .trim();
+  const formattedPhone = this.formatPhoneNumber(phoneNumber);
+  console.log("[FORMATTED PHONE]", formattedPhone);
 
-    const finalAmount = amountText.includes('USD')
-      ? `${cleanAmount} USD`
-      : `${Number(cleanAmount).toLocaleString('fr-CD')} CDF`;
+  // Detect currency
+  const isUSD = /USD/i.test(amountText);
+  console.log("[CURRENCY DETECTED]", isUSD ? "USD" : "CDF");
 
-    const expiryText = `Valide 90 jours. Toute question: nimwema.com`;
+  // Strip everything except digits
+  const digitsOnly = amountText.replace(/[^\d]/g, '');
+  console.log("[DIGITS ONLY EXTRACTED]", digitsOnly);
 
-    const message =
-      `Nimwema: Bon d'achat de ${finalAmount}.\n` +
-      `Code: ${code}.\n` +
-      `De la part de ${senderName}.\n` +
-      `${expiryText}`;
+  let finalAmount;
 
-    return this.sendSMS(formattedPhone, message, 'voucher_sent');
+  if (!digitsOnly) {
+    console.log("[WARN] digitsOnly is EMPTY → fallback to raw amountText");
+    finalAmount = amountText.trim();
+  } else {
+    const numericValue = Number(digitsOnly);
+    console.log("[NUMERIC VALUE PARSED]", numericValue);
+
+    if (!Number.isFinite(numericValue)) {
+      console.log("[ERROR] numericValue is NOT a number → fallback");
+      finalAmount = amountText.trim();
+    } else {
+      finalAmount = isUSD
+        ? `${numericValue} USD`
+        : `${numericValue.toLocaleString('fr-CD')} CDF`;
+    }
   }
 
-  async sendPaymentConfirmation(phoneNumber, quantity, amount, currency) {
-    const formattedPhone = this.formatPhoneNumber(phoneNumber);
+  console.log("[FINAL AMOUNT]", finalAmount);
 
-    const amountText =
-      currency === 'USD'
-        ? `${amount} USD`
-        : `${amount.toLocaleString('fr-CD')} CDF`;
+  const expiryText = `Valide 90 jours. Toute question: nimwema.com`;
+  console.log("[EXPIRY TEXT]", expiryText);
 
-    const message =
-      `Nimwema: Votre paiement de ${amountText} pour ${quantity} bon(s) ` +
-      `a été confirmé. Merci !`;
+  const message =
+    `Nimwema: Bon d'achat de ${finalAmount}.\n` +
+    `Code: ${code}.\n` +
+    `De la part de ${senderName}.\n` +
+    `${expiryText}`;
 
-    return this.sendSMS(formattedPhone, message, 'payment_confirmation');
-  }
+  console.log("[FINAL SMS MESSAGE BEFORE SEND]\n", message);
+  console.log("=====================================================\n");
+
+  return this.sendSMS(formattedPhone, message, 'voucher_sent');
+}
+
 
   async sendRedemptionConfirmation(phoneNumber, amount, merchantName) {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
