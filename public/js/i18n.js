@@ -148,7 +148,6 @@ const translations = {
     no_recipients_message: "Ajoutez des destinataires pour envoyer des bons plus rapidement.",
     recipient_name: "Nom du destinataire",
     notes: "Notes (optionnel)",
-    send_voucher: "Envoyer un Bon",
     edit: "Modifier",
     delete: "Supprimer",
     save: "Enregistrer",
