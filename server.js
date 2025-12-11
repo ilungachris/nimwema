@@ -4260,6 +4260,7 @@ app.get('/api/admin/orders/pending', authMiddleware.requireAuth, authMiddleware.
 
 /////
 // Approve an order (generate and send vouchers) - FIXED: Valid order status ('paid') + logging
+/*//=============== /*
 app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
   const orderId = req.params.orderId; // FIXED: Define at top (always available)
   let client; // Declare outside for finally
@@ -4427,6 +4428,199 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
     if (client) client.release();
   }
 });
+*////
+
+app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authMiddleware.requireRole('admin'), async (req, res) => {
+  const orderId = req.params.orderId;
+  let client;
+  try {
+    console.log('🔍 Starting approve for orderId:', orderId);
+    
+    client = await db.pool.connect();
+    console.log('✅ DB client connected for approve');
+    
+    await client.query('BEGIN');
+    
+    // Fetch order from DB
+    const orderResult = await client.query(
+      'SELECT * FROM orders WHERE id = $1 AND status IN ($2, $3)',
+      [orderId, 'pending', 'pending_payment']
+    );
+    
+    if (orderResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ 
+        success: false,
+        message: 'Commande non trouvée ou déjà traitée' 
+      });
+    }
+    
+    const order = orderResult.rows[0];
+    console.log('✅ Order fetched:', { orderId, quantity: order.quantity, metadata: order.metadata });
+
+    // FIXED: Fetch recipients from order_recipients table
+    let recipients = [];
+    try {
+      const recipientsResult = await client.query(
+        'SELECT name, phone FROM order_recipients WHERE order_id = $1 ORDER BY id',
+        [orderId]
+      );
+      
+      recipients = recipientsResult.rows.map(row => ({
+        name: row.name,
+        phone: row.phone
+      }));
+      
+      console.log('✅ Recipients fetched from order_recipients table:', { 
+        orderId, 
+        recipientsCount: recipients.length,
+        sampleRecipient: recipients[0] || null 
+      });
+    } catch (recipientErr) {
+      console.error('❌ Failed to fetch recipients from order_recipients:', recipientErr);
+    }
+
+    // Fallback to metadata only if order_recipients is empty (for legacy orders)
+    if (recipients.length === 0) {
+      console.warn('⚠️ No recipients in order_recipients table, trying metadata...');
+      try {
+        let parsedMetadata = {};
+        if (order.metadata) {
+          if (typeof order.metadata === 'string') {
+            parsedMetadata = JSON.parse(order.metadata);
+          } else if (typeof order.metadata === 'object') {
+            parsedMetadata = order.metadata;
+          }
+          recipients = Array.isArray(parsedMetadata.recipients) ? parsedMetadata.recipients : [];
+        }
+        console.log('🔍 Parsed metadata recipients:', { recipientsCount: recipients.length });
+      } catch (parseErr) {
+        console.warn('Failed to parse metadata:', orderId, parseErr);
+      }
+    }
+    
+    // Final validation
+    if (!recipients.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false,
+        message: 'Aucun destinataire trouvé pour cette commande' 
+      });
+    }
+    
+    // FIXED: Sync loop to min(quantity, recipients.length) to avoid mismatch
+    const numVouchers = Math.min(order.quantity, recipients.length);
+    console.log('🔄 Starting voucher generation loop (numVouchers):', numVouchers);
+    
+    const vouchers = [];
+    for (let i = 0; i < numVouchers; i++) {
+      const recipient = recipients[i];
+      const voucherCode = generateVoucherCode();
+      
+      console.log(`\n📄 Generating voucher ${i+1}/${numVouchers}`);
+      console.log(`   Recipient: ${recipient.name}`);
+      console.log(`   Phone: ${recipient.phone}`);
+      console.log(`   Sender phone (for comparison): ${order.sender_phone}`);
+      console.log(`   ⚠️ PHONES MATCH? ${recipient.phone === order.sender_phone ? 'YES - POTENTIAL ISSUE!' : 'NO - CORRECT'}`);
+      
+      const voucher = {
+        code: voucherCode,
+        order_id: orderId,
+        amount: parseFloat(order.amount),
+        currency: order.currency,
+        recipient_name: recipient.name || 'Anonyme',
+        recipient_phone: recipient.phone,
+        sender_name: order.sender_name,
+        message: order.message || '',
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
+      };
+      
+      // Insert voucher into DB
+      const voucherResult = await client.query(
+        `INSERT INTO vouchers (code, order_id, amount, currency, recipient_name, recipient_phone, sender_name, message, status, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+        [voucher.code, voucher.order_id, voucher.amount, voucher.currency, voucher.recipient_name, voucher.recipient_phone,
+         voucher.sender_name, voucher.message, voucher.status, voucher.created_at, voucher.expires_at]
+      );
+      
+      voucher.id = voucherResult.rows[0].id;
+      vouchers.push(voucher);
+      console.log(`✅ Voucher inserted: ${voucherCode} (status: ${voucher.status})`);
+      
+      // Send SMS to recipient
+      try {
+        console.log(`📱 About to send SMS to RECIPIENT: ${recipient.phone}`);
+        await sendSMSNotification(recipient.phone, {
+          type: 'voucher_sent',
+          code: voucherCode,
+          amount: order.amount,
+          currency: order.currency,
+          senderName: order.sender_name,
+          expiresAt: voucher.expires_at
+        });
+        console.log(`✅ SMS sent to recipient ${recipient.phone}`);
+      } catch (smsErr) {
+        console.warn(`⚠️ SMS failed for ${recipient.phone}:`, smsErr.message);
+      }
+    }
+    
+    // Update order status to valid value
+    console.log('🔄 Updating order status to "paid"...');
+    await client.query(
+      'UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      ['paid', orderId]
+    );
+    console.log('✅ Order status updated to paid');
+    
+    await client.query('COMMIT');
+    console.log('✅ Transaction committed');
+    
+    // Send confirmation SMS to sender (outside transaction)
+    try {
+      console.log(`📱 About to send confirmation SMS to SENDER: ${order.sender_phone}`);
+      await sendSMSNotification(order.sender_phone, {
+        type: 'payment_confirmation',
+        quantity: order.quantity,
+        amount: order.total_amount,
+        currency: order.currency
+      });
+      console.log(`✅ Sender confirmation SMS sent to ${order.sender_phone}`);
+    } catch (senderSmsErr) {
+      console.warn(`⚠️ Sender SMS failed:`, senderSmsErr.message);
+    }
+    
+    // Update global memory for consistency
+    if (global.orders[orderId]) {
+      global.orders[orderId].status = 'paid';
+      global.orders[orderId].vouchers = vouchers;
+    }
+    
+    console.log('🎉 Approve completed successfully:', { orderId, vouchersCount: vouchers.length });
+    
+    res.json({
+      success: true,
+      message: 'Commande approuvée avec succès',
+      vouchers: vouchers
+    });
+  } catch (error) {
+    if (client) await client.query('ROLLBACK');
+    console.error('❌ Error approving order [DETAILED]:', { 
+      orderId: orderId || 'unknown',
+      error: error.message, 
+      stack: error.stack,
+      code: error.code
+    });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur lors de l\'approbation' 
+    });
+  } finally {
+    if (client) client.release();
+  }
+});
+
 
 
 
