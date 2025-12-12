@@ -129,7 +129,7 @@ class SMSService {
 
   // ---- Templates: voucher, payment, redemption, bulk ----------------------
 
-  async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
+  /*async sendVoucherCode(phoneNumber, code, amountText, senderName, expiresAt) {
   console.log("\n================= SEND VOUCHER CODE =================");
   console.log("[RAW INPUT] phoneNumber:", phoneNumber);
   console.log("[RAW INPUT] amountText:", amountText);
@@ -180,9 +180,83 @@ class SMSService {
   console.log("=====================================================\n");
 
   return this.sendSMS(formattedPhone, message, 'voucher_sent');
+} */
+
+////
+// ============================================
+// SMS SERVICE FIX - sendVoucherCode Function
+// Location: services/sms.js (or wherever your SMS service is)
+// ============================================
+
+// REPLACE YOUR CURRENT sendVoucherCode FUNCTION WITH THIS:
+
+async sendVoucherCode(phoneNumber, voucherCode, amountText, senderName, expiresAt) {
+  console.log('================= SEND VOUCHER CODE =================');
+  console.log('[RAW INPUT] phoneNumber:', phoneNumber);
+  console.log('[RAW INPUT] amountText:', amountText);
+  console.log('[RAW INPUT] senderName:', senderName);
+  console.log('[RAW INPUT] expiresAt:', expiresAt);
+
+  const formattedPhone = this.formatPhoneNumber(phoneNumber);
+  console.log('[FORMATTED PHONE]', formattedPhone);
+
+  // Detect currency
+  const currencyMatch = amountText.match(/USD|CDF/);
+  const currency = currencyMatch ? currencyMatch[0] : 'USD';
+  console.log('[CURRENCY DETECTED]', currency);
+
+  // 🔥 FIX: Extract digits AND decimal point
+  const digitsOnly = amountText.replace(/[^\d.]/g, '');  // Keep the decimal point!
+  console.log('[DIGITS ONLY EXTRACTED]', digitsOnly);
+
+  // 🔥 FIX: Use parseFloat to handle decimals properly
+  const numericAmount = parseFloat(digitsOnly) || 0;
+  console.log('[NUMERIC VALUE PARSED]', numericAmount);
+
+  // Format amount with proper decimal places
+  const formattedAmount = currency === 'USD' 
+    ? numericAmount.toFixed(2)  // USD: always 2 decimals (e.g., 10.00)
+    : Math.round(numericAmount);  // CDF: no decimals (e.g., 22500)
+
+  const finalAmount = `${formattedAmount} ${currency}`;
+  console.log('[FINAL AMOUNT]', finalAmount);
+
+  // Calculate expiry text
+  const expiryDays = Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24));
+  const expiryText = expiryDays > 0 
+    ? `Valide ${expiryDays} jours. Toute question: nimwema.com`
+    : 'Valide 90 jours. Toute question: nimwema.com';
+  
+  console.log('[EXPIRY TEXT]', expiryText);
+
+  // Build final message
+  const message = `${senderName} Vous a envoyé un bon d'achat de ${finalAmount}.\nCode: ${voucherCode}.\n${expiryText}`;
+  
+  console.log('[FINAL SMS MESSAGE BEFORE SEND]\n', message);
+  console.log('=====================================================');
+
+  return await this.sendSMS(formattedPhone, message, 'voucher_sent');
 }
 
+// ============================================
+// SUMMARY OF CHANGES
+// ============================================
 
+// BEFORE (BROKEN):
+// const digitsOnly = amountText.replace(/[^\d]/g, '');     // Removes decimal point
+// const numericAmount = parseInt(digitsOnly);              // Treats 1000 as integer
+
+// AFTER (FIXED):
+// const digitsOnly = amountText.replace(/[^\d.]/g, '');    // Keeps decimal point
+// const numericAmount = parseFloat(digitsOnly) || 0;       // Handles decimals properly
+
+// RESULT:
+// Input:  "10.00 USD"
+// Before: "1000" → 1000
+// After:  "10.00" → 10.00 ✅
+
+
+  ////
   async sendRedemptionConfirmation(phoneNumber, amount, merchantName) {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
     const amountText = amount.toLocaleString('fr-CD') + ' CDF';
