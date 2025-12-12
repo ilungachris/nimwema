@@ -113,6 +113,7 @@ function generatePresetButtons() {
 
 function selectCurrency(currency) {
   currentCurrency = currency;
+  
   document.querySelectorAll('.currency-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.currency === currency);
   });
@@ -133,13 +134,16 @@ function selectCurrency(currency) {
   updateTotalAmount();
 } */
 
+
+
   function selectPresetAmount(amount) {
-  // Convert amount to current currency if needed
+  // Convert amount to current currency if needed_
   selectedAmount = currentCurrency === 'USD' ? amount : convertToCDF(amount);
   
   document.querySelectorAll('.amount-preset-btn').forEach(btn => {
     btn.classList.remove('selected');
   });
+
   event.target.closest('.amount-preset-btn').classList.add('selected');
   document.getElementById('customAmount').value = '';
   updateTotalAmount();
