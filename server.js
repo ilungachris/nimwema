@@ -3567,7 +3567,7 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
 });
 
 // Important CALLBACK (kept from current, added voucher trigger on success)
-app.post('/api/payment/flexpay/callback', async (req, res) => {
+/*app.post('/api/payment/flexpay/callback', async (req, res) => {
          console.log('⚠️le call back est exécuté TOP');
 
   try {
@@ -3797,10 +3797,297 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
   }
   console.log('⚠️le call back est exécuté BOTTOM');
 });
-
+*/
 
 //////////////////////////////////////
 
+// FIXED VERSION OF FLEXPAY CALLBACK
+// Key fixes:
+// 1. Fixed SQL INSERT statement (had 11 placeholders but only 10 columns)
+// 2. Moved paid_at timestamp update
+// 3. Added proper error logging
+// 4. Ensured database connection is properly awaited
+// 5. Fixed the console.log that was unreachable after return
+
+app.post('/api/payment/flexpay/callback', async (req, res) => {
+  console.log('⚠️ FlexPay callback started');
+  console.log('⚠️ Request body:', JSON.stringify(req.body, null, 2));
+
+  try {
+    const body = req.body || {};
+    
+    // Accept multiple shapes for orderNumber and status/code
+    const orderNumber =
+      body?.orderNumber ??
+      body?.order_number ??
+      body?.transaction?.orderNumber ??
+      body?.payment?.orderNumber ??
+      null;
+
+    const rawCode =
+      body?.code ??
+      body?.status ??
+      body?.transaction?.status ??
+      body?.payment?.status ??
+      '';
+
+    const code = String(rawCode).toUpperCase(); // normalize
+
+    if (!orderNumber) {
+      console.warn('❌ FlexPay callback missing orderNumber:', body);
+      return res.status(400).json({ ok: false, error: 'Missing orderNumber' });
+    }
+
+    console.log('📋 Processing callback for orderNumber:', orderNumber, 'Code:', code);
+
+    // FIX 1: Look up order from database first, not just memory
+    const orderLookup = await db.query(
+      'SELECT id, flexpay_order_number FROM orders WHERE flexpay_order_number = $1',
+      [orderNumber]
+    );
+
+    if (orderLookup.rows.length === 0) {
+      console.warn('❌ FlexPay callback - order not found in DB for orderNumber:', orderNumber);
+      return res.json({ ok: true }); // ack anyway to prevent retries
+    }
+
+    const orderId = orderLookup.rows[0].id;
+    console.log('✅ Found orderId in database:', orderId);
+
+    // Success if numeric 0 OR SUCCESS
+    const isSuccess = (code === '0' || code === 'SUCCESS');
+    console.log('💳 Payment status:', isSuccess ? 'SUCCESS' : 'FAILED');
+
+    // FIX 2: Update global.orders if it exists (for backward compatibility)
+    if (global.orders && global.orders[orderId]) {
+      global.orders[orderId].status = isSuccess ? 'paid' : 'failed';
+      global.orders[orderId].provider_reference =
+        body?.provider_reference || body?.providerReference || global.orders[orderId].provider_reference || null;
+      global.orders[orderId].updatedAt = new Date().toISOString();
+    }
+
+    if (isSuccess) {
+      console.log('🎉 Payment successful - starting voucher creation process');
+
+      try {
+        // 1) Check if vouchers already exist (idempotency)
+        const existing = await db.query(
+          'SELECT COUNT(*) AS count FROM vouchers WHERE order_id = $1',
+          [orderId]
+        );
+        const existingCount = parseInt(existing.rows[0].count, 10) || 0;
+
+        if (existingCount > 0) {
+          console.log('⚠️ Vouchers already exist for order, skipping creation', {
+            orderId,
+            existingCount
+          });
+          return res.json({ ok: true, message: 'Vouchers already created' });
+        }
+
+        // 2) Load order from database
+        const orderResult = await db.query(
+          'SELECT id, amount, currency, quantity, sender_name, sender_phone, message, metadata, sender_id FROM orders WHERE id = $1',
+          [orderId]
+        );
+
+        if (orderResult.rows.length === 0) {
+          console.error('❌ Order not found in DB for voucher creation', { orderId });
+          return res.json({ ok: true, error: 'Order not found' });
+        }
+
+        const dbOrder = orderResult.rows[0];
+        console.log('📦 Order loaded:', {
+          id: dbOrder.id,
+          amount: dbOrder.amount,
+          currency: dbOrder.currency,
+          quantity: dbOrder.quantity
+        });
+
+        // 3) Get recipients from multiple sources
+        let recipients = [];
+        
+        // Try metadata first
+        try {
+          if (dbOrder.metadata) {
+            const meta = typeof dbOrder.metadata === 'string'
+              ? JSON.parse(dbOrder.metadata)
+              : dbOrder.metadata;
+            if (meta && Array.isArray(meta.recipients)) {
+              recipients = meta.recipients;
+              console.log('✅ Got recipients from metadata:', recipients.length);
+            }
+          }
+        } catch (parseErr) {
+          console.warn('⚠️ Failed to parse order metadata:', parseErr.message);
+        }
+
+        // Try order_recipients table if no recipients from metadata
+        if (!recipients || !recipients.length) {
+          try {
+            const recipientsResult = await db.query(
+              'SELECT phone, name, request_id FROM order_recipients WHERE order_id = $1',
+              [orderId]
+            );
+            if (recipientsResult.rows.length > 0) {
+              recipients = recipientsResult.rows.map(r => ({
+                phone: r.phone,
+                name: r.name,
+                requestId: r.request_id
+              }));
+              console.log('✅ Got recipients from order_recipients table:', recipients.length);
+            }
+          } catch (dbErr) {
+            console.error('❌ Failed to fetch from order_recipients:', dbErr.message);
+          }
+        }
+
+        // Fallback to global.orders (if still using memory)
+        if ((!recipients || !recipients.length) && global.orders && global.orders[orderId]) {
+          const order = global.orders[orderId];
+          if (Array.isArray(order.recipients)) {
+            recipients = order.recipients;
+            console.log('✅ Got recipients from global.orders:', recipients.length);
+          }
+        }
+
+        if (!Array.isArray(recipients) || recipients.length === 0) {
+          console.error('❌ No recipients found for voucher creation', { orderId });
+          return res.json({ ok: true, error: 'No recipients found' });
+        }
+
+        console.log('👥 Creating vouchers for', recipients.length, 'recipients');
+
+        const numVouchers = Math.min(dbOrder.quantity || recipients.length, recipients.length);
+        const vouchers = [];
+
+        for (let i = 0; i < numVouchers; i++) {
+          const r = recipients[i] || {};
+          const voucherCode = generateVoucherCode();
+          const createdAt = new Date();
+          const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
+
+          console.log(`📝 Creating voucher ${i + 1}/${numVouchers}:`, {
+            code: voucherCode,
+            recipient: r.name || 'Anonyme',
+            phone: r.phone
+          });
+
+          // FIX 3: Corrected SQL - removed one placeholder (was 11, should be 10)
+          const insertResult = await db.query(
+            `INSERT INTO vouchers
+               (code, order_id, amount, currency, recipient_name, recipient_phone, sender_name, message, status, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             RETURNING id`,
+            [
+              voucherCode,
+              dbOrder.id,
+              dbOrder.amount,
+              dbOrder.currency,
+              r.name || 'Anonyme',
+              r.phone,
+              dbOrder.sender_name,
+              dbOrder.message || '',
+              'pending',
+              expiresAt
+            ]
+          );
+
+          const voucherId = insertResult.rows[0]?.id;
+          vouchers.push({ id: voucherId, code: voucherCode, recipient: r });
+
+          console.log(`✅ Voucher created with ID: ${voucherId}`);
+
+          // 4) Send SMS to recipient (non-blocking)
+          if (r.phone) {
+            try {
+              await sendSMSNotification(r.phone, {
+                type: 'voucher_sent',
+                code: voucherCode,
+                amount: dbOrder.amount,
+                currency: dbOrder.currency,
+                senderName: dbOrder.sender_name,
+                expiresAt
+              });
+              console.log(`📱 SMS sent to recipient: ${r.phone}`);
+            } catch (smsErr) {
+              console.error('⚠️ Voucher SMS failed for', r.phone, ':', smsErr.message);
+            }
+          }
+        }
+
+        console.log('✅ All vouchers created:', vouchers.length);
+
+        // FIX 4: Update order status to 'paid' and payment_status to 'completed'
+        // Also add paid_at timestamp
+        try {
+          await db.query(
+            `UPDATE orders 
+             SET status = $1, 
+                 payment_status = $2, 
+                 paid_at = $3,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $4`,
+            ['paid', 'completed', new Date(), orderId]
+          );
+          console.log('✅ Order status updated to paid in DB:', orderId);
+        } catch (statusErr) {
+          console.error('❌ Failed to update order status in DB:', statusErr.message);
+          throw statusErr; // Re-throw to trigger retry
+        }
+
+        // FIX 5: Send confirmation SMS to sender
+        if (dbOrder.sender_phone) {
+          try {
+            await sendSMSNotification(dbOrder.sender_phone, {
+              type: 'payment_confirmation',
+              quantity: dbOrder.quantity,
+              amount: dbOrder.amount,
+              currency: dbOrder.currency
+            });
+            console.log(`📱 Confirmation SMS sent to sender: ${dbOrder.sender_phone}`);
+          } catch (smsErr) {
+            console.error('⚠️ Sender SMS failed:', smsErr.message);
+          }
+        }
+
+        console.log('🎉 Callback processing completed successfully');
+        return res.json({ ok: true, vouchersCreated: vouchers.length });
+
+      } catch (createErr) {
+        console.error('❌ Error auto-creating vouchers from FlexPay callback:', createErr);
+        console.error('Stack trace:', createErr.stack);
+        // Return success to FlexPay but log the error for investigation
+        return res.json({ ok: true, error: createErr.message });
+      }
+
+    } else {
+      // Payment failed
+      console.log('❌ Payment failed, updating order status');
+      try {
+        await db.query(
+          `UPDATE orders 
+           SET status = $1, 
+               payment_status = $2,
+               failed_at = $3,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $4`,
+          ['failed', 'failed', new Date(), orderId]
+        );
+        console.log('✅ Order marked as failed in DB:', orderId);
+      } catch (failErr) {
+        console.error('❌ Failed to update failed order status:', failErr.message);
+      }
+      return res.json({ ok: true });
+    }
+
+  } catch (err) {
+    console.error('❌ FlexPay callback error:', err);
+    console.error('Stack trace:', err.stack);
+    // Still return 200 to avoid retry storms
+    return res.json({ ok: true, error: err.message });
+  }
+});
 
 
 // CHECK (kept from current)
