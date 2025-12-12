@@ -123,8 +123,20 @@ function selectCurrency(currency) {
   updateTotalAmount();
 }
 
-function selectPresetAmount(amount) {
+/* function selectPresetAmount(amount) {
   selectedAmount = amount;
+  document.querySelectorAll('.amount-preset-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  event.target.closest('.amount-preset-btn').classList.add('selected');
+  document.getElementById('customAmount').value = '';
+  updateTotalAmount();
+} */
+
+  function selectPresetAmount(amount) {
+  // Convert amount to current currency if needed
+  selectedAmount = currentCurrency === 'USD' ? amount : convertToCDF(amount);
+  
   document.querySelectorAll('.amount-preset-btn').forEach(btn => {
     btn.classList.remove('selected');
   });
