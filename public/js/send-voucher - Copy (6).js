@@ -237,10 +237,7 @@ function toggleRecipientFields() {
 async function loadWaitingList() {
   try {
     const response = await fetch('/api/requests?status=pending&requestType=waiting_list');
-    const data = await response.json();
-    // Handle both direct array and { requests: [...] } format
-    const requests = Array.isArray(data) ? data : (data.requests || data.data || []);
-    console.log('Loaded waiting list requests:', requests.length, requests);
+    const requests = await response.json();
     waitingListRequests = requests;
     renderWaitingList(requests);
   } catch (error) {
@@ -380,21 +377,10 @@ async function handleFormSubmit(e) {
 
   if (formData.recipientType === 'waiting_list') {
     const selected = document.querySelectorAll('.waiting-list-checkbox:checked');
-    console.log('Selected waiting list checkboxes:', selected.length);
-    console.log('waitingListRequests:', waitingListRequests);
-    
     formData.recipients = Array.from(selected).map(cb => {
-      const cbValue = cb.value;
-      // Handle both string IDs (UUIDs) and integer IDs
-      const req = waitingListRequests.find(r => String(r.id) === String(cbValue));
-      console.log('Looking for request with id:', cbValue, 'Found:', req);
-      if (!req) {
-        console.error('Request not found for id:', cbValue);
-        return null;
-      }
+      const req = waitingListRequests.find(r => r.id === parseInt(cb.value));
       return { phone: req.phone, name: req.fullName, requestId: req.id };
-    }).filter(r => r !== null);
-    
+    });
     if (!formData.recipients.length) {
       window.Nimwema.showNotification('Veuillez sélectionner au moins un destinataire', 'error');
       return;
