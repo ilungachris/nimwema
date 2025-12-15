@@ -373,6 +373,13 @@ async function handleFormSubmit(e) {
   };
   const senderPhoneEl = document.getElementById('senderPhone');
   if (senderPhoneEl) formData.senderPhone = (senderPhoneEl.value || '').trim();
+  // Add email and password for Cash/WU orders
+  if (["cash", "bank"].includes(formData.paymentMethod)) {
+    const emailEl = document.getElementById("senderEmail");
+    const passwordEl = document.getElementById("senderPassword");
+    if (emailEl) formData.email = emailEl.value.trim();
+    if (passwordEl) formData.password = passwordEl.value;
+  }
 
 
   if (formData.recipientType === 'waiting_list') {
@@ -524,21 +531,9 @@ async function processFlexPayCardPayment(formData) {
 // Manual Payment (Cash/Bank)
 async function processManualPayment(formData) {
   try {
-    // Check if user is logged in
-    const userStr = localStorage.getItem('nimwema_user');
-    const isLoggedIn = userStr && JSON.parse(userStr)?.id;
-    
-    if (!isLoggedIn) {
-      // Store the order data in sessionStorage for later retrieval
-      sessionStorage.setItem('pendingVoucherOrder', JSON.stringify(formData));
-      
-      // Redirect to login page with a flag indicating cash/bank order
-      window.location.href = '/login.html?redirect=send&reason=cash_order';
-      return;
-    }
 
-    // User is logged in, proceed with creating the order
-    console.log('🔍 Sending formData to create-pending:', formData);
+    // In processManualPayment(), before fetch:
+console.log('🔍 Sending formData to create-pending:', formData); // Debug payload
 
     // Create pending order
     const response = await fetch('/api/vouchers/create-pending', {

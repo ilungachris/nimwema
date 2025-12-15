@@ -156,31 +156,6 @@
             border: 1px solid #4caf50;
         }
 
-        .info-message {
-            background: #e3f2fd;
-            color: #1565c0;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #2196f3;
-        }
-
-        .info-message strong {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 1.1em;
-        }
-
-        .info-message p {
-            margin: 6px 0;
-            font-size: 14px;
-        }
-
-        .info-message a {
-            color: #1565c0;
-            font-weight: 600;
-        }
-
         .loading {
             display: none;
             text-align: center;
@@ -250,13 +225,6 @@
 
             <div id="errorMessage" class="error-message" role="alert" aria-live="polite"></div>
             <div id="successMessage" class="success-message" role="alert" aria-live="polite"></div>
-            
-            <!-- Info message for cash/bank order redirect -->
-            <div id="cashOrderInfo" class="info-message" role="alert" style="display: none;">
-                <strong>📋 Commande en attente</strong>
-                <p>Pour suivre votre envoi en cash ou par virement bancaire, vous devez vous connecter à votre compte.</p>
-                <p>Pas encore de compte ? <a href="signup.html?redirect=send&reason=cash_order">Créez-en un ici</a></p>
-            </div>
 
             <form id="loginForm" novalidate>
                 <div class="form-group">
@@ -451,19 +419,6 @@
                     }
 
                     showSuccess('Connexion réussie ! Redirection en cours...');
-                    
-                    // Check for pending cash/bank order
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const redirect = urlParams.get('redirect');
-                    const reason = urlParams.get('reason');
-                    
-                    if (redirect === 'send' && reason === 'cash_order') {
-                        // Redirect back to send page to complete the order
-                        setTimeout(() => {
-                            window.location.href = '/send.html?resume=true';
-                        }, 1500);
-                        return;
-                    }
 
                     // Redirect based on role
                     setTimeout(() => {
@@ -499,33 +454,10 @@
 
         // FIXED Already Logged Check (use CONFIG key)
         window.addEventListener('DOMContentLoaded', () => {
-            // Check for cash/bank order redirect
-            const urlParams = new URLSearchParams(window.location.search);
-            const redirect = urlParams.get('redirect');
-            const reason = urlParams.get('reason');
-            
-            if (reason === 'cash_order') {
-                const infoBox = document.getElementById('cashOrderInfo');
-                if (infoBox) {
-                    infoBox.style.display = 'block';
-                }
-            }
-            
             const userStr = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
             if (userStr) {
                 try {
                     const userData = JSON.parse(userStr);
-                    
-                    // If redirected from cash order, process the pending order
-                    if (redirect === 'send' && reason === 'cash_order') {
-                        const pendingOrder = sessionStorage.getItem('pendingVoucherOrder');
-                        if (pendingOrder) {
-                            // Redirect back to send page to complete the order
-                            window.location.href = '/send.html?resume=true';
-                            return;
-                        }
-                    }
-                    
                     // Redirect to appropriate dashboard
                     switch (userData.role) {
                         case 'admin':
