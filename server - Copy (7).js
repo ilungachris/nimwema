@@ -325,23 +325,12 @@ async function sendSMSNotification(phone, data) {
       );
 
     } else if (data.type === 'payment_confirmation') {
-      // Build payment confirmation message
-      const amountText = data.currency === 'USD' 
-        ? `${data.amount} USD` 
-        : `${formatCurrency(data.amount)} CDF`;
-      const confirmMessage = `✅ Nimwema: Votre paiement de ${amountText} a été confirmé. ${data.quantity} bon(s) d'achat ont été envoyés aux destinataires.`;
-      
-      // Use sendSMS with fallback if sendPaymentConfirmation doesn't exist
-      if (typeof sms.sendPaymentConfirmation === 'function') {
-        result = await sms.sendPaymentConfirmation(
-          phone,
-          data.quantity,
-          data.amount,
-          data.currency
-        );
-      } else {
-        result = await sms.sendSMS(phone, confirmMessage, 'payment_confirmation');
-      }
+      result = await sms.sendPaymentConfirmation(
+        phone,
+        data.quantity,
+        data.amount,
+        data.currency
+      );
 
     } else if (data.type === 'redemption_confirmation') {
       result = await sms.sendRedemptionConfirmation(
@@ -4349,15 +4338,13 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
           return res.json({ ok: true, error: 'No recipients found' });
         }
 
-        // FIX: Create `quantity` vouchers (not just one per recipient)
-        const numVouchers = parseInt(dbOrder.quantity) || recipients.length;
-        console.log(`👥 Creating ${numVouchers} voucher(s) for ${recipients.length} recipient(s)`);
+        console.log('👥 Creating vouchers for', recipients.length, 'recipients');
 
+        const numVouchers = Math.min(dbOrder.quantity || recipients.length, recipients.length);
         const vouchers = [];
 
         for (let i = 0; i < numVouchers; i++) {
-          // Cycle through recipients if fewer recipients than quantity
-          const r = recipients[i % recipients.length] || {};
+          const r = recipients[i] || {};
           const voucherCode = generateVoucherCode();
           const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
@@ -5001,15 +4988,13 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
       });
     }
     
-    // FIX: Create `quantity` vouchers (not just one per recipient)
-    // Distribute vouchers among recipients by cycling through them
-    const numVouchers = parseInt(order.quantity) || recipients.length;
-    console.log(`🔄 Starting voucher generation loop: ${numVouchers} voucher(s) for ${recipients.length} recipient(s)`);
+    // FIXED: Sync loop to min(quantity, recipients.length) to avoid mismatch
+    const numVouchers = Math.min(order.quantity, recipients.length);
+    console.log('🔄 Starting voucher generation loop (numVouchers):', numVouchers); // Log 5: Before loop
     
     const vouchers = [];
     for (let i = 0; i < numVouchers; i++) {
-      // Cycle through recipients if fewer recipients than quantity
-      const recipient = recipients[i % recipients.length];
+      const recipient = recipients[i];
       const voucherCode = generateVoucherCode();
       console.log(`📄 Generating voucher ${i+1}/${numVouchers} for phone: ${recipient.phone}`); // Log 6: Per voucher
       
@@ -5188,15 +5173,13 @@ app.post('/api/admin/orders/:orderId/approve', authMiddleware.requireAuth, authM
       });
     }
     
-    // FIX: Create `quantity` vouchers (not just one per recipient)
-    // Distribute vouchers among recipients by cycling through them
-    const numVouchers = parseInt(order.quantity) || recipients.length;
-    console.log(`🔄 Starting voucher generation loop: ${numVouchers} voucher(s) for ${recipients.length} recipient(s)`);
+    // FIXED: Sync loop to min(quantity, recipients.length) to avoid mismatch
+    const numVouchers = Math.min(order.quantity, recipients.length);
+    console.log('🔄 Starting voucher generation loop (numVouchers):', numVouchers);
     
     const vouchers = [];
     for (let i = 0; i < numVouchers; i++) {
-      // Cycle through recipients if fewer recipients than quantity
-      const recipient = recipients[i % recipients.length];
+      const recipient = recipients[i];
       const voucherCode = generateVoucherCode();
       
       console.log(`\n📄 Generating voucher ${i+1}/${numVouchers}`);
