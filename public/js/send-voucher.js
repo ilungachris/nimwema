@@ -224,13 +224,24 @@ function updateBatchInfo(quantity) {
 
 function toggleRecipientFields() {
   const recipientType = document.querySelector('input[name="recipientType"]:checked').value;
+  const waitingListSection = document.getElementById('waitingListSection');
+  const specificSection = document.getElementById('specificRecipientsSection');
+  
   if (recipientType === 'waiting_list') {
-    document.getElementById('waitingListSection').classList.remove('hidden');
-    document.getElementById('specificRecipientsSection').classList.add('hidden');
+    waitingListSection.classList.remove('hidden');
+    specificSection.classList.add('hidden');
+    // Disable required on hidden recipient phone inputs to prevent validation errors
+    specificSection.querySelectorAll('.recipient-phone').forEach(input => {
+      input.removeAttribute('required');
+    });
     loadWaitingList();
   } else {
-    document.getElementById('waitingListSection').classList.add('hidden');
-    document.getElementById('specificRecipientsSection').classList.remove('hidden');
+    waitingListSection.classList.add('hidden');
+    specificSection.classList.remove('hidden');
+    // Re-enable required on visible recipient phone inputs
+    specificSection.querySelectorAll('.recipient-phone').forEach(input => {
+      input.setAttribute('required', 'required');
+    });
   }
 }
 
