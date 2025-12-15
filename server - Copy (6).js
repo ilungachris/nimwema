@@ -3005,14 +3005,8 @@ app.post('/api/vouchers/create', async (req, res) => {
     const createdAt = new Date().toISOString();
     const expiresAt = new Date(Date.now() + (parseInt(process.env.VOUCHER_EXPIRY_DAYS) || 90) * 24 * 60 * 60 * 1000).toISOString();
 
-    // FIX: Create `quantity` vouchers (not just one per recipient)
-    // Distribute vouchers among recipients by cycling through them
-    const qty = parseInt(quantity) || recipients.length;
-    console.log(`📦 Creating ${qty} voucher(s) for ${recipients.length} recipient(s)`);
-    
-    for (let i = 0; i < qty; i++) {
-      // Cycle through recipients if fewer recipients than quantity
-      const recipient = recipients[i % recipients.length];
+    // Generate vouchers for each recipient
+    for (const recipient of recipients) {
       const voucherCode = generateVoucherCode();
       
       // FIX 3: Insert voucher into database instead of in-memory array
@@ -3054,9 +3048,9 @@ app.post('/api/vouchers/create', async (req, res) => {
       };
       
       vouchers.push(voucher);
-      console.log(`✅ Voucher ${i + 1}/${qty} created in DB:`, { id: voucherId, code: voucherCode, phone: recipient.phone });
+      console.log('✅ Voucher created in DB:', { id: voucherId, code: voucherCode, phone: recipient.phone });
 
-      // Send SMS to recipient for each voucher
+      // Send SMS to recipient
       try {
         await sendSMSNotification(recipient.phone, {
           type: 'voucher_sent',
@@ -3066,14 +3060,14 @@ app.post('/api/vouchers/create', async (req, res) => {
           senderName: senderName || 'Anonyme',
           expiresAt: expiresAt
         });
-        console.log(`✅ SMS ${i + 1}/${qty} sent to:`, recipient.phone);
+        console.log('✅ SMS sent to:', recipient.phone);
       } catch (smsError) {
         console.error('⚠️ SMS failed for:', recipient.phone, smsError.message);
         // Continue even if SMS fails
       }
 
-      // Update request status if from waiting list (only once per unique requestId)
-      if (recipient.requestId && i === recipients.findIndex(r => r.requestId === recipient.requestId)) {
+      // Update request status if from waiting list
+      if (recipient.requestId) {
         try {
           await db.query(
             'UPDATE requests SET status = $1 WHERE id = $2',
@@ -3787,15 +3781,11 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
               if (!Array.isArray(recipients) || recipients.length === 0) {
                 console.warn('No recipients found for voucher creation from callback', { orderId });
               } else {
-                // FIX: Create `quantity` vouchers (not just one per recipient)
-                // Distribute vouchers among recipients by cycling through them
-                const numVouchers = parseInt(dbOrder.quantity) || recipients.length;
-                console.log(`👥 Creating ${numVouchers} voucher(s) for ${recipients.length} recipient(s)`);
+                const numVouchers = Math.min(dbOrder.quantity || recipients.length, recipients.length);
                 const vouchers = [];
 
                 for (let i = 0; i < numVouchers; i++) {
-                  // Cycle through recipients if fewer recipients than quantity
-                  const r = recipients[i % recipients.length] || {};
+                  const r = recipients[i] || {};
                   const voucherCode = generateVoucherCode();
                   const createdAt = new Date().toISOString();
                   const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 jours
@@ -3823,9 +3813,7 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
                   const voucherId = insertResult.rows[0] && insertResult.rows[0].id;
                   vouchers.push({ id: voucherId, code: voucherCode, recipient: r });
 
-                  console.log(`✅ Voucher ${i + 1}/${numVouchers} created with ID: ${voucherId}`);
-
-                  // 4) SMS au destinataire for each voucher
+                  // 4) SMS au destinataire (non bloquant pour le callback)
                   try {
                     if (r.phone) {
                       await sendSMSNotification(r.phone, {
@@ -3836,7 +3824,6 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
                         senderName: dbOrder.sender_name,
                         expiresAt
                       });
-                      console.log(`📱 SMS ${i + 1}/${numVouchers} sent to: ${r.phone}`);
                     }
                   } catch (smsErr) {
                     console.warn('Voucher SMS failed for', r.phone, smsErr.message);
@@ -4046,16 +4033,13 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
           return res.json({ ok: true, error: 'No recipients found' });
         }
 
-        // FIX: Create `quantity` vouchers (not just one per recipient)
-        // Distribute vouchers among recipients by cycling through them
-        const numVouchers = parseInt(dbOrder.quantity) || recipients.length;
-        console.log(`👥 Creating ${numVouchers} voucher(s) for ${recipients.length} recipient(s)`);
+        console.log('👥 Creating vouchers for', recipients.length, 'recipients');
 
+        const numVouchers = Math.min(dbOrder.quantity || recipients.length, recipients.length);
         const vouchers = [];
 
         for (let i = 0; i < numVouchers; i++) {
-          // Cycle through recipients if fewer recipients than quantity
-          const r = recipients[i % recipients.length] || {};
+          const r = recipients[i] || {};
           const voucherCode = generateVoucherCode();
           const createdAt = new Date();
           const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
@@ -4089,9 +4073,9 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
           const voucherId = insertResult.rows[0]?.id;
           vouchers.push({ id: voucherId, code: voucherCode, recipient: r });
 
-          console.log(`✅ Voucher ${i + 1}/${numVouchers} created with ID: ${voucherId}`);
+          console.log(`✅ Voucher created with ID: ${voucherId}`);
 
-          // 4) Send SMS to recipient for each voucher
+          // 4) Send SMS to recipient (non-blocking)
           if (r.phone) {
             try {
               await sendSMSNotification(r.phone, {
@@ -4102,7 +4086,7 @@ app.post('/api/payment/flexpay/callback', async (req, res) => {
                 senderName: dbOrder.sender_name,
                 expiresAt
               });
-              console.log(`📱 SMS ${i + 1}/${numVouchers} sent to recipient: ${r.phone}`);
+              console.log(`📱 SMS sent to recipient: ${r.phone}`);
             } catch (smsErr) {
               console.error('⚠️ Voucher SMS failed for', r.phone, ':', smsErr.message);
             }
