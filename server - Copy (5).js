@@ -1852,23 +1852,15 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
     const feeAmount = subtotal * 0.035;
     const total = coverFees ? subtotal + feeAmount : subtotal;
     
-    // FIXED: Validate recipients (must be non-empty array, can have 1 to quantity recipients)
-    // Business logic: Allow sending multiple vouchers to the same recipient (e.g., 10 vouchers to 1 person)
-    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+    // FIXED: Validate recipients (must be non-empty array)
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0 || recipients.length !== quantity) {
       console.warn('❌ Invalid recipients in create-pending:', { orderId, provided: recipients, quantity });
       return res.status(400).json({ 
         success: false, 
-        message: `Liste des destinataires requise (au moins 1 destinataire)` 
+        message: `Liste des destinataires requise (tableau de ${quantity} éléments minimum)` 
       });
     }
-    if (recipients.length > quantity) {
-      console.warn('❌ Too many recipients in create-pending:', { orderId, recipientsCount: recipients.length, quantity });
-      return res.status(400).json({ 
-        success: false, 
-        message: `Trop de destinataires (${recipients.length}) pour ${quantity} bon(s)` 
-      });
-    }
-    console.log('✅ Recipients validated:', { orderId, count: recipients.length, quantity, sample: recipients[0] }); // Log first for debug
+    console.log('✅ Recipients validated:', { orderId, count: recipients.length, sample: recipients[0] }); // Log first for debug
     
     // Prepare metadata
     const metadata = { recipients, hideIdentity: hideIdentity || false }; // Include hideIdentity if sent
@@ -1965,19 +1957,10 @@ app.post('/api/vouchers/create-pending', async (req, res) => {
   }
 
   const qty = parseInt(quantity);
-  
-  // Business logic: Allow sending multiple vouchers to the same recipient (e.g., 10 vouchers to 1 person)
-  // Recipients array must have at least 1, but can have fewer than quantity
-  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+  if (recipients.length !== qty) {
     return res.status(400).json({
       success: false,
-      message: `Au moins 1 destinataire requis`
-    });
-  }
-  if (recipients.length > qty) {
-    return res.status(400).json({
-      success: false,
-      message: `Trop de destinataires (${recipients.length}) pour ${qty} bon(s)`
+      message: `Nombre de destinataires (${recipients.length}) ≠ quantité (${qty})`
     });
   }
 
