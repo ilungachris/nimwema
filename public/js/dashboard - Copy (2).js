@@ -33,64 +33,6 @@ let allSenders = [];
 let deleteTarget = null; // { type: 'recipient'|'sender', id: '...' }
 
 // ============================================
-// PENDING ORDER PROCESSING (Cash/Bank orders)
-// ============================================
-
-async function checkAndProcessPendingOrder() {
-  const pendingOrderStr = sessionStorage.getItem('pendingVoucherOrder');
-  
-  if (!pendingOrderStr) {
-    return; // No pending order
-  }
-  
-  console.log('[Dashboard] Found pending cash/bank order, processing...');
-  
-  try {
-    const formData = JSON.parse(pendingOrderStr);
-    
-    // Show a loading notification
-    showNotification('Création de votre commande en cours...', 'info');
-    
-    // Create the pending order via API
-    const response = await fetch(`${CONFIG.API_BASE}/vouchers/create-pending`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(formData)
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.success) {
-      // Clear the pending order from sessionStorage
-      sessionStorage.removeItem('pendingVoucherOrder');
-      
-      // Store for payment instructions if needed
-      sessionStorage.setItem('pendingOrder', JSON.stringify(result.order));
-      
-      showNotification('✅ Commande créée avec succès!', 'success');
-      
-      // Ask user if they want to see payment instructions
-      setTimeout(() => {
-        if (confirm('Votre commande a été créée. Voulez-vous voir les instructions de paiement?')) {
-          window.location.href = '/payment-instructions.html';
-        } else {
-          // Reload the sent vouchers to show the new order
-          loadSentVouchersPreview();
-        }
-      }, 500);
-    } else {
-      throw new Error(result.message || 'Erreur lors de la création de la commande');
-    }
-  } catch (error) {
-    console.error('[Dashboard] Error processing pending order:', error);
-    showNotification('Erreur: ' + (error.message || 'Impossible de créer la commande'), 'error');
-    // Keep the pending order in case user wants to retry
-    // sessionStorage.removeItem('pendingVoucherOrder');
-  }
-}
-
-// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -100,9 +42,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!checkAuth()) {
     return;
   }
-  
-  // Check for pending cash/bank order from send page
-  checkAndProcessPendingOrder();
   
   // Load home section by default
   showSection('home');
