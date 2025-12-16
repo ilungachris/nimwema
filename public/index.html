@@ -25,9 +25,15 @@
                 <button class="lang-btn" data-lang="ln">LN</button>
                 <button class="lang-btn" data-lang="en">EN</button>
             </div>
-            <button class="login-btn" onclick="window.location.href='/login.html'">
+ <button class="login-btn" id="loginBtn" onclick="window.location.href='/login.html'">
                 <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
             </button>
+            
+            <!-- User Menu (shown when logged in) -->
+            <div class="user-menu" id="userMenu" style="display: none;">
+                <span class="user-name" id="userName">Utilisateur</span>
+                <button class="btn-logout" onclick="logout()" data-i18n="logout">Déconnexion</button>
+            </div>
         </div>
         
         <!-- Main Header: Logo + Menu -->

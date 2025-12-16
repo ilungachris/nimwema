@@ -1,5 +1,34 @@
 // Nimwema Platform - Main JavaScript
+// Check authentication status and update header
+function updateAuthHeader() {
+    const user = JSON.parse(localStorage.getItem('nimwema_user') || 'null');
+    const loginBtn = document.getElementById('loginBtn');
+    const userMenu = document.getElementById('userMenu');
+    const userName = document.getElementById('userName');
+    
+    if (user && user.name) {
+        // User is logged in
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (userMenu) {
+            userMenu.style.display = 'flex';
+            userName.textContent = user.name;
+        }
+    } else {
+        // User is logged out
+        if (loginBtn) loginBtn.style.display = 'block';
+        if (userMenu) userMenu.style.display = 'none';
+    }
+}
 
+// Logout function
+function logout() {
+    localStorage.removeItem('nimwema_user');
+    localStorage.removeItem('nimwema_token');
+    window.location.href = '/login.html';
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', updateAuthHeader);
 // Toggle mobile menu
 function toggleMenu() {
   const hamburger = document.querySelector('.hamburger');
