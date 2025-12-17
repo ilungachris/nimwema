@@ -13,21 +13,84 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
     <link rel="stylesheet" href="/css/dashboard.css">
-    <link rel="stylesheet" href="/css/layout.css">
 </head>
 <body>
-    <!-- ============================================
-         LAYOUT PLACEHOLDERS
-         ============================================ -->
-    <div id="app-header"></div>
-    <div id="app-mobile-nav"></div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <div class="user-menu">
+                <span class="user-name" id="userName">Utilisateur</span>
+                <button class="btn-logout" onclick="logout()" data-i18n="logout">Déconnexion</button>
+            </div>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
 
-    <!-- ============================================
-         DASHBOARD LAYOUT
-         ============================================ -->
+    <!-- Main Dashboard -->
     <main class="dashboard-container">
-        <!-- Sidebar (injected by layout.js) -->
-        <div id="app-sidebar"></div>
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-sidebar" id="dashboardSidebar">
+            <nav class="dashboard-nav">
+                <!-- Home -->
+                <a href="#home" class="nav-item active" onclick="showSection('home')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Accueil</span>
+                </a>
+                
+                <!-- Sent Vouchers -->
+                <a href="#sent-vouchers" class="nav-item" onclick="showSection('sent-vouchers')">
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-text">Bons envoyés</span>
+                </a>
+                
+                <!-- Requested Vouchers -->
+                <a href="#requested-vouchers" class="nav-item" onclick="showSection('requested-vouchers')">
+                    <span class="nav-icon">📥</span>
+                    <span class="nav-text">Bons demandés</span>
+                </a>
+                
+                <!-- Recipients (for senders) -->
+                <a href="#recipients" class="nav-item" onclick="showSection('recipients')">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Mes Destinataires</span>
+                </a>
+                
+                <!-- Senders (for requesters) -->
+                <a href="#senders" class="nav-item" onclick="showSection('senders')">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Mes Expéditeurs</span>
+                </a>
+                
+                <!-- Divider -->
+                <div class="nav-divider"></div>
+                
+                <!-- CTAs -->
+                <a href="/send.html" class="nav-item nav-item-primary">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-text">Envoyer un bon</span>
+                </a>
+                
+                <a href="/request.html" class="nav-item nav-item-secondary">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">Demander un bon</span>
+                </a>
+            </nav>
+        </aside>
 
         <!-- Dashboard Content -->
         <div class="dashboard-content">
@@ -123,16 +186,25 @@
                 <div class="filters-bar">
                     <div class="filter-group">
                         <label>Filtrer par statut:</label>
-                        <select id="requestedStatusFilter" class="form-select" onchange="filterRequestedVouchers()">
+                        <select id="requestStatusFilter" class="form-select" onchange="filterRequestedVouchers()">
                             <option value="all">Tous</option>
                             <option value="pending">En attente</option>
-                            <option value="sent">Envoyé</option>
+                            <option value="fulfilled">Satisfait</option>
                             <option value="expired">Expiré</option>
+                            <option value="cancelled">Annulé</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Filtrer par type:</label>
+                        <select id="requestTypeFilter" class="form-select" onchange="filterRequestedVouchers()">
+                            <option value="all">Tous</option>
+                            <option value="known_sender">Expéditeur connu</option>
+                            <option value="waiting_list">Liste d'attente</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label>Trier par:</label>
-                        <select id="requestedSortBy" class="form-select" onchange="sortRequestedVouchers()">
+                        <select id="requestSortBy" class="form-select" onchange="sortRequestedVouchers()">
                             <option value="date_desc">Plus récent</option>
                             <option value="date_asc">Plus ancien</option>
                         </select>
@@ -302,35 +374,18 @@
         </div>
     </div>
 
-    <!-- ============================================
-         FOOTER PLACEHOLDER
-         ============================================ -->
-    <div id="app-footer"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
 
-    <!-- ============================================
-         SCRIPTS
-         ============================================ -->
+    <!-- Scripts -->
     <script src="/js/i18n.js"></script>
-    <script src="/js/layout.js"></script>
+    <script src="/js/main.js"></script>
     <script src="/js/dashboard.js"></script>
-    <script>
-        // Initialize layout with user sidebar
-        NimwemaLayout.init({
-            sidebar: 'user',
-            activePage: 'dashboard',
-            activeSection: 'home'
-        });
-        
-        // Hook into showSection to update sidebar active state
-        const _originalShowSection = window.showSection;
-        window.showSection = function(sectionName) {
-            // Update sidebar active state
-            NimwemaLayout.updateSidebarActive(sectionName);
-            // Call original function
-            if (_originalShowSection) {
-                _originalShowSection(sectionName);
-            }
-        };
-    </script>
 </body>
 </html>

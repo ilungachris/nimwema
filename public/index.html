@@ -13,64 +13,33 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
-<link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/layout.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <!-- Top Bar: Language Selector + Login -->
-        <div class="header-top">
-            <div class="language-selector">
-                <button class="lang-btn active" data-lang="fr">FR</button>
-                <button class="lang-btn" data-lang="ln">LN</button>
-                <button class="lang-btn" data-lang="en">EN</button>
-            </div>
- <button class="login-btn" id="loginBtn" onclick="window.location.href='/login.html'">
-                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
-            </button>
-            
-            <!-- User Menu (shown when logged in) -->
-            <div class="user-menu" id="userMenu" style="display: none;">
-                <span class="user-name" id="userName">Utilisateur</span>
-                <button class="btn-logout" onclick="logout()" data-i18n="logout">Déconnexion</button>
-            </div>
-        </div>
-        
-        <!-- Main Header: Logo + Menu -->
-        <div class="header-main">
-            <a href="/" class="logo">
-                NIM<span class="w">W</span>EMA
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </header>
+    <!-- ============================================
+         LAYOUT PLACEHOLDERS
+         ============================================ -->
+    <div id="app-header"></div>
+    <div id="app-mobile-nav"></div>
 
-    <!-- Main Content -->
+    <!-- ============================================
+         PAGE CONTENT
+         ============================================ -->
     <main>
-        <!-- Line 3: Tagline -->
+        <!-- Hero Section -->
         <section class="hero-section">
             <div class="container">
                 <h1 class="hero-title" data-i18n="tagline">
                     Bons d'achat simples et sécurisés.
                 </h1>
                 
-                <!-- Line 4: Hero Card with Image -->
+                <!-- Hero Card with Image -->
                 <div class="hero-card">
-                    <!--<img src="/images/homepic.jpg" alt="Nimwema Hero" class="hero-image">-->
                     <picture class="hero-image-wrapper">
-    <!-- Desktop image -->
-    <source srcset="/images/homepic-desktop.jpg" media="(min-width: 992px)">
-
-    <!-- Tablet image -->
-    <source srcset="/images/homepic-tablet.jpg" media="(min-width: 600px)">
-
-    <!-- Mobile fallback -->
-    <img src="/images/homepic-mobile.jpg" alt="Nimwema Hero" class="hero-image">
-</picture>
+                        <source srcset="/images/homepic-desktop.jpg" media="(min-width: 992px)">
+                        <source srcset="/images/homepic-tablet.jpg" media="(min-width: 600px)">
+                        <img src="/images/homepic-mobile.jpg" alt="Nimwema Hero" class="hero-image">
+                    </picture>
                     <div class="hero-overlay">
                         <div class="hero-text">
                             <span data-i18n="hero_line1">Le <span class="text-green">bien</span> circule.</span><br>
@@ -84,7 +53,7 @@
             </div>
         </section>
 
-        <!-- Line 5: Support Text with Green Badge -->
+        <!-- Support Text Section -->
         <section class="container">
             <div class="support-section">
                 <p class="support-text" data-i18n="support_text">
@@ -96,7 +65,7 @@
             </div>
         </section>
 
-        <!-- Lines 6 & 7: Main CTA Buttons -->
+        <!-- Main CTA Buttons -->
         <section class="container">
             <div class="cta-buttons">
                 <button class="btn btn-primary btn-large" onclick="window.location.href='/send.html'" data-i18n="send_voucher">
@@ -105,30 +74,28 @@
                 <button class="btn btn-primary btn-large" onclick="window.location.href='/request.html'" data-i18n="request_voucher">
                     Demander un bon d'achat
                 </button>
-                
             </div>
         </section>
 
-        <!-- Line 8: Merchants Section -->
+        <!-- Merchants Section -->
         <section class="merchants-section">
             <div class="container">
                 <h2 class="merchants-title" data-i18n="our_merchants">Nos Marchands</h2>
                 <div class="merchants-grid" id="merchantsGrid">
-                    <!-- Merchants will be loaded dynamically -->
                     <div class="merchant-card">
-                        <img src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%238BC34A" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="24" fill="%23111111"%3ESC%3C/text%3E%3C/svg%3E" alt="Merchant 1" class="merchant-logo">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%238BC34A' width='80' height='80'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23111111'%3EKM%3C/text%3E%3C/svg%3E" alt="Kin Marché" class="merchant-logo">
                         <div class="merchant-name">Kin Marché</div>
                     </div>
                     <div class="merchant-card">
-                        <img src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%238BC34A" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="24" fill="%23111111"%3EMM%3C/text%3E%3C/svg%3E" alt="Merchant 2" class="merchant-logo">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%238BC34A' width='80' height='80'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23111111'%3EBL%3C/text%3E%3C/svg%3E" alt="Bellisima" class="merchant-logo">
                         <div class="merchant-name">Bellisima</div>
                     </div>
                     <div class="merchant-card">
-                        <img src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%238BC34A" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="24" fill="%23111111"%3EAP%3C/text%3E%3C/svg%3E" alt="Merchant 3" class="merchant-logo">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%238BC34A' width='80' height='80'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23111111'%3ESM%3C/text%3E%3C/svg%3E" alt="Swissmart" class="merchant-logo">
                         <div class="merchant-name">Swissmart</div>
                     </div>
                     <div class="merchant-card">
-                        <img src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%238BC34A" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="24" fill="%23111111"%3EEC%3C/text%3E%3C/svg%3E" alt="Merchant 4" class="merchant-logo">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%238BC34A' width='80' height='80'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23111111'%3ERG%3C/text%3E%3C/svg%3E" alt="Regal" class="merchant-logo">
                         <div class="merchant-name">Regal</div>
                     </div>
                 </div>
@@ -152,47 +119,21 @@
         </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Nimwema</h4>
-                    <p class="text-small">La solidarité africaine, rendue simple.</p>
-                </div>
-                <div class="footer-section">
-                    <h4 data-i18n="quick_links">Liens Rapides</h4>
-                    <ul class="footer-links">
-                        <li><a href="/send.html" data-i18n="send_voucher">Envoyer un bon</a></li>
-                        <li><a href="/request.html" data-i18n="request_voucher">Demander un bon</a></li>
-                        <li><a href="/how-it-works.html" data-i18n="how_it_works">Comment ça marche</a></li>
-                        <li><a href="/about.html" data-i18n="about">À propos</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4 data-i18n="support">Support</h4>
-                    <ul class="footer-links">
-                        <li><a href="/contact.html" data-i18n="contact">Contact</a></li>
-                        <li><a href="/terms.html" data-i18n="terms">Termes et Conditions</a></li>
-                        <li><a href="/privacy.html" data-i18n="privacy">Politique de Confidentialité</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4 data-i18n="contact">Contact</h4>
-                    <p class="text-small">
-                        Email: info@nimwema.com<br>
-                        Kinshasa, RDC
-                    </p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
-            </div>
-        </div>
-    </footer>
+    <!-- ============================================
+         FOOTER PLACEHOLDER
+         ============================================ -->
+    <div id="app-footer"></div>
 
-    <!-- Scripts -->
+    <!-- ============================================
+         SCRIPTS
+         ============================================ -->
     <script src="/js/i18n.js"></script>
-    <script src="/js/main.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        // Initialize layout for public page (no sidebar, full footer)
+        NimwemaLayout.init({
+            activePage: 'home'
+        });
+    </script>
 </body>
 </html>

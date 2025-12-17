@@ -1,0 +1,409 @@
+/**
+ * Nimwema Layout Styles v1.0
+ * 
+ * Styles for header, footer, mobile navigation, and sidebars.
+ * Used with layout.js component system.
+ */
+
+/* ============================================
+   USER MENU (Header - for logged in users)
+   ============================================ */
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-name {
+    color: var(--primary-green, #8BC34A);
+    font-weight: 600;
+    font-size: 14px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-logout {
+    background: transparent;
+    border: 1px solid var(--grey-400, #B5B5B5);
+    color: var(--ink-black, #111);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.btn-logout:hover {
+    background: var(--error, #D32F2F);
+    border-color: var(--error, #D32F2F);
+    color: white;
+}
+
+/* ============================================
+   MOBILE NAVIGATION
+   ============================================ */
+
+.mobile-nav-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-nav-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.mobile-nav {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100%;
+    background: var(--white, #fff);
+    z-index: 9999;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-nav.active {
+    left: 0;
+}
+
+.mobile-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--primary-green, #8BC34A);
+}
+
+.mobile-nav-header .logo {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ink-black, #111);
+    text-decoration: none;
+}
+
+.mobile-nav-header .logo .w {
+    color: var(--white, #fff);
+}
+
+.mobile-nav-close {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: var(--ink-black, #111);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: transform 0.2s;
+}
+
+.mobile-nav-close:hover {
+    transform: scale(1.1);
+}
+
+.mobile-nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-nav-links li a {
+    display: block;
+    padding: 16px 24px;
+    color: var(--ink-black, #111);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--grey-200, #E6E6E6);
+    transition: all 0.2s;
+}
+
+.mobile-nav-links li a:hover {
+    background: rgba(139, 195, 74, 0.1);
+    padding-left: 28px;
+}
+
+.mobile-nav-links li a.active {
+    background: rgba(139, 195, 74, 0.15);
+    color: var(--support-green, #6FA838);
+    border-left: 3px solid var(--primary-green, #8BC34A);
+}
+
+.mobile-nav-divider {
+    height: 1px;
+    background: var(--grey-200, #E6E6E6);
+    margin: 10px 0;
+}
+
+.mobile-nav-section-title {
+    padding: 10px 24px 5px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--grey-700, #6B6B6B);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+}
+
+.mobile-nav-footer {
+    padding: 20px 24px;
+    border-top: 1px solid var(--grey-200, #E6E6E6);
+}
+
+/* ============================================
+   HAMBURGER BUTTON
+   ============================================ */
+
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 100;
+}
+
+.hamburger span {
+    width: 24px;
+    height: 2px;
+    background: var(--ink-black, #111);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+/* Hamburger animation when active */
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ============================================
+   DASHBOARD SIDEBAR
+   ============================================ */
+
+.dashboard-container {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    margin-top: 0;
+}
+
+.dashboard-sidebar {
+    width: 260px;
+    background: var(--white, #fff);
+    border-right: 1px solid var(--grey-200, #E6E6E6);
+    position: sticky;
+    top: 120px;
+    height: calc(100vh - 120px);
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.dashboard-nav {
+    padding: 20px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: var(--grey-700, #6B6B6B);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background: rgba(139, 195, 74, 0.08);
+    color: var(--support-green, #6FA838);
+}
+
+.nav-item.active {
+    background: rgba(139, 195, 74, 0.12);
+    color: var(--support-green, #6FA838);
+    border-left-color: var(--primary-green, #8BC34A);
+    font-weight: 600;
+}
+
+.nav-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-text {
+    font-size: 14px;
+}
+
+.nav-badge {
+    background: var(--error, #D32F2F);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+    font-weight: 600;
+}
+
+.nav-divider {
+    height: 1px;
+    background: var(--grey-200, #E6E6E6);
+    margin: 15px 20px;
+}
+
+/* Primary CTA in sidebar */
+.nav-item-primary {
+    background: var(--primary-green, #8BC34A);
+    color: var(--ink-black, #111) !important;
+    margin: 10px 15px;
+    border-radius: var(--radius-input, 12px);
+    font-weight: 600;
+    border-left: none !important;
+}
+
+.nav-item-primary:hover {
+    background: var(--support-green, #6FA838);
+}
+
+/* Secondary CTA in sidebar */
+.nav-item-secondary {
+    background: var(--paper, #F7F7F7);
+    color: var(--ink-black, #111) !important;
+    margin: 10px 15px;
+    border-radius: var(--radius-input, 12px);
+    font-weight: 600;
+    border-left: none !important;
+}
+
+.nav-item-secondary:hover {
+    background: var(--grey-200, #E6E6E6);
+}
+
+/* Dashboard content area */
+.dashboard-content {
+    flex: 1;
+    padding: 30px;
+    min-width: 0;
+    background: var(--paper, #F7F7F7);
+}
+
+/* ============================================
+   FOOTER MINIMAL (for dashboard pages)
+   ============================================ */
+
+.footer-minimal {
+    margin-top: 0;
+    padding: var(--space-lg, 24px) 0;
+}
+
+.footer-minimal .footer-bottom {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Tablet and below - show hamburger */
+@media (max-width: 992px) {
+    .hamburger {
+        display: flex;
+    }
+    
+    .dashboard-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        padding-top: 120px;
+    }
+    
+    .dashboard-sidebar.active {
+        left: 0;
+    }
+    
+    .dashboard-content {
+        margin-left: 0;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .header-top {
+        padding: 8px 15px;
+    }
+    
+    .user-name {
+        max-width: 100px;
+        font-size: 13px;
+    }
+    
+    .btn-logout {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+    
+    .language-selector {
+        gap: 4px;
+    }
+    
+    .lang-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    .dashboard-content {
+        padding: 20px 15px;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    .mobile-nav {
+        width: 85%;
+        max-width: 300px;
+    }
+    
+    .user-menu {
+        gap: 8px;
+    }
+    
+    .user-name {
+        max-width: 80px;
+    }
+    
+    .header-main {
+        padding: 12px 15px;
+    }
+}
