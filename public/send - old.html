@@ -15,15 +15,38 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
     <link rel="stylesheet" href="/css/send.css">
-    <link rel="stylesheet" href="/css/flexpay-popup.css">
-    <link rel="stylesheet" href="/css/layout.css">
+	<link rel="stylesheet" href="/css/flexpay-popup.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <!-- Layout Placeholders (header injected here) -->
-    <div id="app-header"></div>
-    <div id="app-mobile-nav"></div>
+    <!-- Header -->
+    <header class="header">
+        <!-- Top Bar: Language Selector + Login -->
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
 
-    <!-- Main Content (EXACT SAME AS ORIGINAL) -->
+    <!-- Main Content -->
     <main class="section">
         <div class="container container-narrow">
             <!-- Page Header -->
@@ -206,18 +229,42 @@
                             required
                             placeholder="Votre nom complet">
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="senderPhone" class="form-label">
-                            <span data-i18n="your_mobile">Votre Téléphone (sera utilisé en cas de payment Mobile Money)</span>
+					
+					
+					
+					
+					
+					
+					
+					
+					<div class="form-group">
+                        <label for="senderName" class="form-label">
+                            <span data-i18n="your_mobile">Votre Téléphone (sera utilisé en cas de payment Mobile Money</span>
                             <span class="required">*</span>
                         </label>
-                        <input type="tel" id="senderPhone" name="senderPhone"
-                            class="form-input"
-                            placeholder="+243XXXXXXXXX"
-                            inputmode="tel" autocomplete="tel">
-                        <p class="text-xs text-gray-500 mt-1">Format conseillé : +243812345678 (E.164)</p>
-                    </div>
+					<input type="tel" id="senderPhone" name="senderPhone"
+       class="form-input"
+       placeholder="+243XXXXXXXXX"
+       inputmode="tel" autocomplete="tel" >
+<p class="text-xs text-gray-500 mt-1">Format conseillé : +243812345678 (E.164)</p>
+</div>
+
+
+
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
                     
                     <div class="checkbox-group">
                         <label class="checkbox-label">
@@ -285,7 +332,7 @@
                                 <span class="payment-method-desc">Via FlexPay</span>
                             </span>
                         </label>
-                        <label class="payment-method-card">
+						<label class="payment-method-card">
                             <input type="radio" name="paymentMethod" value="flexpaycard">
                             <span class="payment-method-content">
                                 <span class="payment-method-icon">💳</span>
@@ -293,6 +340,15 @@
                                 <span class="payment-method-desc">Via FlexPay</span>
                             </span>
                         </label>
+                        
+                        <!--<label class="payment-method-card">
+                            <input type="radio" name="paymentMethod" value="flutterwave">
+                            <span class="payment-method-content">
+                                <span class="payment-method-icon">🌊</span>
+                                <span class="payment-method-name">Flutterwave</span>
+                                <span class="payment-method-desc">Alternative payment</span>
+                            </span>
+                        </label> -->
                         
                         <label class="payment-method-card">
                             <input type="radio" name="paymentMethod" value="cash">
@@ -327,32 +383,42 @@
         </div>
     </main>
 
-    <!-- Footer Placeholder (footer injected here) -->
-    <div id="app-footer"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script src="/js/i18n.js"></script>
-    <script src="/js/layout.js"></script>
+    <script src="/js/main.js"></script>
     <script src="/js/send-voucher.js"></script>
     <script>
-        // Initialize layout (header + footer only)
-        NimwemaLayout.init({ activePage: 'send' });
-    </script>
-    <script>
+        // Payment method selection - no longer needed for inline fields
+        // Cash/Bank will redirect to login page
+        
         // Check for resumed order after login
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('resume') === 'true') {
                 const pendingOrder = sessionStorage.getItem('pendingVoucherOrder');
                 if (pendingOrder) {
+                    // User just logged in with a pending cash/bank order
+                    // Auto-submit the order
                     setTimeout(async function() {
                         try {
                             const formData = JSON.parse(pendingOrder);
+                            
+                            // Show loading
                             const overlay = document.createElement('div');
                             overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999';
                             overlay.innerHTML = '<div style="background:#fff;padding:24px 28px;border-radius:10px;text-align:center"><div style="width:40px;height:40px;border:4px solid #eee;border-top:4px solid #8BC34A;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px"></div><div>Création de votre commande...</div><style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style></div>';
                             document.body.appendChild(overlay);
                             
+                            // Create the pending order
                             const response = await fetch('/api/vouchers/create-pending', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -362,8 +428,11 @@
                             const result = await response.json();
                             
                             if (response.ok && result.success) {
+                                // Clear the pending order
                                 sessionStorage.removeItem('pendingVoucherOrder');
+                                // Store the order for the instructions page
                                 sessionStorage.setItem('pendingOrder', JSON.stringify(result.order));
+                                // Redirect to payment instructions
                                 window.location.href = '/payment-instructions.html';
                             } else {
                                 throw new Error(result.message || 'Erreur lors de la création');
@@ -372,6 +441,7 @@
                             console.error('Error resuming order:', error);
                             sessionStorage.removeItem('pendingVoucherOrder');
                             alert('Erreur lors de la création de votre commande. Veuillez réessayer.');
+                            // Clean URL
                             window.history.replaceState({}, document.title, '/send.html');
                         }
                     }, 500);
@@ -379,7 +449,7 @@
             }
         });
     </script>
-    <!-- Prefill from dashboard query params -->
+<!-- Prefill from dashboard query params -->
     <script>
         (function () {
             function applyPrefillFromQuery() {
@@ -388,6 +458,7 @@
                 var params = new URLSearchParams(window.location.search);
                 if (!params.toString()) return;
 
+                // 1) Sender name: accept ?senderName=... or ?name=...
                 var senderNameFromParams = params.get('senderName') || params.get('sname');
                 if (senderNameFromParams) {
                     var senderNameInput = document.getElementById('senderName');
@@ -396,6 +467,8 @@
                     }
                 }
 
+                // 2) Sender phone: accept ?senderPhone=... or ?phone=...
+                //    Also try to prefill the first recipient phone if it exists.
                 var senderPhoneFromParams = params.get('senderPhone') || params.get('sphone');
                 if (senderPhoneFromParams) {
                     var senderPhoneInput = document.getElementById('senderPhone');
@@ -403,6 +476,7 @@
                         senderPhoneInput.value = senderPhoneFromParams;
                     }
 
+                    // Try to prefill first recipient phone, once send-voucher.js created it
                     var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
                     var rPhoneFromParams = params.get('recipientPhone') || params.get('phone');
 
@@ -410,15 +484,17 @@
                         firstRecipientPhone.value = rPhoneFromParams;
                     }
                 }
-                else {
-                    var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
+else {              var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
                     var rPhoneFromParams = params.get('recipientPhone') || params.get('phone');
 
                     if (firstRecipientPhone && !firstRecipientPhone.value) {
                         firstRecipientPhone.value = rPhoneFromParams;
                     }
-                }
 
+}
+               
+
+                // 3) Generic fallback: param name == element id
                 params.forEach(function (value, key) {
                     var el = document.getElementById(key);
                     if (el && !el.value) {
@@ -427,6 +503,7 @@
                 });
             }
 
+            // Use window.load so /js/send-voucher.js has time to build recipient fields
             window.addEventListener('load', applyPrefillFromQuery);
         })();
     </script>
