@@ -352,6 +352,9 @@ async function sendSMSNotification(phone, data) {
 
     } else if (data.type === 'thank_you') {
       result = await sms.send(phone, data.message, 'thank_you');
+    } else if (data.type === 'password_reset') {
+      const resetMessage = `🔐 Nimwema: Votre code de réinitialisation est ${data.code}. Valide 15 minutes. Ne partagez ce code avec personne.`;
+      result = await sms.sendSMS(phone, resetMessage, 'password_reset');
     }
     
     if (result && result.success) {
@@ -1260,6 +1263,193 @@ app.post('/api/auth/login', async (req, res) => {
     const duration = Date.now() - startTime;
     console.warn('Login: EXCEPTION', { error: error.message, stack: error.stack, email: rawEmail, ip, duration }); // Temp: Catches query errors
     res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// ========== PASSWORD RESET ENDPOINTS ==========
+// In-memory storage for reset codes (in production, use Redis or DB table)
+const passwordResetCodes = new Map();
+
+// Step 1: Request password reset code
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email requis' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if user exists
+    const userResult = await db.query(
+      'SELECT id, email, name, phone FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true',
+      [normalizedEmail]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Don't reveal if email exists - return success anyway for security
+      console.log('Password reset requested for non-existent email:', normalizedEmail);
+      return res.json({ success: true, message: 'Si cet email existe, un code a été envoyé.' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Generate 6-digit code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    // Store code with expiration
+    passwordResetCodes.set(normalizedEmail, {
+      code: resetCode,
+      expiresAt,
+      userId: user.id,
+      attempts: 0
+    });
+
+    console.log('🔐 Password reset code generated:', { email: normalizedEmail, code: resetCode });
+
+    // Send SMS if phone exists
+    if (user.phone) {
+      try {
+        await sendSMSNotification(user.phone, {
+          type: 'password_reset',
+          code: resetCode,
+          name: user.name || 'Utilisateur'
+        });
+        console.log('📱 Reset code sent via SMS to:', user.phone);
+      } catch (smsError) {
+        console.error('SMS send error:', smsError);
+        // Continue anyway - code is logged for dev testing
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Code de réinitialisation envoyé.',
+      // In dev mode, include code for testing (remove in production!)
+      ...(process.env.NODE_ENV !== 'production' && { devCode: resetCode })
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
+
+// Step 2: Verify reset code
+app.post('/api/auth/verify-reset-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ success: false, message: 'Email et code requis' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const resetData = passwordResetCodes.get(normalizedEmail);
+
+    if (!resetData) {
+      return res.status(400).json({ success: false, message: 'Aucune demande de réinitialisation trouvée. Veuillez recommencer.' });
+    }
+
+    // Check expiration
+    if (Date.now() > resetData.expiresAt) {
+      passwordResetCodes.delete(normalizedEmail);
+      return res.status(400).json({ success: false, message: 'Code expiré. Veuillez en demander un nouveau.' });
+    }
+
+    // Check attempts (max 5)
+    if (resetData.attempts >= 5) {
+      passwordResetCodes.delete(normalizedEmail);
+      return res.status(400).json({ success: false, message: 'Trop de tentatives. Veuillez recommencer.' });
+    }
+
+    // Verify code
+    if (resetData.code !== code.trim()) {
+      resetData.attempts++;
+      return res.status(400).json({ success: false, message: 'Code incorrect' });
+    }
+
+    // Generate reset token for step 3
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    resetData.resetToken = resetToken;
+    resetData.tokenExpiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes for password entry
+
+    console.log('✅ Reset code verified for:', normalizedEmail);
+
+    res.json({ 
+      success: true, 
+      resetToken,
+      message: 'Code vérifié avec succès' 
+    });
+
+  } catch (error) {
+    console.error('Verify code error:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
+
+// Step 3: Reset password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Tous les champs sont requis' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Le mot de passe doit contenir au moins 8 caractères' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const resetData = passwordResetCodes.get(normalizedEmail);
+
+    if (!resetData || !resetData.resetToken) {
+      return res.status(400).json({ success: false, message: 'Session de réinitialisation invalide. Veuillez recommencer.' });
+    }
+
+    // Verify token
+    if (resetData.resetToken !== token) {
+      return res.status(400).json({ success: false, message: 'Token invalide' });
+    }
+
+    // Check token expiration
+    if (Date.now() > resetData.tokenExpiresAt) {
+      passwordResetCodes.delete(normalizedEmail);
+      return res.status(400).json({ success: false, message: 'Session expirée. Veuillez recommencer.' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in database
+    const updateResult = await db.query(
+      'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, resetData.userId]
+    );
+
+    if (updateResult.rowCount === 0) {
+      return res.status(400).json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    // Clear reset data
+    passwordResetCodes.delete(normalizedEmail);
+
+    // Invalidate all existing sessions for security
+    await db.query('DELETE FROM sessions WHERE user_id = $1', [resetData.userId]);
+
+    console.log('✅ Password reset successful for user:', resetData.userId);
+
+    res.json({ 
+      success: true, 
+      message: 'Mot de passe réinitialisé avec succès' 
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
   }
 });
 
