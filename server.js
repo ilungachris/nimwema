@@ -3653,6 +3653,26 @@ app.post('/api/payment/flexpay/initiate', async (req, res) => {
     global.orders[orderId].orderNumber = orderNumber;
     global.orders[orderId].updatedAt = new Date().toISOString();
 
+    // 🔥 FIX: Save FlexPay orderNumber to database (same as card payment fix)
+    if (orderNumber) {
+      try {
+        await db.query(
+          `UPDATE orders 
+           SET flexpay_order_number = $1, 
+               payment_status = 'pending_payment',
+               payment_initiated_at = CURRENT_TIMESTAMP 
+           WHERE id = $2`,
+          [orderNumber, orderId]
+        );
+        console.log('✅ FlexPay Mobile Money orderNumber saved to DB:', orderNumber, 'for order:', orderId);
+      } catch (dbErr) {
+        console.error('❌ Failed to save FlexPay orderNumber to DB:', dbErr.message);
+        // Don't fail the request - user can still pay
+      }
+    } else {
+      console.warn('⚠️ FlexPay Mobile Money response missing orderNumber');
+    }
+
     return res.json({ success: true, orderNumber, reference });
   } catch (error) {
     console.error('FlexPay initiation error:', error);
