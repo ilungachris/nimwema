@@ -109,35 +109,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 //==================================
 
+// NOTE: User info variables (sfirstName, slastName, qsPhone, etc.) are now 
+// computed inside functions that need them, after currentUser is set.
+// This avoids errors when localStorage is empty on page load.
 
-
-
-//MyConfig
-
-///////
- const userString = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
-currentUser = JSON.parse(userString);
-const sfullName = currentUser.name || "";
-const sphone = currentUser.phone || "";
-
-// Split into first + last name
-let sfirstName = "";
-let slastName = "";
-
-if (sfullName.includes(" ")) {
-    const parts = sfullName.trim().split(" ");
-    sfirstName = parts[0];
-    slastName = parts.slice(1).join(" ");
-} else {
-    sfirstName = sfullName;
+// Helper function to get current user info for URL building
+function getCurrentUserInfo() {
+  if (!currentUser) return { firstName: '', lastName: '', phone: '' };
+  
+  const fullName = currentUser.name || '';
+  const phone = currentUser.phone || '';
+  
+  let firstName = '';
+  let lastName = '';
+  
+  if (fullName.includes(' ')) {
+    const parts = fullName.trim().split(' ');
+    firstName = parts[0];
+    lastName = parts.slice(1).join(' ');
+  } else {
+    firstName = fullName;
+  }
+  
+  return { firstName, lastName, phone };
 }
-
-// Encode for URL
-const qsFirst = encodeURIComponent(sfirstName);
-const qsLast = encodeURIComponent(slastName);
-const qsPhone = encodeURIComponent(sphone);
-
-/////////
 // ============================================
 // AUTHENTICATION
 // ============================================
@@ -152,7 +147,7 @@ function checkAuth() {
       try {
         const guest = JSON.parse(guestStr);
         currentUser = { ...guest, isGuest: true };
-        document.getElementById('userName').textContent = 'Invité';
+        // Note: userName display is now handled by layout.js header
         return true;
       } catch (e) {
         console.error('Error parsing guest data:', e);
@@ -165,14 +160,8 @@ function checkAuth() {
   
   try {
     currentUser = JSON.parse(userStr);
-    const displayName = currentUser.name || currentUser.email || currentUser.phone || 'Utilisateur';
-    document.getElementById('userName').textContent = displayName;
-   
-    
-    
-   
-
-
+    // Note: userName display is now handled by layout.js header
+    // The layout.js reads from localStorage and updates the header automatically
     return true;
   } catch (error) {
     console.error('Error parsing user data:', error);
@@ -797,7 +786,7 @@ function renderRecipients() {
       <div class="contact-actions">
         <button class="btn-icon btn-edit" onclick="editRecipient('${recipient.id}')" title="Modifier">✏️</button>
         <button class="btn-icon btn-delete" onclick="deleteRecipientConfirm('${recipient.id}')" title="Supprimer">🗑️</button>
-        <a href="/send.html?sname=${encodeURIComponent(sfirstName)}%20${encodeURIComponent(slastName)}&sphone=${encodeURIComponent(sphone)}&phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a>
+        <a href="/send.html?sname=${encodeURIComponent(getCurrentUserInfo().firstName)}%20${encodeURIComponent(getCurrentUserInfo().lastName)}&sphone=${encodeURIComponent(getCurrentUserInfo().phone)}&phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a>
 
        <!--  <a href="/send.html?phone=${encodeURIComponent(recipient.phone)}&name=${encodeURIComponent(recipient.name)}" class="btn btn-primary btn-sm">Envoyer</a> -->
       </div>
@@ -939,7 +928,7 @@ function renderSenders() {
       <div class="contact-actions">
         <button class="btn-icon btn-edit" onclick="editSender('${sender.id}')" title="Modifier">✏️</button>
         <button class="btn-icon btn-delete" onclick="deleteSenderConfirm('${sender.id}')" title="Supprimer">🗑️</button>
-        <a href="/request.html?senderPhone=${encodeURIComponent(sender.phone)}&senderName=${encodeURIComponent(sender.name)}&sphone=${encodeURIComponent(sphone)}&sfirstName=${encodeURIComponent(sfirstName)}&slastName=${encodeURIComponent(slastName)}" class="btn btn-primary btn-sm">Demander</a>
+        <a href="/request.html?senderPhone=${encodeURIComponent(sender.phone)}&senderName=${encodeURIComponent(sender.name)}&sphone=${encodeURIComponent(getCurrentUserInfo().phone)}&sfirstName=${encodeURIComponent(getCurrentUserInfo().firstName)}&slastName=${encodeURIComponent(getCurrentUserInfo().lastName)}" class="btn btn-primary btn-sm">Demander</a>
 
  <!--       <a href="/request.html?senderPhone=${encodeURIComponent(sender.phone)}&senderName=${encodeURIComponent(sender.name)}" class="btn btn-primary btn-sm">Demander</a>  -->
       </div>
