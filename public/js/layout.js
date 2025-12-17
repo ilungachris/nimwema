@@ -260,7 +260,7 @@
                     <li><a href="/send.html" class="${activePage === 'send' ? 'active' : ''}"> <span data-i18n="send_voucher">Envoyer un bon</span></a></li>
                     <li><a href="/request.html" class="${activePage === 'request' ? 'active' : ''}"> <span data-i18n="request_voucher">Demander un bon</span></a></li>
                     <li><a href="/how-it-works.html" class="${activePage === 'how-it-works' ? 'active' : ''}"> <span data-i18n="how_it_works">Comment ça marche</span></a></li>
-                    <li><a href="/about.html" class="${activePage === 'about' ? 'active' : ''}">ℹ <span data-i18n="about">À propos</span></a></li>
+                    <li><a href="/about.html" class="${activePage === 'about' ? 'active' : ''}"> <span data-i18n="about">À propos</span></a></li>
                     <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}"> <span data-i18n="contact">Contact</span></a></li>
                 </ul>
                 ${accountSection}
