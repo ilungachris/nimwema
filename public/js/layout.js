@@ -121,7 +121,7 @@
                     ${isLoggedIn ? `
                         <!-- User Menu (logged in) -->
                         <div class="user-menu">
-                            <span class="user-name" id="layoutUserName">${escapeHTML(displayName)}</span>
+                            <span class="user-name" id="userName">${escapeHTML(displayName)}</span>
                             <button class="btn-logout" onclick="NimwemaLayout.logout()" data-i18n="logout">Déconnexion</button>
                         </div>
                     ` : `
