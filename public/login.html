@@ -104,6 +104,23 @@
             background: #ccc;
             cursor: not-allowed;
         }
+        .btn-secondary {
+            width: 100%;
+            padding: 15px;
+            background: #fff;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            border-color: #8BC34A;
+            color: #8BC34A;
+        }
         .auth-links {
             text-align: center;
             margin-top: 20px;
@@ -114,6 +131,19 @@
             font-weight: 500;
         }
         .auth-links a:hover {
+            text-decoration: underline;
+        }
+        .auth-links button.link-btn {
+            background: none;
+            border: none;
+            color: #8BC34A;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
+            padding: 0;
+        }
+        .auth-links button.link-btn:hover {
             text-decoration: underline;
         }
         .error-message {
@@ -160,6 +190,68 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .modal-title {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #111;
+        }
+        .modal-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .modal-icon {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* Steps */
+        .step { display: none; }
+        .step.active { display: block; }
+
         @media (max-width: 480px) {
             .auth-card {
                 padding: 30px 20px;
@@ -167,6 +259,9 @@
             }
             .auth-logo h1 {
                 font-size: 2em;
+            }
+            .modal-content {
+                padding: 25px 20px;
             }
         }
     </style>
@@ -218,10 +313,106 @@
 
             <div class="auth-links">
                 <p>Pas encore de compte ? <a href="/signup.html">Créer un compte</a></p>
-                <p><a href="/forgot-password.html">Mot de passe oublié ?</a></p>
+                <p><button type="button" class="link-btn" onclick="openForgotPassword()">Mot de passe oublié ?</button></p>
             </div>
         </div>
     </main>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal-overlay">
+        <div class="modal-content">
+            <button type="button" class="modal-close" onclick="closeForgotPassword()">&times;</button>
+
+            <!-- Step 1: Enter Email -->
+            <div id="fpStep1" class="step active">
+                <div class="modal-icon">🔐</div>
+                <h3 class="modal-title">Mot de passe oublié ?</h3>
+                <p class="modal-subtitle">Entrez votre adresse e-mail pour recevoir un code de réinitialisation.</p>
+
+                <div id="fpErrorMessage" class="error-message"></div>
+                <div id="fpSuccessMessage" class="success-message"></div>
+
+                <form id="forgotPasswordForm" novalidate>
+                    <div class="form-group">
+                        <label for="fpEmail" class="form-label">Adresse e-mail</label>
+                        <input type="email" id="fpEmail" name="fpEmail" class="form-input" required placeholder="votre@email.com">
+                    </div>
+
+                    <button type="submit" id="fpSubmitBtn" class="btn-primary">Envoyer le code</button>
+
+                    <div id="fpLoading" class="loading">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">Envoi en cours...</p>
+                    </div>
+                </form>
+
+                <button type="button" class="btn-secondary" onclick="closeForgotPassword()">Annuler</button>
+            </div>
+
+            <!-- Step 2: Enter Code -->
+            <div id="fpStep2" class="step">
+                <div class="modal-icon">📧</div>
+                <h3 class="modal-title">Vérification</h3>
+                <p class="modal-subtitle">Un code a été envoyé à <strong id="fpEmailDisplay"></strong>. Entrez-le ci-dessous.</p>
+
+                <div id="fpCodeErrorMessage" class="error-message"></div>
+
+                <form id="verifyCodeForm" novalidate>
+                    <div class="form-group">
+                        <label for="fpCode" class="form-label">Code de vérification</label>
+                        <input type="text" id="fpCode" name="fpCode" class="form-input" required placeholder="123456" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" style="text-align: center; font-size: 24px; letter-spacing: 8px;">
+                    </div>
+
+                    <button type="submit" id="verifyCodeBtn" class="btn-primary">Vérifier le code</button>
+
+                    <div id="verifyLoading" class="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </form>
+
+                <button type="button" class="btn-secondary" onclick="resendCode()">Renvoyer le code</button>
+                <p style="text-align: center; margin-top: 15px; font-size: 13px; color: #666;">
+                    <button type="button" class="link-btn" onclick="goToStep(1)" style="font-size: 13px;">← Changer d'adresse e-mail</button>
+                </p>
+            </div>
+
+            <!-- Step 3: New Password -->
+            <div id="fpStep3" class="step">
+                <div class="modal-icon">🔑</div>
+                <h3 class="modal-title">Nouveau mot de passe</h3>
+                <p class="modal-subtitle">Créez un nouveau mot de passe sécurisé.</p>
+
+                <div id="fpNewPwdErrorMessage" class="error-message"></div>
+
+                <form id="newPasswordForm" novalidate>
+                    <div class="form-group">
+                        <label for="fpNewPassword" class="form-label">Nouveau mot de passe</label>
+                        <input type="password" id="fpNewPassword" name="fpNewPassword" class="form-input" required minlength="8" placeholder="Minimum 8 caractères">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fpConfirmPassword" class="form-label">Confirmer le mot de passe</label>
+                        <input type="password" id="fpConfirmPassword" name="fpConfirmPassword" class="form-input" required minlength="8" placeholder="Répétez le mot de passe">
+                    </div>
+
+                    <button type="submit" id="newPwdBtn" class="btn-primary">Réinitialiser le mot de passe</button>
+
+                    <div id="newPwdLoading" class="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div id="fpStep4" class="step">
+                <div class="modal-icon">✅</div>
+                <h3 class="modal-title">Mot de passe réinitialisé !</h3>
+                <p class="modal-subtitle">Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.</p>
+
+                <button type="button" class="btn-primary" onclick="closeForgotPassword()">Se connecter</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer Placeholder -->
     <div id="app-footer"></div>
@@ -238,6 +429,9 @@
             }
         };
 
+        // =====================================
+        // LOGIN FORM
+        // =====================================
         const form = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -376,6 +570,239 @@
                 } catch (e) {
                     localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
                 }
+            }
+        });
+
+        // =====================================
+        // FORGOT PASSWORD
+        // =====================================
+        let fpEmail = '';
+        let fpResetToken = '';
+
+        function openForgotPassword() {
+            document.getElementById('forgotPasswordModal').classList.add('active');
+            document.getElementById('fpEmail').value = emailInput.value || '';
+            document.getElementById('fpEmail').focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeForgotPassword() {
+            document.getElementById('forgotPasswordModal').classList.remove('active');
+            document.body.style.overflow = '';
+            // Reset to step 1
+            goToStep(1);
+            // Clear forms
+            document.getElementById('forgotPasswordForm').reset();
+            document.getElementById('verifyCodeForm').reset();
+            document.getElementById('newPasswordForm').reset();
+            // Clear messages
+            hideAllFpMessages();
+        }
+
+        function goToStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('fpStep' + step).classList.add('active');
+        }
+
+        function hideAllFpMessages() {
+            ['fpErrorMessage', 'fpSuccessMessage', 'fpCodeErrorMessage', 'fpNewPwdErrorMessage'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        function showFpError(elementId, message) {
+            hideAllFpMessages();
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function showFpSuccess(elementId, message) {
+            hideAllFpMessages();
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        // Step 1: Request reset code
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAllFpMessages();
+
+            fpEmail = document.getElementById('fpEmail').value.trim();
+
+            if (!fpEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fpEmail)) {
+                showFpError('fpErrorMessage', 'Veuillez entrer une adresse e-mail valide.');
+                return;
+            }
+
+            const btn = document.getElementById('fpSubmitBtn');
+            const loader = document.getElementById('fpLoading');
+
+            btn.disabled = true;
+            btn.textContent = 'Envoi...';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: fpEmail })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    document.getElementById('fpEmailDisplay').textContent = fpEmail;
+                    goToStep(2);
+                    document.getElementById('fpCode').focus();
+                } else {
+                    throw new Error(data.message || data.error || 'Erreur lors de l\'envoi');
+                }
+            } catch (error) {
+                showFpError('fpErrorMessage', error.message || 'Une erreur est survenue.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Envoyer le code';
+                loader.style.display = 'none';
+            }
+        });
+
+        // Step 2: Verify code
+        document.getElementById('verifyCodeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAllFpMessages();
+
+            const code = document.getElementById('fpCode').value.trim();
+
+            if (!code || code.length !== 6) {
+                showFpError('fpCodeErrorMessage', 'Veuillez entrer le code à 6 chiffres.');
+                return;
+            }
+
+            const btn = document.getElementById('verifyCodeBtn');
+            const loader = document.getElementById('verifyLoading');
+
+            btn.disabled = true;
+            btn.textContent = 'Vérification...';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/auth/verify-reset-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: fpEmail, code: code })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    fpResetToken = data.resetToken || code; // Backend may return a token
+                    goToStep(3);
+                    document.getElementById('fpNewPassword').focus();
+                } else {
+                    throw new Error(data.message || data.error || 'Code invalide');
+                }
+            } catch (error) {
+                showFpError('fpCodeErrorMessage', error.message || 'Code invalide ou expiré.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Vérifier le code';
+                loader.style.display = 'none';
+            }
+        });
+
+        // Resend code
+        async function resendCode() {
+            hideAllFpMessages();
+
+            try {
+                const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: fpEmail })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const el = document.getElementById('fpCodeErrorMessage');
+                    el.textContent = 'Un nouveau code a été envoyé.';
+                    el.style.display = 'block';
+                    el.style.background = '#e8f5e9';
+                    el.style.color = '#2e7d32';
+                    el.style.borderColor = '#4caf50';
+                } else {
+                    throw new Error(data.message || 'Erreur');
+                }
+            } catch (error) {
+                showFpError('fpCodeErrorMessage', 'Impossible de renvoyer le code.');
+            }
+        }
+
+        // Step 3: Set new password
+        document.getElementById('newPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAllFpMessages();
+
+            const newPassword = document.getElementById('fpNewPassword').value;
+            const confirmPassword = document.getElementById('fpConfirmPassword').value;
+
+            if (newPassword.length < 8) {
+                showFpError('fpNewPwdErrorMessage', 'Le mot de passe doit contenir au moins 8 caractères.');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showFpError('fpNewPwdErrorMessage', 'Les mots de passe ne correspondent pas.');
+                return;
+            }
+
+            const btn = document.getElementById('newPwdBtn');
+            const loader = document.getElementById('newPwdLoading');
+
+            btn.disabled = true;
+            btn.textContent = 'Réinitialisation...';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: fpEmail,
+                        token: fpResetToken,
+                        newPassword: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    goToStep(4);
+                } else {
+                    throw new Error(data.message || data.error || 'Erreur lors de la réinitialisation');
+                }
+            } catch (error) {
+                showFpError('fpNewPwdErrorMessage', error.message || 'Une erreur est survenue.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Réinitialiser le mot de passe';
+                loader.style.display = 'none';
+            }
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeForgotPassword();
+            }
+        });
+
+        // Close modal on overlay click
+        document.getElementById('forgotPasswordModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeForgotPassword();
             }
         });
     </script>
