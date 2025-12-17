@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription - Nimwema</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/forms.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/layout.css">
     <style>
         .signup-container {
             max-width: 500px;
@@ -74,18 +78,9 @@
             width: 0%;
             transition: width 0.3s, background-color 0.3s;
         }
-        .password-strength-bar.weak {
-            width: 33%;
-            background: #dc3545;
-        }
-        .password-strength-bar.medium {
-            width: 66%;
-            background: #ffc107;
-        }
-        .password-strength-bar.strong {
-            width: 100%;
-            background: #8BC34A;
-        }
+        .password-strength-bar.weak { width: 33%; background: #dc3545; }
+        .password-strength-bar.medium { width: 66%; background: #ffc107; }
+        .password-strength-bar.strong { width: 100%; background: #8BC34A; }
         .password-requirements {
             font-size: 12px;
             color: #666;
@@ -95,12 +90,8 @@
             margin: 5px 0;
             padding-left: 20px;
         }
-        .password-requirements li {
-            margin: 3px 0;
-        }
-        .password-requirements li.met {
-            color: #8BC34A;
-        }
+        .password-requirements li { margin: 3px 0; }
+        .password-requirements li.met { color: #8BC34A; }
         .terms-checkbox {
             display: flex;
             align-items: flex-start;
@@ -120,9 +111,7 @@
             color: #8BC34A;
             text-decoration: none;
         }
-        .terms-checkbox a:hover {
-            text-decoration: underline;
-        }
+        .terms-checkbox a:hover { text-decoration: underline; }
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -135,13 +124,8 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-        .submit-btn:hover:not(:disabled) {
-            background: #7CB342;
-        }
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+        .submit-btn:hover:not(:disabled) { background: #7CB342; }
+        .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
         .login-link {
             text-align: center;
             margin-top: 20px;
@@ -153,9 +137,7 @@
             text-decoration: none;
             font-weight: 600;
         }
-        .login-link a:hover {
-            text-decoration: underline;
-        }
+        .login-link a:hover { text-decoration: underline; }
         .user-type-selector {
             display: flex;
             gap: 15px;
@@ -170,53 +152,25 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .user-type-option:hover {
-            border-color: #8BC34A;
-        }
+        .user-type-option:hover { border-color: #8BC34A; }
         .user-type-option.active {
             border-color: #8BC34A;
             background: #f0f8e8;
         }
-        .user-type-option input[type="radio"] {
-            display: none;
-        }
-        .user-type-option .icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
-        .user-type-option .label {
-            font-weight: 600;
-            color: #111111;
-        }
-        .user-type-option .description {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
+        .user-type-option input[type="radio"] { display: none; }
+        .user-type-option .icon { font-size: 32px; margin-bottom: 8px; }
+        .user-type-option .label { font-weight: 600; color: #111111; }
+        .user-type-option .description { font-size: 12px; color: #666; margin-top: 5px; }
         .alert {
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
         }
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        .loading.active {
-            display: block;
-        }
+        .alert.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .loading.active { display: block; }
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #8BC34A;
@@ -226,138 +180,115 @@
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
- <!-- Header -->
-    <header class="header">
-        <div class="header-top">
-            <div class="language-selector">
-                <button class="lang-btn active" data-lang="fr">FR</button>
-                <button class="lang-btn" data-lang="ln">LN</button>
-                <button class="lang-btn" data-lang="en">EN</button>
-            </div>
-            <button class="login-btn" onclick="window.location.href='/login.html'">
-                Connexion
-            </button>
-        </div>
-        
-        <!-- Main Header: Logo + Menu -->
-        <div class="header-main">
-            <a href="/" class="logo">
-                NIM<span class="w">W</span>EMA
-            </a>
-            <button class="hamburger" onclick="toggleMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </header>
+    <!-- Layout Placeholders -->
+    <div id="app-header"></div>
+    <div id="app-mobile-nav"></div>
 
-    <div class="signup-container">
-        <div class="signup-header">
-            <h1 data-i18n="signup.title">Créer un compte</h1>
-            <p data-i18n="signup.subtitle">Rejoignez Nimwema et commencez à partager la solidarité</p>
-        </div>
-
-        <div id="alertBox" class="alert" role="alert"></div>
-
-        <div class="loading" id="loadingSpinner">
-            <div class="spinner"></div>
-            <p data-i18n="signup.processing">Création de votre compte...</p>
-        </div>
-
-        <form id="signupForm" novalidate>
-            <div class="user-type-selector">
-                <label class="user-type-option active">
-                    <input type="radio" name="userType" value="user" checked>
-                    <div class="icon">👤</div>
-                    <div class="label" data-i18n="signup.userType.user">Utilisateur</div>
-                    <div class="description" data-i18n="signup.userType.userDesc">Envoyer et recevoir des bons</div>
-                </label>
-                <label class="user-type-option">
-                    <input type="radio" name="userType" value="merchant">
-                    <div class="icon">🏪</div>
-                    <div class="label" data-i18n="signup.userType.merchant">Commerçant</div>
-                    <div class="description" data-i18n="signup.userType.merchantDesc">Accepter les bons</div>
-                </label>
+    <main>
+        <div class="signup-container">
+            <div class="signup-header">
+                <h1 data-i18n="signup.title">Créer un compte</h1>
+                <p data-i18n="signup.subtitle">Rejoignez Nimwema et commencez à partager la solidarité</p>
             </div>
 
-            <div class="form-group">
-                <label for="fullName" data-i18n="signup.fullName">Nom complet <span style="color: #dc3545;">*</span></label>
-                <input type="text" id="fullName" name="fullName" required aria-required="true" minlength="2">
-                <span class="error" data-i18n="signup.errors.fullNameRequired">Le nom complet est requis (au moins 2 caractères)</span>
+            <div id="alertBox" class="alert" role="alert"></div>
+
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p data-i18n="signup.processing">Création de votre compte...</p>
             </div>
 
-            <div class="form-group">
-                <label for="email" data-i18n="signup.email">Email <span style="color: #dc3545;">*</span></label>
-                <input type="email" id="email" name="email" required aria-required="true" autocomplete="email">
-                <span class="error" data-i18n="signup.errors.emailInvalid">Email invalide</span>
-                <span class="error" id="emailExistsError" data-i18n="signup.errors.emailExists">Cet email est déjà utilisé</span>
-            </div>
-
-            <div class="form-group">
-                <label for="phone" data-i18n="signup.phone">Téléphone <span style="color: #dc3545;">*</span></label>
-                <input type="tel" id="phone" name="phone" placeholder="+243XXXXXXXXX" 
-                    pattern="^\+243[0-9]{9}$" required aria-required="true" autocomplete="tel">
-                <span class="error" data-i18n="signup.errors.phoneInvalid">Numéro de téléphone invalide (format: +243XXXXXXXXX)</span>
-                <span class="error" id="phoneExistsError" data-i18n="signup.errors.phoneExists">Ce numéro est déjà utilisé</span>
-            </div>
-
-            <div class="form-group">
-                <label for="password" data-i18n="signup.password">Mot de passe <span style="color: #dc3545;">*</span></label>
-                <input type="password" id="password" name="password" required aria-required="true"
-                    minlength="8" autocomplete="new-password">
-                <div class="password-strength">
-                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
+            <form id="signupForm" novalidate>
+                <div class="user-type-selector">
+                    <label class="user-type-option active">
+                        <input type="radio" name="userType" value="user" checked>
+                        <div class="icon">👤</div>
+                        <div class="label" data-i18n="signup.userType.user">Utilisateur</div>
+                        <div class="description" data-i18n="signup.userType.userDesc">Envoyer et recevoir des bons</div>
+                    </label>
+                    <label class="user-type-option">
+                        <input type="radio" name="userType" value="merchant">
+                        <div class="icon">🏪</div>
+                        <div class="label" data-i18n="signup.userType.merchant">Commerçant</div>
+                        <div class="description" data-i18n="signup.userType.merchantDesc">Accepter les bons</div>
+                    </label>
                 </div>
-                <div class="password-requirements">
-                    <ul id="passwordRequirements">
-                        <li id="req-length" data-i18n="signup.password.length">Au moins 8 caractères</li>
-                        <li id="req-uppercase" data-i18n="signup.password.uppercase">Une lettre majuscule</li>
-                        <li id="req-lowercase" data-i18n="signup.password.lowercase">Une lettre minuscule</li>
-                        <li id="req-number" data-i18n="signup.password.number">Un chiffre</li>
-                    </ul>
+
+                <div class="form-group">
+                    <label for="fullName" data-i18n="signup.fullName">Nom complet <span style="color: #dc3545;">*</span></label>
+                    <input type="text" id="fullName" name="fullName" required aria-required="true" minlength="2">
+                    <span class="error" data-i18n="signup.errors.fullNameRequired">Le nom complet est requis (au moins 2 caractères)</span>
                 </div>
-                <span class="error" data-i18n="signup.errors.passwordWeak">Mot de passe trop faible</span>
+
+                <div class="form-group">
+                    <label for="email" data-i18n="signup.email">Email <span style="color: #dc3545;">*</span></label>
+                    <input type="email" id="email" name="email" required aria-required="true" autocomplete="email">
+                    <span class="error" data-i18n="signup.errors.emailInvalid">Email invalide</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" data-i18n="signup.phone">Téléphone <span style="color: #dc3545;">*</span></label>
+                    <input type="tel" id="phone" name="phone" placeholder="+243XXXXXXXXX" pattern="^\+243[0-9]{9}$" required aria-required="true" autocomplete="tel">
+                    <span class="error" data-i18n="signup.errors.phoneInvalid">Numéro de téléphone invalide (format: +243XXXXXXXXX)</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" data-i18n="signup.password">Mot de passe <span style="color: #dc3545;">*</span></label>
+                    <input type="password" id="password" name="password" required aria-required="true" minlength="8" autocomplete="new-password">
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                    </div>
+                    <div class="password-requirements">
+                        <ul id="passwordRequirements">
+                            <li id="req-length" data-i18n="signup.password.length">Au moins 8 caractères</li>
+                            <li id="req-uppercase" data-i18n="signup.password.uppercase">Une lettre majuscule</li>
+                            <li id="req-lowercase" data-i18n="signup.password.lowercase">Une lettre minuscule</li>
+                            <li id="req-number" data-i18n="signup.password.number">Un chiffre</li>
+                        </ul>
+                    </div>
+                    <span class="error" data-i18n="signup.errors.passwordWeak">Mot de passe trop faible</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword" data-i18n="signup.confirmPassword">Confirmer le mot de passe <span style="color: #dc3545;">*</span></label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required aria-required="true" autocomplete="new-password">
+                    <span class="error" data-i18n="signup.errors.passwordMismatch">Les mots de passe ne correspondent pas</span>
+                </div>
+
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms" name="terms" required aria-required="true">
+                    <label for="terms">
+                        <span data-i18n="signup.terms.agree">J'accepte les</span>
+                        <a href="/terms.html" target="_blank" data-i18n="signup.terms.terms">conditions d'utilisation</a>
+                        <span data-i18n="signup.terms.and">et la</span>
+                        <a href="/privacy.html" target="_blank" data-i18n="signup.terms.privacy">politique de confidentialité</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn" data-i18n="signup.submit">Créer mon compte</button>
+            </form>
+
+            <div class="login-link">
+                <span data-i18n="signup.haveAccount">Vous avez déjà un compte ?</span>
+                <a href="/login.html" data-i18n="signup.login">Se connecter</a>
             </div>
-
-            <div class="form-group">
-                <label for="confirmPassword" data-i18n="signup.confirmPassword">Confirmer le mot de passe <span style="color: #dc3545;">*</span></label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required 
-                    aria-required="true" autocomplete="new-password">
-                <span class="error" data-i18n="signup.errors.passwordMismatch">Les mots de passe ne correspondent pas</span>
-            </div>
-
-            <div class="terms-checkbox">
-                <input type="checkbox" id="terms" name="terms" required aria-required="true">
-                <label for="terms">
-                    <span data-i18n="signup.terms.agree">J'accepte les</span>
-                    <a href="/terms.html" target="_blank" data-i18n="signup.terms.terms">conditions d'utilisation</a>
-                    <span data-i18n="signup.terms.and">et la</span>
-                    <a href="/privacy.html" target="_blank" data-i18n="signup.terms.privacy">politique de confidentialité</a>
-                </label>
-            </div>
-
-            <button type="submit" class="submit-btn" id="submitBtn" data-i18n="signup.submit">Créer mon compte</button>
-        </form>
-
-        <div class="login-link">
-            <span data-i18n="signup.haveAccount">Vous avez déjà un compte ?</span>
-            <a href="login.html" data-i18n="signup.login">Se connecter</a>
         </div>
-    </div>
+    </main>
 
-    <script src="js/i18n.js"></script>
+    <!-- Footer Placeholder -->
+    <div id="app-footer"></div>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
     <script>
-        // Production mode: No console.logs, secure redirects, coherent with backend auth (localStorage for token/user, as per login.html coherence)
+        NimwemaLayout.init({ activePage: 'signup' });
+
         const CONFIG = {
-            API_BASE: window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api', // Adapt to prod (proxy or full URL)
+            API_BASE: window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api',
             STORAGE_KEYS: {
                 USER: 'nimwema_user',
                 TOKEN: 'nimwema_token',
@@ -365,21 +296,20 @@
             }
         };
 
-        // User type selector: Redirect to merchant signup if selected (keeps logic)
+        // User type selector
         document.querySelectorAll('.user-type-option').forEach(option => {
             option.addEventListener('click', function() {
                 document.querySelectorAll('.user-type-option').forEach(opt => opt.classList.remove('active'));
                 this.classList.add('active');
                 const radio = this.querySelector('input[type="radio"]');
                 radio.checked = true;
-                
                 if (radio.value === 'merchant') {
                     window.location.href = 'merchant-signup.html';
                 }
             });
         });
 
-        // Password strength logic (unchanged, coherent)
+        // Password strength
         const passwordInput = document.getElementById('password');
         const strengthBar = document.getElementById('passwordStrengthBar');
         const requirements = {
@@ -393,42 +323,22 @@
             const password = this.value;
             let strength = 0;
 
-            if (password.length >= 8) {
-                requirements.length.classList.add('met');
-                strength++;
-            } else {
-                requirements.length.classList.remove('met');
-            }
+            if (password.length >= 8) { requirements.length.classList.add('met'); strength++; }
+            else { requirements.length.classList.remove('met'); }
 
-            if (/[A-Z]/.test(password)) {
-                requirements.uppercase.classList.add('met');
-                strength++;
-            } else {
-                requirements.uppercase.classList.remove('met');
-            }
+            if (/[A-Z]/.test(password)) { requirements.uppercase.classList.add('met'); strength++; }
+            else { requirements.uppercase.classList.remove('met'); }
 
-            if (/[a-z]/.test(password)) {
-                requirements.lowercase.classList.add('met');
-                strength++;
-            } else {
-                requirements.lowercase.classList.remove('met');
-            }
+            if (/[a-z]/.test(password)) { requirements.lowercase.classList.add('met'); strength++; }
+            else { requirements.lowercase.classList.remove('met'); }
 
-            if (/[0-9]/.test(password)) {
-                requirements.number.classList.add('met');
-                strength++;
-            } else {
-                requirements.number.classList.remove('met');
-            }
+            if (/[0-9]/.test(password)) { requirements.number.classList.add('met'); strength++; }
+            else { requirements.number.classList.remove('met'); }
 
             strengthBar.className = 'password-strength-bar';
-            if (strength === 4) {
-                strengthBar.classList.add('strong');
-            } else if (strength >= 2) {
-                strengthBar.classList.add('medium');
-            } else if (strength > 0) {
-                strengthBar.classList.add('weak');
-            }
+            if (strength === 4) strengthBar.classList.add('strong');
+            else if (strength >= 2) strengthBar.classList.add('medium');
+            else if (strength > 0) strengthBar.classList.add('weak');
         });
 
         // Form handling
@@ -441,30 +351,15 @@
             alertBox.textContent = message;
             alertBox.className = `alert ${type}`;
             alertBox.style.display = 'block';
-            
-            if (type === 'success') {
-                setTimeout(() => {
-                    alertBox.style.display = 'none';
-                }, 5000);
-            }
+            if (type === 'success') setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
         }
 
-        function validateEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
-        function validatePhone(phone) {
-            return /^\+243[0-9]{9}$/.test(phone);
-        }
-
+        function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+        function validatePhone(phone) { return /^\+243[0-9]{9}$/.test(phone); }
         function validatePassword(password) {
-            return password.length >= 8 &&
-                   /[A-Z]/.test(password) &&
-                   /[a-z]/.test(password) &&
-                   /[0-9]/.test(password);
+            return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
         }
 
-        // Improved validation with specific error messages for backend errors (coherent with backend responses)
         function setFieldError(fieldId, errorMessage) {
             const group = document.getElementById(fieldId).closest('.form-group');
             group.classList.add('has-error');
@@ -475,7 +370,6 @@
         signupForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Reset errors
             document.querySelectorAll('.form-group').forEach(group => {
                 group.classList.remove('has-error');
                 const errorSpan = group.querySelector('.error');
@@ -495,55 +389,24 @@
 
             let isValid = true;
 
-            if (!formData.fullName || formData.fullName.length < 2) {
-                setFieldError('fullName', 'Le nom complet est requis (au moins 2 caractères)');
-                isValid = false;
-            }
+            if (!formData.fullName || formData.fullName.length < 2) { setFieldError('fullName', 'Le nom complet est requis'); isValid = false; }
+            if (!validateEmail(formData.email)) { setFieldError('email', 'Email invalide'); isValid = false; }
+            if (!validatePhone(formData.phone)) { setFieldError('phone', 'Numéro invalide (+243XXXXXXXXX)'); isValid = false; }
+            if (!validatePassword(formData.password)) { setFieldError('password', 'Mot de passe trop faible'); isValid = false; }
+            if (formData.password !== formData.confirmPassword) { setFieldError('confirmPassword', 'Les mots de passe ne correspondent pas'); isValid = false; }
+            if (!formData.terms) { showAlert("Acceptez les conditions d'utilisation", 'error'); isValid = false; }
 
-            if (!validateEmail(formData.email)) {
-                setFieldError('email', 'Email invalide');
-                isValid = false;
-            }
+            if (!isValid) { document.getElementById('fullName').focus(); return; }
 
-            if (!validatePhone(formData.phone)) {
-                setFieldError('phone', 'Numéro de téléphone invalide (format: +243XXXXXXXXX)');
-                isValid = false;
-            }
-
-            if (!validatePassword(formData.password)) {
-                setFieldError('password', 'Mot de passe trop faible');
-                isValid = false;
-            }
-
-            if (formData.password !== formData.confirmPassword) {
-                setFieldError('confirmPassword', 'Les mots de passe ne correspondent pas');
-                isValid = false;
-            }
-
-            if (!formData.terms) {
-                showAlert("Vous devez accepter les conditions d'utilisation", 'error');
-                isValid = false;
-            }
-
-            if (!isValid) {
-                document.getElementById('fullName').focus(); // Focus first field
-                return;
-            }
-
-            // Show loading
             loadingSpinner.classList.add('active');
             signupForm.style.display = 'none';
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Création en cours...';
 
             try {
                 const pendingOrder = sessionStorage.getItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
-                
                 const response = await fetch(`${CONFIG.API_BASE}/auth/signup`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name: formData.fullName,
                         email: formData.email,
@@ -557,51 +420,26 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Clear pending if set
-                    if (pendingOrder) {
-                        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
-                    }
-                    
-                    // Store user and token (coherent with login.html and dashboard auth)
+                    if (pendingOrder) sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_ORDER);
                     if (data.user && data.token) {
                         localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify(data.user));
                         localStorage.setItem(CONFIG.STORAGE_KEYS.TOKEN, data.token);
                     }
-                    
-                    showAlert('Compte créé avec succès ! Redirection vers le tableau de bord...', 'success');
-                    
-                    // Fixed: Always redirect to dashboard after auto-login (removes erroneous login.html redirect for normal signup)
-                    // PendingOrder handled backend-side; dashboard can check token for auth
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 2000);
+                    showAlert('Compte créé ! Redirection...', 'success');
+                    setTimeout(() => { window.location.href = '/dashboard.html'; }, 2000);
                 } else {
-                    // Handle specific backend errors (improvement: coherent with backend messages)
-                    let errorMsg = data.message || data.error || 'Erreur lors de la création du compte';
-                    if (data.error === 'EMAIL_EXISTS') {
-                        setFieldError('email', 'Cet email est déjà utilisé');
-                    } else if (data.error === 'PHONE_EXISTS') {
-                        setFieldError('phone', 'Ce numéro est déjà utilisé');
-                    }
+                    let errorMsg = data.message || data.error || 'Erreur lors de la création';
+                    if (data.error === 'EMAIL_EXISTS') setFieldError('email', 'Cet email est déjà utilisé');
+                    else if (data.error === 'PHONE_EXISTS') setFieldError('phone', 'Ce numéro est déjà utilisé');
                     throw new Error(errorMsg);
                 }
             } catch (error) {
-                // Production: No console.error
-                showAlert(error.message || 'Une erreur est survenue. Veuillez réessayer.', 'error');
+                showAlert(error.message || 'Une erreur est survenue', 'error');
                 loadingSpinner.classList.remove('active');
                 signupForm.style.display = 'block';
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Créer mon compte';
-            }
-        });
-
-        // i18n init (unchanged)
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof initI18n === 'function') {
-                initI18n();
             }
         });
     </script>
-    <script src="/js/main.js"></script
 </body>
 </html>

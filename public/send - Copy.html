@@ -239,7 +239,7 @@
 					
 					<div class="form-group">
                         <label for="senderName" class="form-label">
-                            <span data-i18n="your_name">Votre Téléphone (sera utilisé en cas de payment Mobile Money</span>
+                            <span data-i18n="your_mobile">Votre Téléphone (sera utilisé en cas de payment Mobile Money</span>
                             <span class="required">*</span>
                         </label>
 					<input type="tel" id="senderPhone" name="senderPhone"
@@ -249,33 +249,7 @@
 <p class="text-xs text-gray-500 mt-1">Format conseillé : +243812345678 (E.164)</p>
 </div>
 
-                        <div class="form-group" id="accountFields" style="display: none;">
-                            <label for="senderEmail" class="form-label">
-                                <span data-i18n="your_email">Votre Email</span>
-                                <span class="required">*</span>
-                            </label>
-                            <input type="email" id="senderEmail" name="senderEmail"
-                                class="form-input"
-                                placeholder="votre@email.com"
-                                autocomplete="email" >
-                        </div>
 
-                        <div class="form-group" id="passwordFields" style="display: none;">
-                            <label for="senderPassword" class="form-label">
-                                <span data-i18n="your_password">Mot de passe</span>
-                                <span class="required">*</span>
-                            </label>
-                            <div class="password-input-container">
-                                <input type="password" id="senderPassword" name="senderPassword"
-                                    class="form-input"
-                                    placeholder="Choisissez un mot de passe"
-                                    autocomplete="new-password" >
-                                <button type="button" class="password-toggle" onclick="togglePassword()">
-                                    <i class="eye-icon">👁️</i>
-                                </button>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">Ce mot de passe vous servira à vous connecter plus tard</p>
-                        </div>
 
 					
 					
@@ -380,7 +354,7 @@
                             <input type="radio" name="paymentMethod" value="cash">
                             <span class="payment-method-content">
                                 <span class="payment-method-icon">💵</span>
-                                <span class="payment-method-name">Cash / Western Union</span>
+                                <span class="payment-method-name">Cash/Western Union</span>
                                 <span class="payment-method-desc">Paiement manuel</span>
                             </span>
                         </label>
@@ -423,42 +397,115 @@
     <script src="/js/main.js"></script>
     <script src="/js/send-voucher.js"></script>
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById("senderPassword");
-            const eyeIcon = document.querySelector(".eye-icon");
-            
-            if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                eyeIcon.textContent = "🙈";
-            } else {
-                passwordInput.type = "password";
-                eyeIcon.textContent = "👁️";
-            }
-        }
+        // Payment method selection - no longer needed for inline fields
+        // Cash/Bank will redirect to login page
         
-        // Show account fields when Cash/WU is selected
-        document.addEventListener("DOMContentLoaded", function() {
-            const paymentMethods = document.querySelectorAll("input[name="paymentMethod"]");
-            const accountFields = document.getElementById("accountFields");
-            const passwordFields = document.getElementById("passwordFields");
-            
-            paymentMethods.forEach(method => {
-                method.addEventListener("change", function() {
-                    if (this.value === "cash" || this.value === "bank") {
-                        accountFields.style.display = "block";
-                        passwordFields.style.display = "block";
-                        document.getElementById("senderEmail").required = true;
-                        document.getElementById("senderPassword").required = true;
-                    } else {
-                        accountFields.style.display = "none";
-                        passwordFields.style.display = "none";
-                        document.getElementById("senderEmail").required = false;
-                        document.getElementById("senderPassword").required = false;
-                    }
-                });
-            });
+        // Check for resumed order after login
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('resume') === 'true') {
+                const pendingOrder = sessionStorage.getItem('pendingVoucherOrder');
+                if (pendingOrder) {
+                    // User just logged in with a pending cash/bank order
+                    // Auto-submit the order
+                    setTimeout(async function() {
+                        try {
+                            const formData = JSON.parse(pendingOrder);
+                            
+                            // Show loading
+                            const overlay = document.createElement('div');
+                            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999';
+                            overlay.innerHTML = '<div style="background:#fff;padding:24px 28px;border-radius:10px;text-align:center"><div style="width:40px;height:40px;border:4px solid #eee;border-top:4px solid #8BC34A;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px"></div><div>Création de votre commande...</div><style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style></div>';
+                            document.body.appendChild(overlay);
+                            
+                            // Create the pending order
+                            const response = await fetch('/api/vouchers/create-pending', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(formData)
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (response.ok && result.success) {
+                                // Clear the pending order
+                                sessionStorage.removeItem('pendingVoucherOrder');
+                                // Store the order for the instructions page
+                                sessionStorage.setItem('pendingOrder', JSON.stringify(result.order));
+                                // Redirect to payment instructions
+                                window.location.href = '/payment-instructions.html';
+                            } else {
+                                throw new Error(result.message || 'Erreur lors de la création');
+                            }
+                        } catch (error) {
+                            console.error('Error resuming order:', error);
+                            sessionStorage.removeItem('pendingVoucherOrder');
+                            alert('Erreur lors de la création de votre commande. Veuillez réessayer.');
+                            // Clean URL
+                            window.history.replaceState({}, document.title, '/send.html');
+                        }
+                    }, 500);
+                }
+            }
         });
     </script>
+<!-- Prefill from dashboard query params -->
+    <script>
+        (function () {
+            function applyPrefillFromQuery() {
+                if (!('URLSearchParams' in window)) return;
 
+                var params = new URLSearchParams(window.location.search);
+                if (!params.toString()) return;
+
+                // 1) Sender name: accept ?senderName=... or ?name=...
+                var senderNameFromParams = params.get('senderName') || params.get('sname');
+                if (senderNameFromParams) {
+                    var senderNameInput = document.getElementById('senderName');
+                    if (senderNameInput && !senderNameInput.value) {
+                        senderNameInput.value = senderNameFromParams;
+                    }
+                }
+
+                // 2) Sender phone: accept ?senderPhone=... or ?phone=...
+                //    Also try to prefill the first recipient phone if it exists.
+                var senderPhoneFromParams = params.get('senderPhone') || params.get('sphone');
+                if (senderPhoneFromParams) {
+                    var senderPhoneInput = document.getElementById('senderPhone');
+                    if (senderPhoneInput && !senderPhoneInput.value) {
+                        senderPhoneInput.value = senderPhoneFromParams;
+                    }
+
+                    // Try to prefill first recipient phone, once send-voucher.js created it
+                    var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
+                    var rPhoneFromParams = params.get('recipientPhone') || params.get('phone');
+
+                    if (firstRecipientPhone && !firstRecipientPhone.value) {
+                        firstRecipientPhone.value = rPhoneFromParams;
+                    }
+                }
+else {              var firstRecipientPhone = document.querySelector('#recipientsInputContainer input[type="tel"]');
+                    var rPhoneFromParams = params.get('recipientPhone') || params.get('phone');
+
+                    if (firstRecipientPhone && !firstRecipientPhone.value) {
+                        firstRecipientPhone.value = rPhoneFromParams;
+                    }
+
+}
+               
+
+                // 3) Generic fallback: param name == element id
+                params.forEach(function (value, key) {
+                    var el = document.getElementById(key);
+                    if (el && !el.value) {
+                        el.value = value;
+                    }
+                });
+            }
+
+            // Use window.load so /js/send-voucher.js has time to build recipient fields
+            window.addEventListener('load', applyPrefillFromQuery);
+        })();
+    </script>
 </body>
 </html>

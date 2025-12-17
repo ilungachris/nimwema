@@ -156,6 +156,31 @@
             border: 1px solid #4caf50;
         }
 
+        .info-message {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #2196f3;
+        }
+
+        .info-message strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .info-message p {
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        .info-message a {
+            color: #1565c0;
+            font-weight: 600;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -225,6 +250,13 @@
 
             <div id="errorMessage" class="error-message" role="alert" aria-live="polite"></div>
             <div id="successMessage" class="success-message" role="alert" aria-live="polite"></div>
+            
+            <!-- Info message for cash/bank order redirect -->
+            <div id="cashOrderInfo" class="info-message" role="alert" style="display: none;">
+                <strong>📋 Commande en attente</strong>
+                <p>Pour suivre votre envoi en cash ou par virement bancaire, vous devez vous connecter à votre compte.</p>
+                <p>Pas encore de compte ? <a href="signup.html?redirect=send&reason=cash_order">Créez-en un ici</a></p>
+            </div>
 
             <form id="loginForm" novalidate>
                 <div class="form-group">
@@ -276,6 +308,14 @@
     </div>
 
     <script>
+        // FIXED: Add CONFIG (matches dashboard)
+        const CONFIG = {
+            STORAGE_KEYS: {
+                USER: 'nimwema_user',
+                TOKEN: 'nimwema_token'
+            }
+        };
+
         // Elements
         const form = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
@@ -383,22 +423,47 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: 'Erreur de serveur' }));
-                    throw new Error(errorData.message || `Erreur HTTP ${response.status}`);
+                    const errorData = await response.json().catch(() => ({ error: 'Erreur de serveur' }));
+                    throw new Error(errorData.error || `Erreur HTTP ${response.status}`);  // Use .error
                 }
 
                 const result = await response.json();
 
+                // FIXED Success Block (paste here – stores token + user)
+                const CONFIG = {
+                    STORAGE_KEYS: {
+                        USER: 'nimwema_user',
+                        TOKEN: 'nimwema_token'
+                    }
+                };
+
                 if (result.success) {
-                    // Assume backend sets session cookie; store user info (no sensitive data)
-                    localStorage.setItem('nimwema_user', JSON.stringify({
+                    // FIXED: Store user + token (sessionId for dashboard Bearer fallback)
+                    localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify({
                         id: result.user.id,
                         email: result.user.email,
                         role: result.user.role,
-                        name: result.user.name // If available
+                        name: result.user.name || `${result.user.firstName || ''} ${result.user.lastName || ''}`.trim(),
+                        phone: result.user.phone // If backend returns
                     }));
+                    if (result.token) {
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.TOKEN, result.token);
+                    }
 
                     showSuccess('Connexion réussie ! Redirection en cours...');
+                    
+                    // Check for pending cash/bank order
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirect = urlParams.get('redirect');
+                    const reason = urlParams.get('reason');
+                    
+                    if (redirect === 'send' && reason === 'cash_order') {
+                        // Redirect back to send page to complete the order
+                        setTimeout(() => {
+                            window.location.href = '/send.html?resume=true';
+                        }, 1500);
+                        return;
+                    }
 
                     // Redirect based on role
                     setTimeout(() => {
@@ -417,11 +482,13 @@
                         }
                     }, 1500);
                 } else {
-                    throw new Error(result.message || 'Erreur de connexion');
+                    throw new Error(result.message || result.error || 'Erreur de connexion'); // FIXED: .message fallback
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showError(error.message || 'Une erreur est survenue. Veuillez réessayer.');
+                let msg = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                if (msg.includes('401') || msg.includes('Identifiants')) msg = 'Email ou mot de passe incorrect.';
+                showError(msg);
             } finally {
                 // Re-enable button
                 loginBtn.disabled = false;
@@ -430,12 +497,35 @@
             }
         });
 
-        // Check if already logged in
+        // FIXED Already Logged Check (use CONFIG key)
         window.addEventListener('DOMContentLoaded', () => {
-                        const userStr = localStorage.getItem('nimwema_user');
+            // Check for cash/bank order redirect
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect');
+            const reason = urlParams.get('reason');
+            
+            if (reason === 'cash_order') {
+                const infoBox = document.getElementById('cashOrderInfo');
+                if (infoBox) {
+                    infoBox.style.display = 'block';
+                }
+            }
+            
+            const userStr = localStorage.getItem(CONFIG.STORAGE_KEYS.USER);
             if (userStr) {
                 try {
                     const userData = JSON.parse(userStr);
+                    
+                    // If redirected from cash order, process the pending order
+                    if (redirect === 'send' && reason === 'cash_order') {
+                        const pendingOrder = sessionStorage.getItem('pendingVoucherOrder');
+                        if (pendingOrder) {
+                            // Redirect back to send page to complete the order
+                            window.location.href = '/send.html?resume=true';
+                            return;
+                        }
+                    }
+                    
                     // Redirect to appropriate dashboard
                     switch (userData.role) {
                         case 'admin':
@@ -452,7 +542,7 @@
                     }
                 } catch (e) {
                     console.error('Invalid user data in localStorage:', e);
-                    localStorage.removeItem('nimwema_user');
+                    localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
                 }
             }
         });

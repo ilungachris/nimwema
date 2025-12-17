@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dire Merci - Nimwema</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/forms.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/layout.css">
     <style>
         .thank-you-container {
             max-width: 600px;
@@ -15,39 +19,32 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
         .thank-you-header {
             text-align: center;
             margin-bottom: 30px;
         }
-
         .thank-you-header h1 {
             color: #111111;
             font-size: 28px;
             margin-bottom: 10px;
         }
-
         .thank-you-header p {
             color: #666;
             font-size: 14px;
         }
-
         .thank-you-icon {
             font-size: 64px;
             margin-bottom: 20px;
         }
-
         .form-group {
             margin-bottom: 20px;
         }
-
         .form-group label {
             display: block;
             margin-bottom: 8px;
             color: #111111;
             font-weight: 500;
         }
-
         .form-group input,
         .form-group textarea {
             width: 100%;
@@ -56,26 +53,23 @@
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
+            box-sizing: border-box;
         }
-
         .form-group textarea {
             min-height: 150px;
             resize: vertical;
         }
-
         .form-group input:focus,
         .form-group textarea:focus {
             outline: none;
             border-color: #8BC34A;
         }
-
         .char-count {
             text-align: right;
             font-size: 12px;
             color: #999;
             margin-top: 5px;
         }
-
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -88,35 +82,16 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-
-        .submit-btn:hover {
-            background: #7CB342;
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
+        .submit-btn:hover { background: #7CB342; }
+        .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
         .alert {
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
         }
-
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
+        .alert.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .info-box {
             background: #e7f3ff;
             border-left: 4px solid #2196F3;
@@ -124,23 +99,13 @@
             margin-bottom: 20px;
             border-radius: 4px;
         }
-
         .info-box p {
             margin: 0;
             font-size: 13px;
             color: #666;
         }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
+        .loading { display: none; text-align: center; padding: 20px; }
+        .loading.active { display: block; }
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #8BC34A;
@@ -150,73 +115,52 @@
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <a href="index.html">
-                    <span class="logo">NIMWEMA</span>
-                </a>
+    <!-- Layout Placeholders -->
+    <div id="app-header"></div>
+    <div id="app-mobile-nav"></div>
+
+    <main>
+        <div class="thank-you-container">
+            <div class="thank-you-header">
+                <div class="thank-you-icon">🙏</div>
+                <h1>Dire Merci</h1>
+                <p>Envoyez un message de remerciement à votre bienfaiteur</p>
             </div>
-            <div class="nav-links">
-                <a href="index.html">Accueil</a>
-                <a href="request.html">Demander</a>
-                <a href="send.html">Envoyer</a>
-                <a href="thank-you.html" class="active">Dire Merci</a>
-                <div class="language-selector">
-                    <button id="languageToggle" class="language-btn">
-                        <span id="currentLanguage">FR</span>
-                    </button>
+
+            <div id="alertBox" class="alert"></div>
+
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Envoi en cours...</p>
+            </div>
+
+            <div class="info-box">
+                <p>💡 Votre message de remerciement sera envoyé par SMS à la personne qui vous a envoyé le bon.</p>
+            </div>
+
+            <form id="thankYouForm">
+                <div class="form-group">
+                    <label for="recipientName">Votre nom *</label>
+                    <input type="text" id="recipientName" name="recipientName" required>
                 </div>
-            </div>
-        </div>
-    </nav>
 
-    <div class="thank-you-container">
-        <div class="thank-you-header">
-            <div class="thank-you-icon">🙏</div>
-            <h1>Dire Merci</h1>
-            <p>Envoyez un message de remerciement à votre bienfaiteur</p>
-        </div>
+                <div class="form-group">
+                    <label for="recipientPhone">Votre téléphone *</label>
+                    <input type="tel" id="recipientPhone" name="recipientPhone" placeholder="+243XXXXXXXXX" required>
+                </div>
 
-        <div id="alertBox" class="alert"></div>
+                <div class="form-group">
+                    <label for="senderPhone">Téléphone du bienfaiteur *</label>
+                    <input type="tel" id="senderPhone" name="senderPhone" placeholder="+243XXXXXXXXX" required>
+                </div>
 
-        <div class="loading" id="loadingSpinner">
-            <div class="spinner"></div>
-            <p>Envoi en cours...</p>
-        </div>
-
-        <div class="info-box">
-            <p>💡 Votre message de remerciement sera envoyé par SMS à la personne qui vous a envoyé le bon.</p>
-        </div>
-
-        <form id="thankYouForm">
-            <div class="form-group">
-                <label for="recipientName">Votre nom *</label>
-                <input type="text" id="recipientName" name="recipientName" required>
-            </div>
-
-            <div class="form-group">
-                <label for="recipientPhone">Votre téléphone *</label>
-                <input type="tel" id="recipientPhone" name="recipientPhone" placeholder="+243XXXXXXXXX" required>
-            </div>
-
-            <div class="form-group">
-                <label for="senderPhone">Téléphone du bienfaiteur *</label>
-                <input type="tel" id="senderPhone" name="senderPhone" placeholder="+243XXXXXXXXX" required>
-            </div>
-
-            <div class="form-group">
-                <label for="thankYouMessage">Message de remerciement *</label>
-                <textarea id="thankYouMessage" name="thankYouMessage" maxlength="500" required>Bonjour,
+                <div class="form-group">
+                    <label for="thankYouMessage">Message de remerciement *</label>
+                    <textarea id="thankYouMessage" name="thankYouMessage" maxlength="500" required>Bonjour,
 
 Je tiens à vous remercier du fond du cœur pour le bon d'achat que vous m'avez envoyé via Nimwema. Votre générosité et votre soutien signifient beaucoup pour moi et ma famille.
 
@@ -225,34 +169,36 @@ Grâce à votre aide, j'ai pu subvenir à mes besoins essentiels. Votre geste de
 Que Dieu vous bénisse abondamment.
 
 Merci encore!</textarea>
-                <div class="char-count">
-                    <span id="charCount">0</span>/500 caractères
+                    <div class="char-count">
+                        <span id="charCount">0</span>/500 caractères
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit" class="submit-btn">Envoyer le message de remerciement</button>
-        </form>
-    </div>
+                <button type="submit" class="submit-btn">Envoyer le message de remerciement</button>
+            </form>
+        </div>
+    </main>
 
-    <script src="js/i18n.js"></script>
+    <!-- Footer Placeholder -->
+    <div id="app-footer"></div>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
     <script>
-        // Get voucher code from URL if present
+        NimwemaLayout.init({ activePage: 'thank-you' });
+
         const urlParams = new URLSearchParams(window.location.search);
         const voucherCode = urlParams.get('code');
 
-        // Character counter
         const messageTextarea = document.getElementById('thankYouMessage');
         const charCount = document.getElementById('charCount');
 
         function updateCharCount() {
-            const count = messageTextarea.value.length;
-            charCount.textContent = count;
+            charCount.textContent = messageTextarea.value.length;
         }
-
         messageTextarea.addEventListener('input', updateCharCount);
         updateCharCount();
 
-        // Load voucher info if code is provided
         async function loadVoucherInfo() {
             if (voucherCode) {
                 try {
@@ -267,10 +213,8 @@ Merci encore!</textarea>
                 }
             }
         }
-
         loadVoucherInfo();
 
-        // Form submission
         document.getElementById('thankYouForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -282,28 +226,23 @@ Merci encore!</textarea>
                 voucherCode: voucherCode
             };
 
-            // Validate phone numbers
             const phoneRegex = /^\+243[0-9]{9}$/;
             if (!phoneRegex.test(formData.recipientPhone)) {
                 showAlert('Numéro de téléphone du destinataire invalide. Format: +243XXXXXXXXX', 'error');
                 return;
             }
-
             if (!phoneRegex.test(formData.senderPhone)) {
                 showAlert('Numéro de téléphone du bienfaiteur invalide. Format: +243XXXXXXXXX', 'error');
                 return;
             }
 
-            // Show loading
             document.getElementById('loadingSpinner').classList.add('active');
             document.getElementById('thankYouForm').style.display = 'none';
 
             try {
                 const response = await fetch('/api/thank-you/send', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
 
@@ -311,8 +250,6 @@ Merci encore!</textarea>
 
                 if (response.ok) {
                     showAlert('✅ Votre message de remerciement a été envoyé avec succès !', 'success');
-                    
-                    // Reset form after 2 seconds
                     setTimeout(() => {
                         document.getElementById('thankYouForm').reset();
                         updateCharCount();
@@ -323,7 +260,6 @@ Merci encore!</textarea>
                     throw new Error(data.error || 'Erreur lors de l\'envoi du message');
                 }
             } catch (error) {
-                console.error('Thank you error:', error);
                 showAlert(error.message, 'error');
                 document.getElementById('loadingSpinner').classList.remove('active');
                 document.getElementById('thankYouForm').style.display = 'block';
@@ -335,18 +271,8 @@ Merci encore!</textarea>
             alertBox.textContent = message;
             alertBox.className = `alert ${type}`;
             alertBox.style.display = 'block';
-            
-            setTimeout(() => {
-                alertBox.style.display = 'none';
-            }, 5000);
+            setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
         }
-
-        // Initialize i18n
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof initI18n === 'function') {
-                initI18n();
-            }
-        });
     </script>
 </body>
 </html>

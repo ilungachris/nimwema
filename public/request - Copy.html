@@ -14,12 +14,35 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/forms.css">
-    <link rel="stylesheet" href="/css/layout.css">
+ 
 </head>
 <body>
-    <!-- Layout Placeholders -->
-    <div id="app-header"></div>
-    <div id="app-mobile-nav"></div>
+    <!-- Header -->
+    <header class="header">
+        <!-- Top Bar: Language Selector + Login -->
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span data-i18n="login">Connexion</span> / <span data-i18n="welcome">Bienvenue</span>
+            </button>
+        </div>
+        
+        <!-- Main Header: Logo + Menu -->
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
 
     <!-- Main Content -->
     <main class="section">
@@ -148,7 +171,7 @@
 
                 <!-- Known Sender Fields (Visible by default) -->
                 <div id="knownSenderFields" class="form-section">
-                    <h3 class="form-section-title" data-i18n="sender_details">Coordonnées de l'expéditeur</h3>
+                    <h3 class="form-section-title" data-i18n="sender_info">Informations de l'expéditeur</h3>
                     
                     <!-- Sender Name -->
                     <div class="form-group">
@@ -232,23 +255,61 @@
         </div>
     </main>
 
-    <!-- Footer Placeholder -->
-    <div id="app-footer"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="quick_links">Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html" data-i18n="send_voucher">Envoyer un bon</a></li>
+                        <li><a href="/request.html" data-i18n="request_voucher">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html" data-i18n="how_it_works">Comment ça marche</a></li>
+                        <li><a href="/about.html" data-i18n="about">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="support">Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html" data-i18n="contact">Contact</a></li>
+                        <li><a href="/terms.html" data-i18n="terms">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html" data-i18n="privacy">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="contact">Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.com<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. <span data-i18n="all_rights">Tous droits réservés.</span></p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script src="/js/i18n.js"></script>
-    <script src="/js/layout.js"></script>
+    <script src="/js/main.js"></script>
     <script src="/js/request-form.js"></script>
-    <script>
-        NimwemaLayout.init({ activePage: 'request' });
-    </script>
+
+
     <script>
         (function () {
             function applyPrefillFromQuery() {
                 if (!('URLSearchParams' in window)) return;
+
                 var params = new URLSearchParams(window.location.search);
                 if (!params.toString()) return;
 
+                // 1) Special mappings you already use from the dashboard
+                // Example: ?senderPhone=...&senderName=...
                 var senderPhone = params.get('senderPhone');
                 if (senderPhone) {
                     ['senderPhone', 'senderPhoneConfirm'].forEach(function (id) {
@@ -263,6 +324,7 @@
                     if (elSenderName && !elSenderName.value) elSenderName.value = senderName;
                 }
 
+                // Optional: allow dashboard to prefill requester too
                 var phone = params.get('sphone');
                 if (phone) {
                     ['phone', 'phoneConfirm'].forEach(function (id) {
@@ -289,11 +351,15 @@
                     if (elMessage && !elMessage.value) elMessage.value = message;
                 }
 
+                // 2) Generic mapping: if a param name matches an element id, fill it
                 params.forEach(function (value, key) {
                     var el = document.getElementById(key);
-                    if (el && !el.value) el.value = value;
+                    if (el && !el.value) {
+                        el.value = value;
+                    }
                 });
             }
+
             window.addEventListener('load', applyPrefillFromQuery);
         })();
     </script>

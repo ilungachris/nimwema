@@ -9,19 +9,38 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="/css/layout.css">
 </head>
 <body>
-    <!-- Layout Placeholders -->
-    <div id="app-header"></div>
-    <div id="app-mobile-nav"></div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="fr">FR</button>
+                <button class="lang-btn" data-lang="ln">LN</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button class="login-btn" onclick="window.location.href='/login.html'">
+                <span>Connexion</span> / <span>Bienvenue</span>
+            </button>
+        </div>
+        <div class="header-main">
+            <a href="/" class="logo">
+                NIM<span class="w">W</span>EMA
+            </a>
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
 
     <main>
         <section class="section" style="padding-top:2.5rem;">
             <div class="container container-narrow">
                 <h1>Contact</h1>
                 <p>
-                    Une question, un partenariat, un retour d'expérience ? Écrivez-nous, nous reviendrons vers vous
+                    Une question, un partenariat, un retour d’expérience&nbsp;? Écrivez-nous, nous reviendrons vers vous
                     dans les plus brefs délais.
                 </p>
             </div>
@@ -76,13 +95,45 @@
         </section>
     </main>
 
-    <!-- Footer Placeholder -->
-    <div id="app-footer"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Nimwema</h4>
+                    <p class="text-small">La solidarité africaine, rendue simple.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liens Rapides</h4>
+                    <ul class="footer-links">
+                        <li><a href="/send.html">Envoyer un bon</a></li>
+                        <li><a href="/request.html">Demander un bon</a></li>
+                        <li><a href="/how-it-works.html">Comment ça marche</a></li>
+                        <li><a href="/about.html">À propos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/terms.html">Termes et Conditions</a></li>
+                        <li><a href="/privacy.html">Politique de Confidentialité</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p class="text-small">
+                        Email: info@nimwema.com<br>
+                        Kinshasa, RDC
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nimwema. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
 
-    <script src="/js/i18n.js"></script>
-    <script src="/js/layout.js"></script>
-    <script>
-        NimwemaLayout.init({ activePage: 'contact' });
-    </script>
+    <script src="/js/main.js"></script>
 </body>
 </html>
