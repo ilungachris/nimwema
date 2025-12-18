@@ -1,11 +1,8 @@
 /**
- * Nimwema Layout System v1.1
+ * Nimwema Layout System v1.0
  * 
  * Single source of truth for header, footer, sidebar, and mobile navigation.
  * Designed for easy migration to mobile apps (React Native, Flutter).
- * 
- * v1.1 Changes:
- * - Mobile nav now includes full dashboard menu for user/admin/merchant
  * 
  * Usage:
  *   <div id="app-header"></div>
@@ -227,66 +224,20 @@
         const user = getCurrentUser();
         const isLoggedIn = user !== null;
         const activePage = currentOptions.activePage || '';
-        const activeSection = currentOptions.activeSection || 'home';
-        const sidebarType = currentOptions.sidebar;
 
-        // Build dashboard section based on sidebar type
-        let dashboardSection = '';
-        
-        if (sidebarType === 'user') {
-            // User dashboard menu items
-            dashboardSection = `
-                <div class="mobile-nav-divider"></div>
-                <p class="mobile-nav-section-title">Mon Tableau de Bord</p>
-                <ul class="mobile-nav-links">
-                    <li><a href="/dashboard.html" class="${activePage === 'dashboard' && activeSection === 'home' ? 'active' : ''}">Accueil</a></li>
-                    <li><a href="/dashboard.html#sent-vouchers" class="${activeSection === 'sent-vouchers' ? 'active' : ''}">Bons envoyés</a></li>
-                    <li><a href="/dashboard.html#requested-vouchers" class="${activeSection === 'requested-vouchers' ? 'active' : ''}">Bons demandés</a></li>
-                    <li><a href="/dashboard.html#recipients" class="${activeSection === 'recipients' ? 'active' : ''}">Mes Destinataires</a></li>
-                    <li><a href="/dashboard.html#senders" class="${activeSection === 'senders' ? 'active' : ''}">Mes Expéditeurs</a></li>
-                    <li><a href="/payment-instructions.html" class="${activePage === 'payment-instructions' ? 'active' : ''}">Instructions de Paiement</a></li>
-                </ul>
-            `;
-        } else if (sidebarType === 'admin') {
-            // Admin dashboard menu items
-            dashboardSection = `
-                <div class="mobile-nav-divider"></div>
-                <p class="mobile-nav-section-title">Administration</p>
-                <ul class="mobile-nav-links">
-                    <li><a href="#" onclick="showSection('overview'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'overview' ? 'active' : ''}">Vue d'ensemble</a></li>
-                    <li><a href="#" onclick="showSection('pending'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'pending' ? 'active' : ''}">Commandes en attente</a></li>
-                    <li><a href="#" onclick="showSection('merchants'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'merchants' ? 'active' : ''}">Commerçants</a></li>
-                    <li><a href="#" onclick="showSection('users'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'users' ? 'active' : ''}">Utilisateurs</a></li>
-                    <li><a href="#" onclick="showSection('transactions'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'transactions' ? 'active' : ''}">Transactions</a></li>
-                    <li><a href="#" onclick="showSection('settings'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'settings' ? 'active' : ''}">Paramètres</a></li>
-                </ul>
-            `;
-        } else if (sidebarType === 'merchant') {
-            // Merchant dashboard menu items
-            dashboardSection = `
-                <div class="mobile-nav-divider"></div>
-                <p class="mobile-nav-section-title">Espace Commerçant</p>
-                <ul class="mobile-nav-links">
-                    <li><a href="#" onclick="showSection('overview'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'overview' ? 'active' : ''}">Vue d'ensemble</a></li>
-                    <li><a href="#" onclick="showSection('redeem'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'redeem' ? 'active' : ''}">Racheter un bon</a></li>
-                    <li><a href="#" onclick="showSection('history'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'history' ? 'active' : ''}">Historique</a></li>
-                    <li><a href="#" onclick="showSection('cashiers'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'cashiers' ? 'active' : ''}">Caissiers</a></li>
-                    <li><a href="#" onclick="showSection('settings'); NimwemaLayout.closeMobileMenu(); return false;" class="${activeSection === 'settings' ? 'active' : ''}">Paramètres</a></li>
-                </ul>
-            `;
-        } else if (isLoggedIn) {
-            // Logged in but no specific sidebar (public pages)
-            dashboardSection = `
+        // Build account section based on login state
+        let accountSection = '';
+        if (isLoggedIn) {
+            accountSection = `
                 <div class="mobile-nav-divider"></div>
                 <p class="mobile-nav-section-title">Mon Compte</p>
                 <ul class="mobile-nav-links">
-                    <li><a href="/dashboard.html" class="${activePage === 'dashboard' ? 'active' : ''}">Tableau de Bord</a></li>
-                    <li><a href="/payment-instructions.html" class="${activePage === 'payment-instructions' ? 'active' : ''}">Instructions de Paiement</a></li>
+                    <li><a href="/dashboard.html" class="${activePage === 'dashboard' ? 'active' : ''}">📊 Tableau de Bord</a></li>
+                    <li><a href="/payment-instructions.html" class="${activePage === 'payment-instructions' ? 'active' : ''}">💳 Instructions de Paiement</a></li>
                 </ul>
             `;
         } else {
-            // Not logged in
-            dashboardSection = `
+            accountSection = `
                 <div class="mobile-nav-divider"></div>
                 <div class="mobile-nav-footer">
                     <a href="/login.html" class="btn btn-primary" style="width:100%; text-align:center;">Connexion</a>
@@ -312,7 +263,7 @@
                     <li><a href="/about.html" class="${activePage === 'about' ? 'active' : ''}">ℹ <span data-i18n="about">À propos</span></a></li>
                     <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}"> <span data-i18n="contact">Contact</span></a></li>
                 </ul>
-                ${dashboardSection}
+                ${accountSection}
             </nav>
         `;
     }
@@ -557,28 +508,6 @@
         if (activeItem) {
             activeItem.classList.add('active');
         }
-        
-        // Also update mobile nav active state
-        updateMobileNavActive(sectionName);
-    }
-
-    // ============================================
-    // MOBILE NAV ACTIVE STATE UPDATE
-    // ============================================
-    
-    function updateMobileNavActive(sectionName) {
-        // Update mobile nav links
-        document.querySelectorAll('.mobile-nav-links a').forEach(item => {
-            // Check if this link matches the section
-            if (item.getAttribute('onclick')?.includes(sectionName) || 
-                item.getAttribute('href')?.includes(sectionName)) {
-                item.classList.add('active');
-            } else if (item.classList.contains('active') && 
-                       !item.getAttribute('href')?.includes(currentOptions.activePage)) {
-                // Remove active from non-matching items (but keep page-level active)
-                item.classList.remove('active');
-            }
-        });
     }
 
     // ============================================

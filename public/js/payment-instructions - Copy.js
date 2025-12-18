@@ -1,5 +1,5 @@
 // Nimwema Platform - Payment Instructions Page (Production)
-// Version: 2.1 - Shows instructions even without pending order
+// Version: 2.0 - Clean, professional implementation
 
 document.addEventListener('DOMContentLoaded', function() {
   loadOrderDetails();
@@ -12,10 +12,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadOrderDetails() {
   const orderDataStr = sessionStorage.getItem('pendingOrder');
   
-  // FIX: If no pending order, show generic instructions instead of redirecting
   if (!orderDataStr) {
-    console.log('No pending order - showing general payment instructions');
-    showGenericPaymentInstructions();
+    console.error('No order data found');
+    showError('Données de commande non trouvées');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 3000);
     return;
   }
   
@@ -25,90 +27,7 @@ function loadOrderDetails() {
     populatePaymentInstructions(order);
   } catch (error) {
     console.error('Error parsing order data:', error);
-    showGenericPaymentInstructions();
-  }
-}
-
-/**
- * Show generic payment instructions when no pending order exists
- */
-function showGenericPaymentInstructions() {
-  const detailsContainer = document.getElementById('orderDetails');
-  const instructionsContainer = document.getElementById('paymentInstructions');
-  
-  // Hide order details section or show a message
-  if (detailsContainer) {
-    detailsContainer.innerHTML = `
-      <div style="text-align: center; padding: var(--space-lg); background: var(--paper); border-radius: var(--radius-input);">
-        <p style="margin: 0; color: var(--grey-700);">
-          Aucune commande en attente. Consultez nos méthodes de paiement ci-dessous.
-        </p>
-      </div>
-    `;
-  }
-  
-  // Show both payment methods
-  if (instructionsContainer) {
-    instructionsContainer.innerHTML = `
-      <!-- Bank Transfer Instructions -->
-      <div style="margin-bottom: var(--space-xl);">
-        <h2 style="margin-bottom: var(--space-lg); color: #1976D2; text-align: center;">
-          🏦 Virement Bancaire
-        </h2>
-        
-        <div style="background: #E3F2FD; padding: var(--space-lg); border-radius: var(--radius-input); margin-bottom: var(--space-md); border-left: 4px solid #1976D2;">
-          <h4 style="margin-bottom: var(--space-md); color: #1565C0;">EquityBCDC</h4>
-          <div style="font-size: 16px; line-height: 1.8;">
-            <p style="margin-bottom: var(--space-sm);"><strong>Intitulé du compte :</strong> CPOSSIBLE</p>
-            <p><strong>Numéro de compte :</strong> 024 200 000 007 245</p>
-          </div>
-        </div>
-        
-        <div style="background: var(--paper); padding: var(--space-lg); border-radius: var(--radius-input); margin-bottom: var(--space-md);">
-          <h4 style="margin-bottom: var(--space-sm);">Instructions :</h4>
-          <ol style="margin-left: var(--space-lg); line-height: 1.8;">
-            <li>Effectuez le virement bancaire du montant total</li>
-            <li>Dans la référence, indiquez votre numéro de commande</li>
-            <li>Prenez une photo de la preuve de virement</li>
-            <li>Envoyez la preuve à : <strong>paiements@nimwema.com</strong></li>
-            <li>Les bons seront envoyés après validation</li>
-          </ol>
-        </div>
-      </div>
-      
-      <!-- Cash / Western Union Instructions -->
-      <div>
-        <h2 style="margin-bottom: var(--space-lg); color: var(--primary-green); text-align: center;">
-          💵 Western Union et Espèces
-        </h2>
-        
-        <div style="background: #E8F5E9; padding: var(--space-lg); border-radius: var(--radius-input); margin-bottom: var(--space-md); border-left: 4px solid var(--primary-green);">
-          <h4 style="margin-bottom: var(--space-md); color: var(--primary-green);">Paiement à effectuer à :</h4>
-          <div style="font-size: 16px; line-height: 1.8;">
-            <p style="margin-bottom: var(--space-sm);"><strong>👤 Mr Paulin Ikoko</strong></p>
-            <p style="margin-bottom: var(--space-sm);">📱 <strong>+243 821 075 415</strong></p>
-            <p style="margin-bottom: var(--space-sm);">📍 <strong>7 Chemin de bon accueil, Q/Socimat</strong></p>
-            <p><strong>Kinshasa Gombe</strong></p>
-          </div>
-        </div>
-        
-        <div style="background: var(--paper); padding: var(--space-lg); border-radius: var(--radius-input); margin-bottom: var(--space-md);">
-          <h4 style="margin-bottom: var(--space-sm);">Instructions :</h4>
-          <ol style="margin-left: var(--space-lg); line-height: 1.8;">
-            <li>Effectuez le paiement du montant total</li>
-            <li>Mentionnez votre numéro de commande</li>
-            <li>Conservez votre reçu ou MTCN (Western Union)</li>
-            <li>Les bons seront envoyés après validation du paiement</li>
-          </ol>
-        </div>
-        
-        <div style="background: #FFF3CD; padding: var(--space-md); border-radius: var(--radius-input); border-left: 4px solid var(--warning);">
-          <p style="margin: 0; font-size: 14px; color: var(--ink-black);">
-            <strong>📝 Note :</strong> La validation du paiement peut prendre jusqu'à 24 heures. Vous recevrez un SMS de confirmation.
-          </p>
-        </div>
-      </div>
-    `;
+    showError('Erreur lors du chargement des données');
   }
 }
 
@@ -327,4 +246,5 @@ function showError(message) {
   if (instructionsContainer) {
     instructionsContainer.innerHTML = '';
   }
+  
 }
