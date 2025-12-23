@@ -113,7 +113,7 @@
 
         container.innerHTML = `
             <header class="header">
-            <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+           
                 <!-- Top Bar: Language Selector + Login/User -->
                 <div class="header-top">
                     <div class="language-selector">
@@ -643,6 +643,16 @@
     // ============================================
 
     function init(options = {}) {
+
+         // Inject favicon globally
+    if (!document.querySelector('link[rel="icon"]')) {
+        const favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/svg+xml';
+        favicon.href = '/images/favicon.svg';
+        document.head.appendChild(favicon);
+    }
+    
         currentOptions = {
             sidebar: options.sidebar || null,
             activePage: options.activePage || '',
