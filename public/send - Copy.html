@@ -96,8 +96,6 @@
                             <span data-i18n="number_of_vouchers">Nombre de bons</span>
                             <span class="required">*</span>
                         </label>
-                        <div class="quantity-wrapper">
-  <button type="button" onclick="decrementQty()">−</button>
                         <input 
                             type="number" 
                             id="quantity" 
@@ -108,8 +106,6 @@
                             max="50"
                             value="1"
                             onchange="updateTotalAmount()">
-                            <button type="button" onclick="incrementQty()">+</button>
-</div>
                         <div class="form-helper" data-i18n="quantity_helper">
                             Nombre de bons d'achat à créer (maximum 50)
                         </div>
@@ -338,18 +334,6 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/send-voucher.js"></script>
-    <script>
-function incrementQty() {
-  const input = document.getElementById('quantity');
-  if (input.value < 50) input.value = parseInt(input.value) + 1;
-  updateTotalAmount();
-}
-function decrementQty() {
-  const input = document.getElementById('quantity');
-  if (input.value > 1) input.value = parseInt(input.value) - 1;
-  updateTotalAmount();
-}
-</script>
     <script>
         // Initialize layout (header + footer only)
         NimwemaLayout.init({ activePage: 'send' });
