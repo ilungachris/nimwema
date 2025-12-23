@@ -1,5 +1,48 @@
 /* Nimwema Platform - Forms Styles */
+/* ============================================
+   QUANTITY STEPPER (Mobile only)
+   ============================================ */
+.quantity-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
 
+/* Custom +/- buttons - HIDDEN on desktop */
+.quantity-wrapper button {
+  display: none;
+}
+
+/* Show +/- buttons ONLY on mobile */
+@media (max-width: 768px) {
+  .quantity-wrapper button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--grey-200);
+    background: var(--white);
+    border-radius: var(--radius-input);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--ink-black);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .quantity-wrapper button:hover {
+    border-color: var(--primary-green);
+    background: rgba(139, 195, 74, 0.05);
+  }
+
+  .quantity-wrapper button:active {
+    background: var(--primary-green);
+    border-color: var(--primary-green);
+    transform: scale(0.95);
+  }
+}
 /* ============================================
    FORM CONTAINERS
    ============================================ */
