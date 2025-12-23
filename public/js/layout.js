@@ -113,6 +113,7 @@
 
         container.innerHTML = `
             <header class="header">
+            <link rel="icon" type="image/svg+xml" href="/favicon.svg">
                 <!-- Top Bar: Language Selector + Login/User -->
                 <div class="header-top">
                     <div class="language-selector">
